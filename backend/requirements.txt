@@ -22,10 +22,9 @@ redis==5.0.1
 celery==5.3.4
 boto3==1.34.0
 websockets==12.0
-httpx==0.25.2
-asyncio-subprocess==0.1.0
+httpx>=0.25.2,<1.0.0  # Updated to allow newer versions that support Python 3.11
+# Removed asyncio-subprocess as it's not a real package - using asyncio's built-in instead
 google-cloud-storage==2.10.0
-google-cloud-secretmanager==2.16.4
 pydantic-settings==2.1.0
 tenacity==8.2.3
 jinja2==3.1.2

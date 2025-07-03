@@ -139,7 +139,7 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO veogen;
 
 -- Log successful initialization
 INSERT INTO system_metrics (metric_name, metric_value, labels) VALUES
-    ('database_initialized', 1, '{"version": "1.0", "timestamp": "' || CURRENT_TIMESTAMP || '"}')
+    ('database_initialized', 1, jsonb_build_object('version', '1.0', 'timestamp', CURRENT_TIMESTAMP::text))
 ON CONFLICT DO NOTHING;
 
 -- Enable query performance monitoring

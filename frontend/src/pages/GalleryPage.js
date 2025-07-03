@@ -7,6 +7,7 @@ import {
   HeartIcon,
   ShareIcon,
   FunnelIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 
 const GalleryPage = () => {
@@ -161,7 +162,7 @@ const GalleryPage = () => {
                     </button>
                   </div>
                   <button className="text-gray-400 hover:text-white transition-colors">
-                    <DownloadIcon className="w-4 h-4" />
+                    <ArrowDownTrayIcon className="w-4 h-4" />
                   </button>
                 </div>
               </div>

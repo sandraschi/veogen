@@ -7,7 +7,7 @@ import {
   XCircleIcon,
   TrashIcon,
   EyeIcon,
-  DownloadIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 
 const JobsPage = () => {
@@ -153,7 +153,7 @@ const JobsPage = () => {
                           className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                           title="Download"
                         >
-                          <DownloadIcon className="w-5 h-5" />
+                          <ArrowDownTrayIcon className="w-5 h-5" />
                         </button>
                         <button
                           className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"

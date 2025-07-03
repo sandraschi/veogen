@@ -6,8 +6,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
-      - "8001:8001"  # Metrics port
+      - "4700:8000"  # Backend API
+      - "4705:8001"  # Metrics port
     environment:
       - DEBUG=false
       - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
@@ -50,11 +50,11 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "4710:3000"  # Frontend
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=http://localhost:4700
       - REACT_APP_VERSION=1.0.0
-      - REACT_APP_GRAFANA_URL=http://localhost:3001
+      - REACT_APP_GRAFANA_URL=http://localhost:4715
     depends_on:
       - backend
     networks:
@@ -73,7 +73,7 @@ services:
   postgres:
     image: postgres:15-alpine
     ports:
-      - "5432:5432"
+      - "4715:5432"  # PostgreSQL
     environment:
       - POSTGRES_DB=veogen
       - POSTGRES_USER=veogen
@@ -102,7 +102,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "4720:6379"  # Redis
     command: redis-server --appendonly yes --requirepass veogen123
     volumes:
       - redis_data:/data
@@ -128,7 +128,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3001:3000"
+      - "4725:3000"  # Grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=veogen123
       - GF_SECURITY_ADMIN_USER=admin
@@ -155,12 +155,14 @@ services:
   # Loki for log aggregation
   loki:
     image: grafana/loki:latest
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
     ports:
       - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - loki_data:/tmp/loki
       - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - ./monitoring/loki-rules:/tmp/loki/rules
     networks:
       - veogen-network
     restart: unless-stopped
@@ -178,7 +180,7 @@ services:
   promtail:
     image: grafana/promtail:latest
     ports:
-      - "9080:9080"
+      - "4735:9080"  # Promtail
     volumes:
       - /var/log:/var/log:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -201,7 +203,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9090:9090"
+      - "4740:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/rules:/etc/prometheus/rules:ro
@@ -211,8 +213,10 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
-      - '--alertmanager.url=http://alertmanager:9093'
+    depends_on:
+      - alertmanager
     networks:
       - veogen-network
     restart: unless-stopped
@@ -230,14 +234,14 @@ services:
   alertmanager:
     image: prom/alertmanager:latest
     ports:
-      - "9093:9093"
+      - "4745:9093"  # Alertmanager
     volumes:
       - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
-      - '--web.external-url=http://localhost:9093'
+      - '--web.external-url=http://localhost:4745'
     networks:
       - veogen-network
     restart: unless-stopped
@@ -255,7 +259,7 @@ services:
   node-exporter:
     image: prom/node-exporter:latest
     ports:
-      - "9100:9100"
+      - "4750:9100"  # Node Exporter
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -278,7 +282,7 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     ports:
-      - "8080:8080"
+      - "4755:8080"  # cAdvisor
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
@@ -298,8 +302,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - "4760:80"   # Nginx HTTP
+      - "4765:443"  # Nginx HTTPS
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro

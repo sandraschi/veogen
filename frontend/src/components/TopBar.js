@@ -11,7 +11,7 @@ import {
   LanguageIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
-import LogViewerModal from '../LogViewerModal';
+import LogViewerModal from './LogViewerModal';
 
 const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
   const [showLogViewer, setShowLogViewer] = useState(false);

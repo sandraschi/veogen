@@ -43,8 +43,9 @@ receivers:
   - name: 'critical-alerts'
     email_configs:
       - to: 'admin@yourdomain.com'
-        subject: 'CRITICAL: VeoGen Alert - {{ .GroupLabels.alertname }}'
-        body: |
+        headers:
+          subject: 'CRITICAL: VeoGen Alert - {{ .GroupLabels.alertname }}'
+        text: |
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -52,18 +53,19 @@ receivers:
           Severity: {{ .Labels.severity }}
           Started: {{ .StartsAt }}
           {{ end }}
-    slack_configs:
-      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
-        channel: '#veogen-alerts'
-        title: 'CRITICAL VeoGen Alert'
-        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
-        color: 'danger'
+#    slack_configs:
+#      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+#        channel: '#veogen-alerts'
+#        title: 'CRITICAL VeoGen Alert'
+#        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+#        color: 'danger'
 
   - name: 'warning-alerts'
     email_configs:
       - to: 'team@yourdomain.com'
-        subject: 'WARNING: VeoGen Alert - {{ .GroupLabels.alertname }}'
-        body: |
+        headers:
+          subject: 'WARNING: VeoGen Alert - {{ .GroupLabels.alertname }}'
+        text: |
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -71,20 +73,20 @@ receivers:
           Severity: {{ .Labels.severity }}
           Started: {{ .StartsAt }}
           {{ end }}
-    slack_configs:
-      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
-        channel: '#veogen-warnings'
-        title: 'VeoGen Warning'
-        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
-        color: 'warning'
+#    slack_configs:
+#      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+#        channel: '#veogen-warnings'
+#        title: 'VeoGen Warning'
+#        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+#        color: 'warning'
 
   - name: 'info-alerts'
-    slack_configs:
-      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
-        channel: '#veogen-info'
-        title: 'VeoGen Info'
-        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
-        color: 'good'
+#    slack_configs:
+#      - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+#        channel: '#veogen-info'
+#        title: 'VeoGen Info'
+#        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+#        color: 'good'
 
 # Inhibition rules
 inhibit_rules:
