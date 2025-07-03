@@ -1,0 +1,171 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Docker container logs
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*log
+    pipeline_stages:
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            attrs: attrs
+      - json:
+          expressions:
+            tag: attrs.tag
+          source: attrs
+      - regex:
+          expression: (?P<container_name>(?:[^|]*))\|
+          source: tag
+      - timestamp:
+          format: RFC3339Nano
+          source: time
+      - labels:
+          stream:
+          container_name:
+      - output:
+          source: output
+
+  # VeoGen application logs
+  - job_name: veogen-backend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: veogen-backend
+          service: backend
+          __path__: /app/logs/*.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) - (?P<logger>\S+) - (?P<level>\w+) - (?P<message>.*)'
+      - timestamp:
+          format: '2006-01-02 15:04:05,000'
+          source: timestamp
+      - labels:
+          level:
+          logger:
+          service:
+
+  # System logs (if available)
+  - job_name: syslog
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: syslog
+          __path__: /var/log/syslog
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}) (?P<hostname>\S+) (?P<service>\S+): (?P<message>.*)'
+      - labels:
+          hostname:
+          service:
+
+  # VeoGen specific log patterns
+  - job_name: veogen-video-generation
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: veogen-video-generation
+          service: video-generation
+          __path__: /app/logs/video_*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            job_id: job_id
+            status: status
+            duration: duration
+            error: error
+      - timestamp:
+          format: RFC3339
+          source: timestamp
+      - labels:
+          level:
+          job_id:
+          status:
+
+  # Movie Maker logs
+  - job_name: veogen-movie-maker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: veogen-movie-maker
+          service: movie-maker
+          __path__: /app/logs/movie_*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            project_id: project_id
+            scene_id: scene_id
+            status: status
+            progress: progress
+      - timestamp:
+          format: RFC3339
+          source: timestamp
+      - labels:
+          level:
+          project_id:
+          status:
+
+  # FFmpeg processing logs
+  - job_name: ffmpeg
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: ffmpeg
+          service: ffmpeg
+          __path__: /app/logs/ffmpeg_*.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>\w+)\] (?P<component>\w+): (?P<message>.*)'
+      - timestamp:
+          format: '2006-01-02 15:04:05'
+          source: timestamp
+      - labels:
+          level:
+          component:
+
+  # Error logs specifically
+  - job_name: error-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: error-logs
+          severity: error
+          __path__: /app/logs/error_*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            service: service
+            error_type: error_type
+            stack_trace: stack_trace
+      - timestamp:
+          format: RFC3339
+          source: timestamp
+      - labels:
+          level:
+          service:
+          error_type:

@@ -1,0 +1,46 @@
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: prometheus
+          matcherRegex: "job_id=([^\\s]+)"
+          name: JobID
+          url: "/d/veogen-jobs/veogen-jobs?var-job_id=${__value.raw}"
+        - datasourceUid: prometheus
+          matcherRegex: "project_id=([^\\s]+)"
+          name: ProjectID
+          url: "/d/veogen-movies/veogen-movies?var-project_id=${__value.raw}"
+
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    uid: prometheus
+    jsonData:
+      httpMethod: GET
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      cacheLevel: 'High'
+      disableRecordingRules: false
+      incrementalQueryOverlapWindow: 10m
+
+  - name: VeoGen Logs
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    uid: veogen-logs
+    jsonData:
+      maxLines: 5000
+      derivedFields:
+        - datasourceUid: prometheus
+          matcherRegex: "level=(ERROR|CRITICAL)"
+          name: Error Details
+          url: "/d/veogen-errors/veogen-errors?var-level=${__value.raw}"

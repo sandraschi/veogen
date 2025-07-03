@@ -1,0 +1,135 @@
+groups:
+  - name: veogen_system_alerts
+    rules:
+      - alert: VeoGenServiceDown
+        expr: up{job=~"veogen-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "VeoGen service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has been down for more than 1 minute"
+          
+      - alert: HighCPUUsage
+        expr: veogen_system_cpu_usage_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% for more than 5 minutes"
+          
+      - alert: HighMemoryUsage
+        expr: (veogen_system_memory_usage_bytes{type="used"} / veogen_system_memory_usage_bytes{type="total"}) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% for more than 5 minutes"
+          
+      - alert: DiskSpaceRunningLow
+        expr: (veogen_system_disk_usage_bytes{type="used"} / veogen_system_disk_usage_bytes{type="total"}) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space running low on {{ $labels.mount_point }}"
+          description: "Disk usage is {{ $value }}% on {{ $labels.mount_point }}"
+
+  - name: veogen_application_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(veogen_http_requests_total{status=~"5.."}[5m]) / rate(veogen_http_requests_total[5m]) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }}% for endpoint {{ $labels.endpoint }}"
+          
+      - alert: SlowVideoGeneration
+        expr: histogram_quantile(0.95, rate(veogen_video_generation_duration_seconds_bucket[10m])) > 1800
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Video generation is slow"
+          description: "95th percentile generation time is {{ $value }} seconds"
+          
+      - alert: VideoGenerationFailureRate
+        expr: rate(veogen_video_generations_total{status="failed"}[10m]) / rate(veogen_video_generations_total[10m]) * 100 > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High video generation failure rate"
+          description: "Video generation failure rate is {{ $value }}%"
+          
+      - alert: LargeVideoQueue
+        expr: veogen_video_queue_size > 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Large video generation queue"
+          description: "Video queue size is {{ $value }} jobs"
+          
+      - alert: FFmpegOperationFailures
+        expr: rate(veogen_ffmpeg_operations_total{status="failed"}[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FFmpeg operation failures detected"
+          description: "FFmpeg failure rate is {{ $value }} operations per second"
+
+  - name: veogen_storage_alerts
+    rules:
+      - alert: HighStorageUsage
+        expr: veogen_file_storage_bytes > 10737418240  # 10GB
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High storage usage in {{ $labels.storage_type }}"
+          description: "Storage usage is {{ $value | humanize }}B in {{ $labels.storage_type }}"
+          
+      - alert: TempFilesAccumulating
+        expr: veogen_file_storage_bytes{storage_type="temp"} > 1073741824  # 1GB
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Temporary files accumulating"
+          description: "Temp directory size is {{ $value | humanize }}B - cleanup may be needed"
+
+  - name: veogen_gemini_alerts
+    rules:
+      - alert: GeminiAPIFailures
+        expr: rate(veogen_gemini_api_calls_total{status="failed"}[10m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Gemini API failures detected"
+          description: "Gemini API failure rate is {{ $value }} calls per second"
+          
+      - alert: SlowGeminiAPIResponse
+        expr: histogram_quantile(0.95, rate(veogen_gemini_api_duration_seconds_bucket[10m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow Gemini API responses"
+          description: "95th percentile API response time is {{ $value }} seconds"
+          
+      - alert: HighTokenUsage
+        expr: rate(veogen_gemini_tokens_total[1h]) > 1000000  # 1M tokens per hour
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "High token usage detected"
+          description: "Token usage rate is {{ $value }} tokens per hour"
