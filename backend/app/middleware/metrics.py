@@ -398,3 +398,59 @@ def set_active_generations(count: int):
 def set_active_movie_projects(count: int):
     """Set active movie project count"""
     ACTIVE_MOVIE_PROJECTS.set(count)
+
+# Image generation metrics
+IMAGE_GENERATION_TOTAL = Counter(
+    'veogen_image_generation_total',
+    'Total image generations by style and status',
+    ['style', 'status'],
+    registry=REGISTRY
+)
+
+IMAGE_GENERATION_DURATION = Histogram(
+    'veogen_image_generation_duration_seconds',
+    'Time spent generating images',
+    ['style'],
+    registry=REGISTRY
+)
+
+# Music generation metrics
+MUSIC_GENERATION_TOTAL = Counter(
+    'veogen_music_generation_total',
+    'Total music generations by style and status',
+    ['style', 'status'],
+    registry=REGISTRY
+)
+
+MUSIC_GENERATION_DURATION = Histogram(
+    'veogen_music_generation_duration_seconds',
+    'Time spent generating music',
+    ['style'],
+    registry=REGISTRY
+)
+
+def track_image_generation(style: str, status: str, duration: float = 0):
+    """Track image generation metrics"""
+    try:
+        IMAGE_GENERATION_TOTAL.labels(style=style, status=status).inc()
+        
+        if duration > 0:
+            IMAGE_GENERATION_DURATION.labels(style=style).observe(duration)
+        
+        logger.info(f"Image generation tracked: style={style}, status={status}, duration={duration}")
+        
+    except Exception as e:
+        logger.error(f"Failed to track image generation metrics: {e}")
+
+def track_music_generation(style: str, status: str, duration: float = 0):
+    """Track music generation metrics"""
+    try:
+        MUSIC_GENERATION_TOTAL.labels(style=style, status=status).inc()
+        
+        if duration > 0:
+            MUSIC_GENERATION_DURATION.labels(style=style).observe(duration)
+        
+        logger.info(f"Music generation tracked: style={style}, status={status}, duration={duration}")
+        
+    except Exception as e:
+        logger.error(f"Failed to track music generation metrics: {e}")

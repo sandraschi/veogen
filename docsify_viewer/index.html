@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Windsurf Documentation</title>
+  <title>Veogen - Vue Component Documentation</title>
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <meta name="description" content="Windsurf Documentation">
+  <meta name="description" content="Veogen Vue Component Documentation and Generator">
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <link rel="icon" href="favicon.ico">
   
@@ -15,6 +15,9 @@
   <link rel="stylesheet" href="plugins/prism-tomorrow.css">
   <link rel="stylesheet" href="plugins/prism-css.min.css">
   <link rel="stylesheet" href="plugins/sidebar-collapse.min.css">
+  
+  <!-- Additional plugin CSS -->
+  <link rel="stylesheet" href="plugins/katex.min.css">
   
   <!-- Custom CSS -->
   <!-- <link rel="stylesheet" href="css/theme.css"> -->
@@ -60,12 +63,14 @@
       background-color: var(--bg-color);
       color: var(--text-color);
       transition: background-color 0.3s ease, color 0.3s ease;
+      font-size: var(--base-font-size, 16px);
     }
 
     /* Sidebar theming */
     .sidebar {
       background-color: var(--sidebar-bg);
       border-right: 1px solid var(--border-color);
+      font-size: calc(var(--base-font-size, 16px) * 0.9);
     }
 
     .sidebar ul li a {
@@ -80,6 +85,8 @@
     .markdown-section {
       background-color: var(--bg-color);
       color: var(--text-color);
+      font-size: var(--base-font-size, 16px);
+      line-height: 1.6;
     }
 
     .markdown-section h1,
@@ -89,7 +96,15 @@
     .markdown-section h5,
     .markdown-section h6 {
       color: var(--text-color);
+      line-height: 1.3;
     }
+    
+    .markdown-section h1 { font-size: calc(var(--base-font-size, 16px) * 2.5); }
+    .markdown-section h2 { font-size: calc(var(--base-font-size, 16px) * 2); }
+    .markdown-section h3 { font-size: calc(var(--base-font-size, 16px) * 1.5); }
+    .markdown-section h4 { font-size: calc(var(--base-font-size, 16px) * 1.25); }
+    .markdown-section h5 { font-size: calc(var(--base-font-size, 16px) * 1.1); }
+    .markdown-section h6 { font-size: calc(var(--base-font-size, 16px) * 1); }
 
     .markdown-section a {
       color: var(--link-color);
@@ -143,20 +158,60 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
+    /* Ensure all UI elements respect theme */
+    .app-navbar, .app-navbar * {
+      background-color: var(--bg-color) !important;
+      color: var(--text-color) !important;
+    }
+    
+    /* Docsify specific elements */
+    .docsify-pagination, .docsify-pagination * {
+      background-color: var(--bg-color) !important;
+      color: var(--text-color) !important;
+    }
+    
+    /* Search box theming */
+    .search {
+      background-color: var(--bg-color) !important;
+      color: var(--text-color) !important;
+    }
+    
+    .search input {
+      background-color: var(--code-bg) !important;
+      color: var(--text-color) !important;
+      border: 1px solid var(--border-color) !important;
+    }
+    
+    /* Config panel theming */
+    #config-panel {
+      background-color: var(--bg-color) !important;
+      color: var(--text-color) !important;
+    }
+    
+    #config-panel h3, #config-panel h4 {
+      color: var(--text-color) !important;
+    }
+    
+    #config-panel select, #config-panel input {
+      background-color: var(--code-bg) !important;
+      color: var(--text-color) !important;
+      border: 1px solid var(--border-color) !important;
+    }
+    
     .theme-toggle {
       right: 20px;
       top: 20px;
     }
     
     .console-toggle {
-      right: 70px;
+      right: 170px;
       top: 20px;
       font-family: monospace;
       font-weight: bold;
     }
     
     .config-toggle {
-      right: 120px;
+      right: 220px;
       top: 20px;
       font-size: 18px;
     }
@@ -164,6 +219,56 @@
     .theme-toggle:hover, .console-toggle:hover, .config-toggle:hover {
       opacity: 1;
       transform: scale(1.1);
+    }
+    
+    /* Font Controls */
+    .font-controls {
+      position: fixed;
+      right: 70px;
+      top: 20px;
+      display: flex;
+      gap: 2px;
+      z-index: 1000;
+    }
+    
+    .font-control-btn {
+      background: var(--theme-color, #3F51B5);
+      border: none;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: all 0.3s ease;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .font-control-btn:hover {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    
+    .font-control-btn:active {
+      transform: scale(0.95);
+    }
+    
+    #fontReset {
+      background: var(--theme-color, #3F51B5);
+      font-weight: bold;
+    }
+    
+    #fontDecrease {
+      background: #666;
+    }
+    
+    #fontIncrease {
+      background: #666;
     }
     
     /* Console styles */
@@ -328,6 +433,19 @@
     🌓
   </button>
   
+  <!-- Font Size Controls -->
+  <div class="font-controls">
+    <button id="fontDecrease" class="font-control-btn" aria-label="Decrease font size" title="Decrease font size">
+      A-
+    </button>
+    <button id="fontReset" class="font-control-btn" aria-label="Reset font size" title="Reset font size">
+      A
+    </button>
+    <button id="fontIncrease" class="font-control-btn" aria-label="Increase font size" title="Increase font size">
+      A+
+    </button>
+  </div>
+  
   <!-- Console Toggle Button -->
   <button id="consoleToggle" class="console-toggle" aria-label="Toggle console" title="Toggle console">
     >_
@@ -358,12 +476,13 @@
   <script>
     // Initialize Docsify with configuration
     window.$docsify = {
-      name: 'Windsurf Documentation',
-      repo: '',
+      name: 'Veogen Documentation',
+      repo: 'https://github.com/veogen/veogen',
       loadSidebar: '_sidebar.md',
       coverpage: '_coverpage.md',
+      notFoundPage: '_404.md',
       auto2top: true,
-      themeColor: '#3F51B5',
+      themeColor: '#41B883',
       executeScript: true,
       noEmoji: false,
       relativePath: true,
@@ -376,11 +495,11 @@
       search: {
         maxAge: 86400000,
         paths: 'auto',
-        placeholder: 'Search',
-        noData: 'No Results',
+        placeholder: 'Search components...',
+        noData: 'No Components Found',
         depth: 6,
         hideOtherSidebarContent: false,
-        namespace: 'windsurf-docs'
+        namespace: 'veogen-docs'
       },
       alias: {
         '/.*/_sidebar.md': '/_sidebar.md',
@@ -405,31 +524,59 @@
       window.$docsify = { ...window.$docsify, ...window.$docsifyConfig };
     }
     
+    // Global theme management functions
+    function getCurrentTheme() {
+      const settings = JSON.parse(localStorage.getItem('docsifySettings') || '{}');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (settings.theme && settings.theme !== 'system') {
+        return settings.theme;
+      }
+      return localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+    }
+    
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      
+      // Update both storage systems for compatibility
+      localStorage.setItem('theme', theme);
+      
+      // Update docsifySettings
+      const settings = JSON.parse(localStorage.getItem('docsifySettings') || '{}');
+      settings.theme = theme;
+      localStorage.setItem('docsifySettings', JSON.stringify(settings));
+      
+      // Update UI elements
+      const themeToggle = document.getElementById('themeToggle');
+      if (themeToggle) {
+        themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+      }
+      if (document.getElementById('themeSelect')) {
+        document.getElementById('themeSelect').value = theme;
+      }
+    }
+    
     // Theme management
     document.addEventListener('DOMContentLoaded', function() {
       const themeToggle = document.getElementById('themeToggle');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      let currentTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
-      
-      function setTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-        themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-        currentTheme = theme;
-      }
       
       // Initialize theme
+      const currentTheme = getCurrentTheme();
+      console.log('Initializing theme:', currentTheme);
       setTheme(currentTheme);
       
       // Toggle theme on button click
       themeToggle.addEventListener('click', function() {
+        const currentTheme = getCurrentTheme();
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        console.log('Toggling theme from', currentTheme, 'to', newTheme);
         setTheme(newTheme);
       });
       
       // Watch for system theme changes
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-        if (!localStorage.getItem('theme')) {
+        const settings = JSON.parse(localStorage.getItem('docsifySettings') || '{}');
+        if (!settings.theme || settings.theme === 'system') {
           setTheme(e.matches ? 'dark' : 'light');
         }
       });
@@ -438,10 +585,16 @@
   
   <!-- Load Docsify and plugins -->
   <script src="plugins/docsify.min.js"></script>
-  <!-- ALL PLUGINS COMMENTED OUT -->
+  
+  <!-- Essential Docsify plugins -->
+  <script src="plugins/docsify-search.min.js"></script>
+  <script src="plugins/docsify-pagination.js"></script>
   <script src="plugins/docsify-sidebar-collapse.min.js"></script>
-  <!-- <script src="plugins/docsify-tabs.min.js"></script> -->
-  <script src="plugins/docsify-copy-code.min.js"></script>
+  <script src="plugins/docsify-copy-code.js"></script>
+  <script src="plugins/docsify-tabs.js"></script>
+  <script src="plugins/docsify-footnote.js"></script>
+  
+  <!-- Prism code highlighting -->
   <script src="plugins/prism.js"></script>
   <script src="plugins/prism-bash.min.js"></script>
   <script src="plugins/prism-javascript.min.js"></script>
@@ -449,11 +602,11 @@
   <script src="plugins/prism-json.min.js"></script>
   <script src="plugins/prism-yaml.min.js"></script>
   <script src="plugins/prism-powershell.min.js"></script>
-  <script src="plugins/docsify-search.min.js"></script>
-  <!-- <script src="plugins/docsify-sidebar-collapse.js"></script> -->
-  <!-- <script src="plugins/docsify-copy-code.js"></script> -->
-  <script src="plugins/docsify-pagination.js"></script>
-  <!-- <script src="plugins/docsify-tabs.js"></script> -->
+  
+  <!-- Additional plugins -->
+  <script src="plugins/docsify-mermaid.js"></script>
+  <script src="plugins/docsify-katex.js"></script>
+  <script src="plugins/zoom-image.js"></script>
   
   <!-- Initialize Docsify -->
   <script>
@@ -567,7 +720,7 @@
       // Add welcome message
       const welcomeMsg = document.createElement('div');
       welcomeMsg.className = 'console-message';
-      welcomeMsg.textContent = 'Windsurf Console - Type "help" for available commands';
+      welcomeMsg.textContent = 'Veogen Console - Type "help" for available commands';
       consoleContent.appendChild(welcomeMsg);
       
       // Command history
@@ -734,11 +887,17 @@
         switch(cmd) {
           case 'help':
             result = 'Available commands:\n' +
-                     '  help         - Show this help message\n' +
-                     '  clear        - Clear the console\n' +
-                     '  theme [dark|light] - Change theme\n' +
-                     '  reload       - Reload the page\n' +
-                     '  version      - Show version info';
+                     '  help                    - Show this help message\n' +
+                     '  clear                   - Clear the console\n' +
+                     '  theme [dark|light]      - Change theme\n' +
+                     '  reload                  - Reload the page\n' +
+                     '  version                 - Show version info\n' +
+                     '  video status            - Check video generation status (mockup)\n' +
+                     '  movie list              - List available movie presets (mockup)\n' +
+                     '  styles                  - Show available visual styles\n' +
+                     '  quota                   - Check remaining video credits (mockup)\n' +
+                     '  \n' +
+                     '  Note: Commands marked with (mockup) show demo data for testing';
             break;
             
           case 'clear':
@@ -760,8 +919,64 @@
             return;
             
           case 'version':
-            result = 'Windsurf Documentation Console v1.0.0\n' +
+            result = 'VeoGen Documentation Console v1.0.0\n' +
+                    'AI Video Generation & Movie Maker Platform\n' +
+                    'Google Veo 3 Integration\n' +
                     'Docsify v' + (window.Docsify ? Docsify.version : 'unknown');
+            break;
+            
+          case 'video':
+            const videoCmd = args[1];
+            switch(videoCmd) {
+              case 'status':
+                result = 'Video Generation Status (MOCKUP DATA):\n' +
+                        '  Active Generations: 0\n' +
+                        '  Queue Position: N/A\n' +
+                        '  Average Wait Time: 3 minutes\n' +
+                        '  \n' +
+                        '  Note: These are demo numbers for testing purposes';
+                break;
+              default:
+                result = 'Usage: video status';
+            }
+            break;
+            
+          case 'movie':
+            if (args[1] === 'list') {
+              result = 'Available Movie Presets (MOCKUP DATA):\n' +
+                      '  🎬 Short Film (5-10 clips, $0.50-2.50)\n' +
+                      '  📺 Commercial (3-5 clips, $0.30-1.25)\n' +
+                      '  🎵 Music Video (8-15 clips, $0.80-3.75)\n' +
+                      '  🎭 Feature (20-50 clips, $2.00-12.50)\n' +
+                      '  📖 Story (10-20 clips, $1.00-5.00)\n' +
+                      '  \n' +
+                      '  Note: These are demo prices for testing purposes';
+            } else {
+              result = 'Usage: movie list';
+            }
+            break;
+            
+          case 'styles':
+            result = 'Available Visual Styles:\n' +
+                    '  🎨 Anime - Japanese animation aesthetic\n' +
+                    '  🎭 Pixar - 3D animated movie style\n' +
+                    '  🎪 Wes Anderson - Symmetrical, quirky cinematography\n' +
+                    '  🏺 Claymation - Stop-motion clay animation\n' +
+                    '  🎪 Švankmajer - Surreal, dark stop-motion\n' +
+                    '  📺 Advertisement - Clean, commercial style\n' +
+                    '  🎵 Music Video - Dynamic, rhythm-focused\n' +
+                    '  🎬 Cinematic - Hollywood blockbuster\n' +
+                    '  📰 Documentary - Realistic presentation';
+            break;
+            
+          case 'quota':
+            result = 'Video Generation Quota (MOCKUP DATA):\n' +
+                    '  Plan: Free Tier\n' +
+                    '  Remaining: 3/3 videos this month\n' +
+                    '  Resets: Next billing cycle\n' +
+                    '  Upgrade to Pro for 50 videos/month\n' +
+                    '  \n' +
+                    '  Note: These are demo numbers for testing purposes';
             break;
             
           default:
@@ -800,10 +1015,11 @@
       function loadSettings() {
         const settings = JSON.parse(localStorage.getItem('docsifySettings') || '{}');
         
-        // Apply theme
-        if (settings.theme) {
-          document.documentElement.setAttribute('data-theme', settings.theme);
-          document.getElementById('themeSelect').value = settings.theme;
+        // Apply theme - use unified theme system
+        const currentTheme = getCurrentTheme();
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        if (document.getElementById('themeSelect')) {
+          document.getElementById('themeSelect').value = settings.theme || currentTheme;
         }
         
         // Apply font size
@@ -843,8 +1059,13 @@
         
         localStorage.setItem('docsifySettings', JSON.stringify(settings));
         
-        // Apply theme
-        document.documentElement.setAttribute('data-theme', settings.theme);
+        // Apply theme using unified system
+        if (settings.theme && settings.theme !== 'system') {
+          setTheme(settings.theme);
+        } else if (settings.theme === 'system') {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          setTheme(prefersDark ? 'dark' : 'light');
+        }
         
         // Apply font size
         document.documentElement.style.setProperty('--base-font-size', settings.fontSize);
@@ -865,6 +1086,60 @@
       
       // Load initial settings
       loadSettings();
+      
+      // Font size controls
+      const fontDecrease = document.getElementById('fontDecrease');
+      const fontReset = document.getElementById('fontReset');
+      const fontIncrease = document.getElementById('fontIncrease');
+      
+      let currentFontSize = parseInt(localStorage.getItem('fontSize') || '16');
+      const minFontSize = 12;
+      const maxFontSize = 24;
+      const defaultFontSize = 16;
+      
+      function updateFontSize(size) {
+        currentFontSize = Math.max(minFontSize, Math.min(maxFontSize, size));
+        document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
+        localStorage.setItem('fontSize', currentFontSize.toString());
+        
+        // Update button states
+        fontDecrease.disabled = currentFontSize <= minFontSize;
+        fontIncrease.disabled = currentFontSize >= maxFontSize;
+        
+        // Visual feedback
+        fontDecrease.style.opacity = fontDecrease.disabled ? '0.5' : '0.8';
+        fontIncrease.style.opacity = fontIncrease.disabled ? '0.5' : '0.8';
+      }
+      
+      // Initialize font size
+      updateFontSize(currentFontSize);
+      
+      // Event listeners
+      fontDecrease.addEventListener('click', () => {
+        updateFontSize(currentFontSize - 2);
+      });
+      
+      fontReset.addEventListener('click', () => {
+        updateFontSize(defaultFontSize);
+      });
+      
+      fontIncrease.addEventListener('click', () => {
+        updateFontSize(currentFontSize + 2);
+      });
+      
+      // Keyboard shortcuts
+      document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === '=') {
+          e.preventDefault();
+          updateFontSize(currentFontSize + 2);
+        } else if (e.ctrlKey && e.key === '-') {
+          e.preventDefault();
+          updateFontSize(currentFontSize - 2);
+        } else if (e.ctrlKey && e.key === '0') {
+          e.preventDefault();
+          updateFontSize(defaultFontSize);
+        }
+      });
     });
     
     // Configure sidebar
@@ -878,19 +1153,29 @@
       hideMissingTitles: true
     };
     
-    // ALL PLUGINS COMMENTED OUT
-    // Initialize sidebar collapse after Docsify is loaded
-    // window.$docsify.plugins = window.$docsify.plugins || [];
-    // window.$docsify.plugins.push(function(hook, vm) {
-    //   hook.doneEach(function() {
-    //     if (window.DocsifySidebarCollapse) {
-    //       window.DocsifySidebarCollapse.init({
-    //           sidebarHtml: true,
-    //           collapseAll: false
-    //         });
-    //       }
-    //     });
-    //   });
+    // Initialize plugins after Docsify is loaded
+    window.$docsify.plugins = window.$docsify.plugins || [];
+    window.$docsify.plugins.push(function(hook, vm) {
+      hook.doneEach(function() {
+        // Initialize sidebar collapse
+        if (window.DocsifySidebarCollapse) {
+          window.DocsifySidebarCollapse.init({
+            sidebarHtml: true,
+            collapseAll: false
+          });
+        }
+        
+        // Initialize copy code buttons
+        if (window.DocsifyCopyCode) {
+          window.DocsifyCopyCode.init();
+        }
+        
+        // Initialize tabs
+        if (window.DocsifyTabs) {
+          window.DocsifyTabs.init();
+        }
+      });
+    });
   </script>
 </body>
 </html>

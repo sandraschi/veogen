@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Bars3Icon,
   BellIcon,
@@ -10,13 +11,35 @@ import {
   MoonIcon,
   LanguageIcon,
   ChevronDownIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import LogViewerModal from './LogViewerModal';
 
 const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
+  const navigate = useNavigate();
   const [showLogViewer, setShowLogViewer] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  const languageMenuRef = useRef();
+  const userMenuRef = useRef();
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target)) {
+        setShowLanguageMenu(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -33,7 +56,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
   };
 
   const handleHelp = () => {
-    window.open('/docs', '_blank');
+    window.open('/help', '_blank');
   };
 
   return (
@@ -101,7 +124,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
               </motion.button>
 
               {/* Language Selector */}
-              <div className="relative">
+              <div className="relative" ref={languageMenuRef}>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -119,7 +142,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-lg overflow-hidden z-50"
+                    className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-xl overflow-hidden z-50"
                   >
                     {languages.map((lang) => (
                       <button
@@ -128,8 +151,8 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                           setLanguage(lang.code);
                           setShowLanguageMenu(false);
                         }}
-                        className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center space-x-3 ${
-                          language === lang.code ? 'bg-white/5 text-white' : 'text-gray-300'
+                        className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center space-x-3 ${
+                          language === lang.code ? 'bg-gray-700 text-white' : 'text-gray-200'
                         }`}
                       >
                         <span className="text-lg">{lang.flag}</span>
@@ -155,7 +178,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
               </motion.button>
 
               {/* User Menu */}
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -175,23 +198,33 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-lg overflow-hidden z-50"
+                    className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-xl overflow-hidden z-50"
                   >
-                    <div className="px-4 py-3 border-b border-white/10">
+                    <div className="px-4 py-3 border-b border-gray-600">
                       <p className="text-white font-medium">Creator</p>
-                      <p className="text-gray-400 text-sm">creator@veogen.com</p>
+                      <p className="text-gray-300 text-sm">creator@veogen.com</p>
                     </div>
-                    <button className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/10 hover:text-white transition-colors">
-                      Profile Settings
+                    <button 
+                      onClick={() => {
+                        navigate('/settings');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors flex items-center"
+                    >
+                      <Cog6ToothIcon className="w-4 h-4 mr-2" />
+                      Settings
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/10 hover:text-white transition-colors">
+                    <button className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                      Profile
+                    </button>
+                    <button className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
                       Billing
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/10 hover:text-white transition-colors">
+                    <button className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
                       Usage Stats
                     </button>
-                    <div className="border-t border-white/10">
-                      <button className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors">
+                    <div className="border-t border-gray-600">
+                      <button className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors">
                         Sign Out
                       </button>
                     </div>

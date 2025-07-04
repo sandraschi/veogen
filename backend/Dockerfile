@@ -38,9 +38,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Gemini CLI (Google GenerativeAI CLI)
-RUN pip install --no-cache-dir google-generativeai[cli]
-
 # Copy application code
 COPY . .
 

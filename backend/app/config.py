@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "VeoGen - AI Video Generator"
     VERSION: str = "1.0.0"
-    DESCRIPTION: str = "AI-powered video generation using Google's Veo model via Gemini CLI"
+    DESCRIPTION: str = "AI-powered video generation using Google's Veo model via Gemini CLI.\n\nDefault admin user: admin / admin. Please change the password after first login."
     
     # Server Configuration
     HOST: str = "0.0.0.0"
@@ -81,6 +81,14 @@ class Settings(BaseSettings):
     
     # WebSocket
     WEBSOCKET_ENABLED: bool = True
+    
+    # Email Configuration
+    EMAIL_FROM: str = "noreply@veogen.local"
+    EMAIL_SMTP: str = "dev"  # 'dev' writes emails to file, otherwise SMTP host
+    EMAIL_PORT: int = 25
+    EMAIL_USER: str = ""
+    EMAIL_PASS: str = ""
+    EMAIL_DEV_OUTBOX: str = "dev_emails/"
     
     class Config:
         env_file = ".env"

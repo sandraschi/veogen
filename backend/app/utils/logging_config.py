@@ -295,3 +295,39 @@ def log_ffmpeg_operation(logger: logging.Logger, operation_type: str, input_file
     else:
         extra['status'] = 'completed'
         logger.info("FFmpeg operation completed", extra=extra)
+
+def log_image_generation_event(logger, event: str, job_id: str, **kwargs):
+    """Log image generation events with structured data"""
+    extra = {
+        'component': 'image_generation',
+        'event': event,
+        'job_id': job_id,
+        **kwargs
+    }
+    
+    if event == "started":
+        logger.info("Image generation started", extra=extra)
+    elif event == "completed":
+        logger.info("Image generation completed", extra=extra)
+    elif event == "failed":
+        logger.error("Image generation failed", extra=extra)
+    else:
+        logger.info("Image generation event", extra=extra)
+
+def log_music_generation_event(logger, event: str, job_id: str, **kwargs):
+    """Log music generation events with structured data"""
+    extra = {
+        'component': 'music_generation',
+        'event': event,
+        'job_id': job_id,
+        **kwargs
+    }
+    
+    if event == "started":
+        logger.info("Music generation started", extra=extra)
+    elif event == "completed":
+        logger.info("Music generation completed", extra=extra)
+    elif event == "failed":
+        logger.error("Music generation failed", extra=extra)
+    else:
+        logger.info("Music generation event", extra=extra)

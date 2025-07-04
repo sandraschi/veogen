@@ -6,6 +6,9 @@ from contextlib import asynccontextmanager
 import logging
 from app.config import settings
 from app.routers import video, movie
+from app.api.api_v1.endpoints import music, image, book, code, translation, predictor, documents, auth
+from app.api.api_v1.endpoints import settings as settings_endpoints
+# from app.api.api_v1.endpoints import chat
 from app.middleware.metrics import PrometheusMetricsMiddleware, metrics_endpoint
 import uvicorn
 
@@ -89,6 +92,70 @@ app.include_router(
     tags=["movie"]
 )
 
+app.include_router(
+    music.router,
+    prefix=f"{settings.API_V1_STR}/music",
+    tags=["music"]
+)
+
+app.include_router(
+    image.router,
+    prefix=f"{settings.API_V1_STR}/image",
+    tags=["image"]
+)
+
+# New endpoints for enhanced frontend features
+app.include_router(
+    book.router,
+    prefix=f"{settings.API_V1_STR}/book",
+    tags=["book"]
+)
+
+app.include_router(
+    code.router,
+    prefix=f"{settings.API_V1_STR}/code",
+    tags=["code"]
+)
+
+app.include_router(
+    translation.router,
+    prefix=f"{settings.API_V1_STR}/translation",
+    tags=["translation"]
+)
+
+app.include_router(
+    predictor.router,
+    prefix=f"{settings.API_V1_STR}/predictor",
+    tags=["predictor"]
+)
+
+app.include_router(
+    documents.router,
+    prefix=f"{settings.API_V1_STR}/documents",
+    tags=["documents"]
+)
+
+# Authentication endpoints
+app.include_router(
+    auth.router,
+    prefix=f"{settings.API_V1_STR}/auth",
+    tags=["authentication"]
+)
+
+# Settings endpoints
+app.include_router(
+    settings_endpoints.router,
+    prefix=f"{settings.API_V1_STR}/settings",
+    tags=["settings"]
+)
+
+# Chat endpoints
+# app.include_router(
+#     chat.router,
+#     prefix=f"{settings.API_V1_STR}/chat",
+#     tags=["chat"]
+# )
+
 # Add metrics endpoint
 @app.get("/metrics")
 async def get_metrics():
@@ -104,6 +171,13 @@ async def root():
         "features": [
             "AI Video Generation",
             "Movie Maker with Continuity",
+            "Book Maker Studio",
+            "Code Assistant",
+            "Universal Translator",
+            "Future Predictor",
+            "Document Management",
+            "User Authentication & Management",
+            "Secure API Key Storage",
             "Multiple Visual Styles",
             "Real-time Progress Tracking"
         ],
@@ -148,13 +222,23 @@ async def health_check():
             health_status["components"]["movie_maker"] = f"error: {str(e)}"
             health_status["status"] = "degraded"
         
+        # Check database
+        try:
+            from app.database import engine
+            with engine.connect() as conn:
+                conn.execute("SELECT 1")
+            health_status["components"]["database"] = "available"
+        except Exception as e:
+            health_status["components"]["database"] = f"error: {str(e)}"
+            health_status["status"] = "degraded"
+        
         return health_status
         
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
         return {
             "status": "unhealthy",
             "service": settings.PROJECT_NAME,
+            "version": settings.VERSION,
             "error": str(e)
         }
 
@@ -162,57 +246,45 @@ async def health_check():
 async def api_info():
     """API information endpoint"""
     return {
-        "api_version": "v1",
-        "service": settings.PROJECT_NAME,
+        "name": settings.PROJECT_NAME,
         "version": settings.VERSION,
-        "features": {
-            "video_generation": {
-                "description": "Generate individual videos using Google Veo",
-                "endpoint": "/api/v1/video/generate",
-                "max_duration": 60,
-                "supported_styles": [
-                    "cinematic", "realistic", "animated", "artistic",
-                    "documentary", "commercial", "anime", "pixar"
-                ]
-            },
-            "movie_maker": {
-                "description": "Create complete movies with multiple scenes and continuity",
-                "endpoint": "/api/v1/movie/create",
-                "max_scenes": 50,
-                "supported_styles": [
-                    "anime", "pixar", "wes-anderson", "claymation",
-                    "svankmajer", "advertisement", "music-video", "cinematic", "documentary"
-                ],
-                "presets": [
-                    "commercial", "short-film", "music-video", "story", "feature"
-                ]
-            }
+        "description": settings.DESCRIPTION,
+        "endpoints": {
+            "video": f"{settings.API_V1_STR}/video",
+            "movie": f"{settings.API_V1_STR}/movie",
+            "music": f"{settings.API_V1_STR}/music",
+            "image": f"{settings.API_V1_STR}/image",
+            "book": f"{settings.API_V1_STR}/book",
+            "code": f"{settings.API_V1_STR}/code",
+            "translation": f"{settings.API_V1_STR}/translation",
+            "predictor": f"{settings.API_V1_STR}/predictor",
+            "documents": f"{settings.API_V1_STR}/documents",
+            "auth": f"{settings.API_V1_STR}/auth"
         },
-        "limits": {
-            "max_concurrent_generations": settings.MAX_CONCURRENT_GENERATIONS,
-            "max_queue_size": settings.MAX_QUEUE_SIZE,
-            "generation_timeout": settings.GENERATION_TIMEOUT
+        "documentation": {
+            "swagger": "/docs",
+            "redoc": "/redoc"
         }
     }
 
+# Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """Global exception handler"""
-    logger.error(f"Unhandled exception: {str(exc)}")
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
         content={
             "detail": "Internal server error",
-            "service": settings.PROJECT_NAME,
-            "support": "Check logs for more details"
+            "error": str(exc) if settings.DEBUG else "An unexpected error occurred"
         }
     )
 
 if __name__ == "__main__":
     uvicorn.run(
-        "main:app",
+        "app.main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,
-        log_level="info"
+        workers=settings.WORKERS
     )

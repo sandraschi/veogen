@@ -80,7 +80,15 @@ class GeminiService:
             logger.error(f"Failed to enhance prompt: {str(e)}")
             return user_prompt  # Return original if enhancement fails
     async def generate_video_with_veo(self, request: VideoGenerationRequest) -> VideoGenerationResponse:
-        """Generate video using Google's Veo model"""
+        """
+        Generate video using Google's Veo 3 model
+        
+        Args:
+            request: Video generation request parameters
+            
+        Returns:
+            VideoGenerationResponse with generated video details
+        """
         try:
             # Enhance the prompt using Gemini
             enhanced_prompt = await self.enhance_prompt(
@@ -88,16 +96,13 @@ class GeminiService:
                 request.style or "cinematic"
             )
             
-            # Prepare Veo generation parameters
+            # Prepare Veo 3 generation parameters
             veo_params = {
                 "prompt": enhanced_prompt,
                 "aspect_ratio": request.aspect_ratio or "16:9",
-                "duration": request.duration or 5,
-                "fps": request.fps or 24,
-                "resolution": request.resolution or "1080p",
+                "duration_seconds": min(max(5, request.duration or 5), 60),  # 5-60s
                 "style": request.style or "cinematic",
-                "motion_intensity": request.motion_intensity or "medium",
-                "camera_movement": request.camera_movement or "static"
+                "model": "veo-3"  # Explicitly use Veo 3
             }
             
             # Add reference image if provided
@@ -157,3 +162,5 @@ class GeminiService:
         except Exception as e:
             logger.error(f"Failed to get job status: {str(e)}")
             raise
+
+gemini_service = GeminiService()

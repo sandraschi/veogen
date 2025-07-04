@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -9,6 +9,7 @@ import {
   UserIcon,
   ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
+import { settingsService } from '../services/settingsService';
 
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
@@ -24,6 +25,24 @@ const SettingsPage = () => {
   });
 
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load settings on component mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const userSettings = await settingsService.getSettings();
+        setSettings(userSettings);
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        toast.error('Failed to load settings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
 
   const handleSettingChange = (key, value) => {
     setSettings(prev => ({
@@ -35,10 +54,10 @@ const SettingsPage = () => {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await settingsService.updateSettings(settings);
       toast.success('Settings saved successfully!');
     } catch (error) {
+      console.error('Failed to save settings:', error);
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);
@@ -59,6 +78,17 @@ const SettingsPage = () => {
       toast.error('Connection test failed');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-400 mx-auto mb-4"></div>
+          <p className="text-xl text-gray-300">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">

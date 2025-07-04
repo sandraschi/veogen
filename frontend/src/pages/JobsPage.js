@@ -8,7 +8,12 @@ import {
   TrashIcon,
   EyeIcon,
   ArrowDownTrayIcon,
+  FilmIcon,
+  CameraIcon,
+  MusicalNoteIcon,
 } from '@heroicons/react/24/outline';
+import { imageService } from '../services/imageService';
+import { musicService } from '../services/musicService';
 
 const JobsPage = () => {
   const [jobs, setJobs] = useState([]);
