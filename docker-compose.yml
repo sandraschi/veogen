@@ -24,7 +24,6 @@ services:
     depends_on:
       - postgres
       - redis
-      - loki
     networks:
       - veogen-network
     restart: unless-stopped
@@ -154,13 +153,12 @@ services:
   loki:
     image: grafana/loki:latest
     container_name: loki
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml -target=read
     ports:
       - "3100:3100"
     volumes:
-      - loki_data:/tmp/loki
       - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
-      - ./monitoring/loki-rules:/tmp/loki/rules
+      - ./monitoring/loki-data:/tmp/loki
     networks:
       - veogen-network
     restart: unless-stopped
@@ -173,6 +171,7 @@ services:
     labels:
       - "promtail.enabled=true"
       - "promtail.job=loki"
+
 
   # Promtail for log shipping
   promtail:
@@ -188,8 +187,7 @@ services:
     networks:
       - veogen-network
     restart: unless-stopped
-    depends_on:
-      - loki
+
     logging:
       driver: json-file
       options:

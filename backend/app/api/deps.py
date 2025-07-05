@@ -21,3 +21,9 @@ async def get_current_user() -> User:
     # For now, return a mock user
     # In production, this would validate JWT token and return real user
     return User()
+
+async def get_current_user_optional() -> User | None:
+    """Get current authenticated user (optional - returns None if not authenticated)"""
+    # For now, return a mock user
+    # In production, this would validate JWT token and return real user or None
+    return User()

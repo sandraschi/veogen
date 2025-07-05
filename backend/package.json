@@ -1,0 +1,30 @@
+{
+  "name": "mcp-media-server",
+  "version": "1.0.0",
+  "description": "MCP Media Server for VeoGen - Google Media Generation API v3",
+  "main": "mcp_media_server.js",
+  "scripts": {
+    "start": "node mcp_media_server.js",
+    "dev": "nodemon mcp_media_server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@google-cloud/vertexai": "^0.1.0",
+    "google-auth-library": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "mcp",
+    "media",
+    "generation",
+    "veo",
+    "imagen",
+    "lyria",
+    "google",
+    "ai"
+  ],
+  "author": "VeoGen Team",
+  "license": "MIT"
+} 

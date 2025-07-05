@@ -1,9 +1,13 @@
-# Music Generation API Endpoints
+"""
+Music Generation API Endpoints
+Uses MCP-based music service for Lyria generation
+"""
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from uuid import UUID
+from pydantic import BaseModel
 
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
@@ -18,128 +22,139 @@ from app.services.music_service import music_service
 
 router = APIRouter()
 
+class MusicGenerationRequest(BaseModel):
+    prompt: str
+    duration: int = 30
+    style: str = "electronic"
+
+class SpeechGenerationRequest(BaseModel):
+    text: str
+    voice: str = "en-US-Neural2-F"
+
+class MusicGenerationResponse(BaseModel):
+    status: str
+    music_id: str
+    music_url: Optional[str] = None
+    duration: Optional[int] = None
+    prompt: Optional[str] = None
+    error: Optional[str] = None
+
+class SpeechGenerationResponse(BaseModel):
+    status: str
+    speech_id: str
+    audio_data: Optional[str] = None
+    voice: Optional[str] = None
+    text: Optional[str] = None
+    error: Optional[str] = None
+
+class MusicStatusResponse(BaseModel):
+    music_id: str
+    status: str
+    prompt: str
+    duration: int
+    style: str
+    music_url: Optional[str] = None
+    error_message: Optional[str] = None
+    created_at: Optional[str] = None
+    completed_at: Optional[str] = None
+
 @router.post("/generate", response_model=MusicGenerationResponse)
 async def generate_music(
-    music_data: MusicGenerationCreate,
-    db: AsyncSession = Depends(get_db),
+    request: MusicGenerationRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Generate music using Google Lyria AI
-    
-    - **prompt**: Description of the music to generate (5-500 chars)
-    - **style**: Music style (classical, jazz, rock, electronic, etc.)
-    - **mood**: Music mood (happy, sad, energetic, calm, etc.)
-    - **duration**: Music duration in seconds (10-300)
-    - **tempo**: Optional BPM (60-200)
-    - **musical_key**: Optional musical key (e.g., "C major", "A minor")
-    - **vocal_style**: Optional vocal style for songs with lyrics
-    - **instruments**: Optional list of preferred instruments
-    """
+    """Generate music using Lyria via MCP"""
     try:
-        music_gen = await music_service.create_music_generation(
-            db, music_data, current_user
+        result = await music_service.generate_music(
+            prompt=request.prompt,
+            user_id=current_user.id,
+            duration=request.duration,
+            style=request.style
         )
         
-        return MusicGenerationResponse(
-            job_id=music_gen.id,
-            status=music_gen.status,
-            message="Music generation started successfully",
-            estimated_completion_time=None
-        )
+        return MusicGenerationResponse(**result)
         
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start music generation: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Music generation failed: {str(e)}")
 
-@router.get("/{music_id}", response_model=MusicGeneration)
-async def get_music_generation(
-    music_id: UUID,
-    db: AsyncSession = Depends(get_db),
+@router.post("/speech", response_model=SpeechGenerationResponse)
+async def generate_speech(
+    request: SpeechGenerationRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Get music generation status and details"""
-    music_gen = await music_service.get_music_generation(
-        db, music_id, current_user
-    )
-    
-    if not music_gen:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Music generation not found"
+    """Generate speech using Chirp 3 HD via MCP"""
+    try:
+        result = await music_service.generate_speech(
+            text=request.text,
+            user_id=current_user.id,
+            voice=request.voice
         )
-    
-    return music_gen
+        
+        return SpeechGenerationResponse(**result)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Speech generation failed: {str(e)}")
 
-@router.get("/", response_model=List[MusicGeneration])
-async def list_music_generations(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
-    style: Optional[MusicStyle] = None,
-    mood: Optional[MusicMood] = None,
-    status: Optional[str] = None,
-    db: AsyncSession = Depends(get_db),
+@router.get("/status/{music_id}", response_model=MusicStatusResponse)
+async def get_music_status(
+    music_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """List user's music generations with optional filtering"""
-    music_gens = await music_service.list_user_music(
-        db, current_user, skip=skip, limit=limit,
-        style=style, mood=mood, status=status
-    )
-    return music_gens
+    """Get the status of a music generation"""
+    try:
+        result = await music_service.get_music_status(music_id)
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Music not found")
+            
+        return MusicStatusResponse(**result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get music status: {str(e)}")
+
+@router.get("/list", response_model=List[MusicStatusResponse])
+async def list_user_music(
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all music for the current user"""
+    try:
+        music_list = await music_service.get_user_music(current_user.id, limit)
+        return [MusicStatusResponse(**music) for music in music_list]
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get user music: {str(e)}")
+
+@router.get("/voices")
+async def get_available_voices():
+    """Get list of available Chirp voices"""
+    try:
+        voices = await music_service.get_available_voices()
+        return {"voices": voices}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get voices: {str(e)}")
 
 @router.delete("/{music_id}")
-async def delete_music_generation(
-    music_id: UUID,
-    db: AsyncSession = Depends(get_db),
+async def delete_music(
+    music_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Delete a music generation"""
-    music_gen = await music_service.get_music_generation(
-        db, music_id, current_user
-    )
-    
-    if not music_gen:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Music generation not found"
-        )
-    
-    await music_service.delete_music_generation(db, music_id)
-    return {"message": "Music generation deleted successfully"}
-
-@router.post("/{music_id}/regenerate", response_model=MusicGenerationResponse)
-async def regenerate_music(
-    music_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Regenerate a failed music generation"""
-    music_gen = await music_service.get_music_generation(
-        db, music_id, current_user
-    )
-    
-    if not music_gen:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Music generation not found"
-        )
-    
-    if music_gen.status != "failed":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Can only regenerate failed music generations"
-        )
-    
-    await music_service.regenerate_music(db, music_id)
-    
-    return MusicGenerationResponse(
-        job_id=music_gen.id,
-        status="pending",
-        message="Music regeneration started"
-    )
+    try:
+        success = await music_service.delete_music(music_id, current_user.id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Music not found")
+            
+        return {"message": "Music deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete music: {str(e)}")
 
 @router.get("/styles/", response_model=List[str])
 async def get_music_styles():

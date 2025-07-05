@@ -1,9 +1,13 @@
-# Image Generation API Endpoints
+"""
+Image Generation API Endpoints
+Uses MCP-based image service for Imagen generation
+"""
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from uuid import UUID
+from pydantic import BaseModel
 
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
@@ -14,41 +18,106 @@ from app.schemas.image import (
     ImageStyle,
     ImageQuality
 )
-from app.services.image_service_layer import image_service
+from app.services.image_service import image_service
 
 router = APIRouter()
 
+class ImageGenerationRequest(BaseModel):
+    prompt: str
+    aspect_ratio: str = "1:1"
+    num_images: int = 1
+    style: str = "photorealistic"
+
+class ImageGenerationResponse(BaseModel):
+    status: str
+    image_id: str
+    image_urls: Optional[List[str]] = None
+    prompt: Optional[str] = None
+    aspect_ratio: Optional[str] = None
+    error: Optional[str] = None
+
+class ImageStatusResponse(BaseModel):
+    image_id: str
+    status: str
+    prompt: str
+    aspect_ratio: str
+    num_images: int
+    style: str
+    image_urls: Optional[List[str]] = None
+    error_message: Optional[str] = None
+    created_at: Optional[str] = None
+    completed_at: Optional[str] = None
+
 @router.post("/generate", response_model=ImageGenerationResponse)
 async def generate_image(
-    image_data: ImageGenerationCreate,
-    db: AsyncSession = Depends(get_db),
+    request: ImageGenerationRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Generate image using Google Imagen AI
-    
-    - **prompt**: Description of the image to generate (5-500 chars)
-    - **style**: Image style (photorealistic, artistic, illustration, etc.)
-    - **aspect_ratio**: Image dimensions (1:1, 16:9, 9:16, 4:3)
-    - **quality**: Image quality (standard, high, ultra)
-    """
+    """Generate an image using Imagen via MCP"""
     try:
-        image_gen = await image_service.create_image_generation(
-            db, image_data, current_user
+        result = await image_service.generate_image(
+            prompt=request.prompt,
+            user_id=current_user.id,
+            aspect_ratio=request.aspect_ratio,
+            num_images=request.num_images,
+            style=request.style
         )
         
-        return ImageGenerationResponse(
-            job_id=image_gen.id,
-            status=image_gen.status,
-            message="Image generation started successfully",
-            estimated_completion_time=None
-        )
+        return ImageGenerationResponse(**result)
         
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start image generation: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+
+@router.get("/status/{image_id}", response_model=ImageStatusResponse)
+async def get_image_status(
+    image_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get the status of an image generation"""
+    try:
+        result = await image_service.get_image_status(image_id)
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Image not found")
+            
+        return ImageStatusResponse(**result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get image status: {str(e)}")
+
+@router.get("/list", response_model=List[ImageStatusResponse])
+async def list_user_images(
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all images for the current user"""
+    try:
+        images = await image_service.get_user_images(current_user.id, limit)
+        return [ImageStatusResponse(**image) for image in images]
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get user images: {str(e)}")
+
+@router.delete("/{image_id}")
+async def delete_image(
+    image_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete an image generation"""
+    try:
+        success = await image_service.delete_image(image_id, current_user.id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Image not found")
+            
+        return {"message": "Image deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete image: {str(e)}")
 
 @router.get("/{image_id}", response_model=ImageGeneration)
 async def get_image_generation(
@@ -85,26 +154,6 @@ async def list_image_generations(
         style=style, quality=quality, status=status
     )
     return image_gens
-
-@router.delete("/{image_id}")
-async def delete_image_generation(
-    image_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Delete an image generation"""
-    image_gen = await image_service.get_image_generation(
-        db, image_id, current_user
-    )
-    
-    if not image_gen:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Image generation not found"
-        )
-    
-    await image_service.delete_image_generation(db, image_id)
-    return {"message": "Image generation deleted successfully"}
 
 @router.post("/{image_id}/regenerate", response_model=ImageGenerationResponse)
 async def regenerate_image(

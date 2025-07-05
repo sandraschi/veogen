@@ -6,8 +6,9 @@ from contextlib import asynccontextmanager
 import logging
 from app.config import settings
 from app.routers import video, movie
-from app.api.api_v1.endpoints import music, image, book, code, translation, predictor, documents, auth
+from app.api.api_v1.endpoints import music, image, book, code, translation, auth
 from app.api.api_v1.endpoints import settings as settings_endpoints
+from app.api.api_v1.endpoints import system
 # from app.api.api_v1.endpoints import chat
 from app.middleware.metrics import PrometheusMetricsMiddleware, metrics_endpoint
 import uvicorn
@@ -123,18 +124,6 @@ app.include_router(
     tags=["translation"]
 )
 
-app.include_router(
-    predictor.router,
-    prefix=f"{settings.API_V1_STR}/predictor",
-    tags=["predictor"]
-)
-
-app.include_router(
-    documents.router,
-    prefix=f"{settings.API_V1_STR}/documents",
-    tags=["documents"]
-)
-
 # Authentication endpoints
 app.include_router(
     auth.router,
@@ -147,6 +136,13 @@ app.include_router(
     settings_endpoints.router,
     prefix=f"{settings.API_V1_STR}/settings",
     tags=["settings"]
+)
+
+# System endpoints
+app.include_router(
+    system.router,
+    prefix=f"{settings.API_V1_STR}/system",
+    tags=["system"]
 )
 
 # Chat endpoints
@@ -225,8 +221,9 @@ async def health_check():
         # Check database
         try:
             from app.database import engine
+            from sqlalchemy import text
             with engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1"))
             health_status["components"]["database"] = "available"
         except Exception as e:
             health_status["components"]["database"] = f"error: {str(e)}"
@@ -257,9 +254,8 @@ async def api_info():
             "book": f"{settings.API_V1_STR}/book",
             "code": f"{settings.API_V1_STR}/code",
             "translation": f"{settings.API_V1_STR}/translation",
-            "predictor": f"{settings.API_V1_STR}/predictor",
-            "documents": f"{settings.API_V1_STR}/documents",
-            "auth": f"{settings.API_V1_STR}/auth"
+            "auth": f"{settings.API_V1_STR}/auth",
+            "settings": f"{settings.API_V1_STR}/settings"
         },
         "documentation": {
             "swagger": "/docs",

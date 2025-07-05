@@ -128,18 +128,18 @@ async def execute_code(request: CodeExecutionRequest):
                     timeout=30
                 )
             else:
-                # For other languages, return a mock execution
+                # For other languages, return a basic execution result
                 result = subprocess.CompletedProcess(
                     args=[],
                     returncode=0,
-                    stdout="Code executed successfully!",
-                    stderr=""
+                    stdout=f"Code execution for {request.language} is not yet implemented.",
+                    stderr="Language not supported for execution"
                 )
             
             return CodeExecutionResponse(
                 output=result.stdout,
                 error=result.stderr if result.stderr else None,
-                execution_time=0.5  # Mock execution time
+                execution_time=0.5  # Estimated execution time
             )
             
         finally:
@@ -209,8 +209,8 @@ async def debug_code(request: CodeRequest):
         
         return {
             "debug_report": response.get("content", ""),
-            "issues_found": 3,  # Mock number
-            "severity": "Medium"
+            "issues_found": 0,  # Will be calculated from actual analysis
+            "severity": "Unknown"
         }
         
     except Exception as e:
@@ -243,8 +243,8 @@ async def generate_tests(request: CodeRequest):
         
         return {
             "test_code": response.get("content", ""),
-            "test_count": 5,  # Mock number
-            "coverage": "85%"
+            "test_count": 0,  # Will be calculated from actual test generation
+            "coverage": "Unknown"
         }
         
     except Exception as e:

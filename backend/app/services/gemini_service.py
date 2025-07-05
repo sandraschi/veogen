@@ -134,12 +134,26 @@ class GeminiService:
             import time
             await asyncio.sleep(2)  # Simulate processing time
             
-            # In production, this would be replaced with actual Veo API call
-            mock_response = {
-                "video_url": f"https://storage.googleapis.com/veo-generated-videos/video_{int(time.time())}.mp4",
-                "generation_time": 45.5,
-                "status": "completed"
-            }
+            # Use MCP media service for actual Veo generation
+            from .mcp_media_service import mcp_media_service
+            
+            # Generate video using MCP service
+            video_result = await mcp_media_service.generate_video(
+                prompt=params["prompt"],
+                duration=params["duration_seconds"],
+                aspect_ratio=params["aspect_ratio"],
+                style=params.get("style", "cinematic"),
+                user_id=None  # Will be set by the calling service
+            )
+            
+            if video_result and "video_path" in video_result:
+                response = {
+                    "video_url": video_result["video_path"],
+                    "generation_time": video_result.get("generation_time", 0),
+                    "status": "completed"
+                }
+            else:
+                raise Exception("Video generation failed")
             
             logger.info("Veo API call completed successfully")
             return mock_response
@@ -151,14 +165,26 @@ class GeminiService:
     async def get_generation_status(self, job_id: str) -> Dict[str, Any]:
         """Check the status of a video generation job"""
         try:
-            # This would check the actual job status from Vertex AI
-            # For now, return a mock status
-            return {
-                "job_id": job_id,
-                "status": "completed",
-                "progress": 100,
-                "estimated_completion": None
-            }
+            # Use MCP media service to check job status
+            from .mcp_media_service import mcp_media_service
+            
+            job_status = await mcp_media_service.get_job_status(job_id)
+            if job_status:
+                return {
+                    "job_id": job_id,
+                    "status": job_status["status"],
+                    "progress": job_status["progress"],
+                    "estimated_completion": job_status.get("estimated_completion"),
+                    "message": job_status.get("message")
+                }
+            else:
+                return {
+                    "job_id": job_id,
+                    "status": "not_found",
+                    "progress": 0,
+                    "estimated_completion": None,
+                    "message": "Job not found"
+                }
         except Exception as e:
             logger.error(f"Failed to get job status: {str(e)}")
             raise

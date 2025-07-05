@@ -331,3 +331,21 @@ def log_music_generation_event(logger, event: str, job_id: str, **kwargs):
         logger.error("Music generation failed", extra=extra)
     else:
         logger.info("Music generation event", extra=extra)
+
+def log_video_generation_event(logger, event: str, job_id: str, **kwargs):
+    """Log video generation events with structured data"""
+    extra = {
+        'component': 'video_generation',
+        'event': event,
+        'job_id': job_id,
+        **kwargs
+    }
+    
+    if event == "started":
+        logger.info("Video generation started", extra=extra)
+    elif event == "completed":
+        logger.info("Video generation completed", extra=extra)
+    elif event == "failed":
+        logger.error("Video generation failed", extra=extra)
+    else:
+        logger.info("Video generation event", extra=extra)

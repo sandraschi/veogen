@@ -1,282 +1,178 @@
-# Image Generation Service using Google Imagen
+"""
+Image Generation Service for VeoGen
+Uses Google's MCP servers for Imagen image generation
+"""
 
 import asyncio
 import logging
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass
-from enum import Enum
-import google.generativeai as genai
-from app.config import settings
-from app.middleware.metrics import track_image_generation
-from app.utils.logging_config import log_image_generation_event
+import os
+from typing import Dict, Any, Optional, List
+from datetime import datetime
+import uuid
+
+from .mcp_media_service import mcp_media_service
+from ..models.image import ImageGeneration
+from ..database import get_db
 
 logger = logging.getLogger(__name__)
 
-class ImageStyle(str, Enum):
-    PHOTOREALISTIC = "photorealistic"
-    ARTISTIC = "artistic"
-    ILLUSTRATION = "illustration"
-    PAINTING = "painting"
-    SKETCH = "sketch"
-    ANIME = "anime"
-    CARTOON = "cartoon"
-    ABSTRACT = "abstract"
-
-class ImageQuality(str, Enum):
-    STANDARD = "standard"
-    HIGH = "high"
-    ULTRA = "ultra"
-
-class AspectRatio(str, Enum):
-    SQUARE = "1:1"
-    LANDSCAPE = "16:9"
-    PORTRAIT = "9:16"
-    CLASSIC = "4:3"
-
-@dataclass
-class ImageGenerationRequest:
-    prompt: str
-    style: ImageStyle
-    aspect_ratio: AspectRatio
-    quality: ImageQuality
-
-@dataclass
-class ImageGenerationResult:
-    image_url: str
-    thumbnail_url: str
-    metadata: Dict[str, Any]
-
-class ImagenService:
-    """Google Imagen AI Image Generation Service"""
+class ImageService:
+    """Service for image generation using Google's Imagen via MCP"""
     
     def __init__(self):
-        self.client = None
-        self.initialized = False
-    
-    async def initialize(self):
-        """Initialize Imagen service"""
-        try:
-            # Configure Gemini API for image generation
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-            
-            # Test connection
-            models = genai.list_models()
-            image_models = [m for m in models if 'image' in m.name.lower() or 'imagen' in m.name.lower()]
-            
-            if not image_models:
-                logger.warning("No Imagen models found, using general Gemini for image generation")
-            
-            self.initialized = True
-            logger.info("Imagen service initialized successfully")
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize Imagen service: {e}")
-            raise
-    
-    async def generate_image(self, request: ImageGenerationRequest) -> ImageGenerationResult:
-        """
-        Generate image using Google Imagen
+        self.db = get_db()
         
-        Args:
-            request: Image generation request parameters
-            
-        Returns:
-            ImageGenerationResult with image URLs and metadata
-        """
-        if not self.initialized:
-            await self.initialize()
+    async def generate_image(self, prompt: str, user_id: int, aspect_ratio: str = "1:1", 
+                           num_images: int = 1, style: str = "photorealistic") -> Dict[str, Any]:
+        """Generate image using Imagen via MCP servers"""
         
-        start_time = asyncio.get_event_loop().time()
-        job_id = f"image_{int(start_time)}"
+        # Create image generation record
+        image_id = str(uuid.uuid4())
+        image_generation = ImageGeneration(
+            id=image_id,
+            user_id=user_id,
+            prompt=prompt,
+            status="processing",
+            aspect_ratio=aspect_ratio,
+            num_images=num_images,
+            style=style,
+            created_at=datetime.utcnow()
+        )
         
         try:
-            # Log generation start
-            log_image_generation_event(
-                logger, "started", job_id,
-                style=request.style,
-                quality=request.quality,
-                aspect_ratio=request.aspect_ratio
+            # Add to database
+            self.db.add(image_generation)
+            self.db.commit()
+            
+            logger.info(f"Starting image generation {image_id} for user {user_id}")
+            
+            # Generate image using MCP service
+            result = await mcp_media_service.generate_image(
+                prompt=prompt,
+                aspect_ratio=aspect_ratio,
+                num_images=num_images,
+                user_id=user_id
             )
             
-            # Enhance prompt with style and quality parameters
-            enhanced_prompt = self._create_image_prompt(request)
-            
-            # Generate image (simulated for now - would use actual Imagen API)
-            image_result = await self._generate_imagen(enhanced_prompt, request)
-            
-            end_time = asyncio.get_event_loop().time()
-            duration = end_time - start_time
-            
-            # Track metrics
-            track_image_generation(
-                request.style, 
-                "completed", 
-                duration
-            )
-            
-            # Log completion
-            log_image_generation_event(
-                logger, "completed", job_id,
-                duration=duration,
-                style=request.style
-            )
-            
-            result = ImageGenerationResult(
-                image_url=image_result["image_url"],
-                thumbnail_url=image_result["thumbnail_url"],
-                metadata={
-                    "style": request.style,
-                    "quality": request.quality,
-                    "aspect_ratio": request.aspect_ratio,
-                    "generation_time": duration,
-                    "prompt": request.prompt,
-                    "enhanced_prompt": enhanced_prompt,
+            if result["status"] == "success":
+                # Update database with success
+                image_generation.status = "completed"
+                image_generation.image_urls = result["image_urls"]
+                image_generation.completed_at = datetime.utcnow()
+                self.db.commit()
+                
+                logger.info(f"Image generation {image_id} completed successfully")
+                
+                return {
+                    "status": "success",
+                    "image_id": image_id,
+                    "image_urls": result["image_urls"],
+                    "prompt": result["prompt"],
+                    "aspect_ratio": result["aspect_ratio"]
                 }
-            )
+            else:
+                # Update database with error
+                image_generation.status = "failed"
+                image_generation.error_message = result.get("error", "Unknown error")
+                image_generation.completed_at = datetime.utcnow()
+                self.db.commit()
+                
+                logger.error(f"Image generation {image_id} failed: {result.get('error')}")
+                
+                return {
+                    "status": "error",
+                    "image_id": image_id,
+                    "error": result.get("error", "Unknown error")
+                }
+                
+        except Exception as e:
+            # Update database with error
+            image_generation.status = "failed"
+            image_generation.error_message = str(e)
+            image_generation.completed_at = datetime.utcnow()
+            self.db.commit()
             
-            logger.info(f"Image generation completed in {duration:.2f}s")
-            return result
+            logger.error(f"Image generation {image_id} failed with exception: {e}")
+            
+            return {
+                "status": "error",
+                "image_id": image_id,
+                "error": str(e)
+            }
+            
+    async def get_image_status(self, image_id: str) -> Optional[Dict[str, Any]]:
+        """Get the status of an image generation"""
+        try:
+            image = self.db.query(ImageGeneration).filter(ImageGeneration.id == image_id).first()
+            
+            if not image:
+                return None
+                
+            return {
+                "image_id": image.id,
+                "status": image.status,
+                "prompt": image.prompt,
+                "aspect_ratio": image.aspect_ratio,
+                "num_images": image.num_images,
+                "style": image.style,
+                "image_urls": image.image_urls,
+                "error_message": image.error_message,
+                "created_at": image.created_at.isoformat() if image.created_at else None,
+                "completed_at": image.completed_at.isoformat() if image.completed_at else None
+            }
             
         except Exception as e:
-            end_time = asyncio.get_event_loop().time()
-            duration = end_time - start_time
+            logger.error(f"Error getting image status {image_id}: {e}")
+            return None
             
-            # Track failed generation
-            track_image_generation(
-                request.style,
-                "failed",
-                duration
-            )
+    async def get_user_images(self, user_id: int, limit: int = 50) -> list:
+        """Get all images for a user"""
+        try:
+            images = self.db.query(ImageGeneration)\
+                .filter(ImageGeneration.user_id == user_id)\
+                .order_by(ImageGeneration.created_at.desc())\
+                .limit(limit)\
+                .all()
+                
+            return [
+                {
+                    "image_id": image.id,
+                    "status": image.status,
+                    "prompt": image.prompt,
+                    "aspect_ratio": image.aspect_ratio,
+                    "num_images": image.num_images,
+                    "style": image.style,
+                    "image_urls": image.image_urls,
+                    "error_message": image.error_message,
+                    "created_at": image.created_at.isoformat() if image.created_at else None,
+                    "completed_at": image.completed_at.isoformat() if image.completed_at else None
+                }
+                for image in images
+            ]
             
-            # Log error
-            log_image_generation_event(
-                logger, "failed", job_id,
-                error=str(e),
-                duration=duration
-            )
+        except Exception as e:
+            logger.error(f"Error getting images for user {user_id}: {e}")
+            return []
             
-            logger.error(f"Image generation failed: {e}")
-            raise
-    
-    def _create_image_prompt(self, request: ImageGenerationRequest) -> str:
-        """Create enhanced prompt for image generation"""
-        prompt_parts = [request.prompt]
-        
-        # Add style-specific keywords
-        style_keywords = {
-            ImageStyle.PHOTOREALISTIC: "photorealistic, highly detailed, realistic lighting, professional photography",
-            ImageStyle.ARTISTIC: "artistic, creative interpretation, expressive, unique perspective",
-            ImageStyle.ILLUSTRATION: "digital illustration, clean lines, stylized, graphic design",
-            ImageStyle.PAINTING: "painted, traditional art, brushstrokes, fine art",
-            ImageStyle.SKETCH: "pencil sketch, hand-drawn, line art, artistic drawing",
-            ImageStyle.ANIME: "anime style, manga art, Japanese animation, vibrant colors",
-            ImageStyle.CARTOON: "cartoon style, simplified forms, bright colors, playful",
-            ImageStyle.ABSTRACT: "abstract art, non-representational, artistic expression"
-        }
-        
-        if request.style in style_keywords:
-            prompt_parts.append(style_keywords[request.style])
-        
-        # Add quality keywords
-        quality_keywords = {
-            ImageQuality.STANDARD: "good quality",
-            ImageQuality.HIGH: "high quality, detailed",
-            ImageQuality.ULTRA: "ultra high quality, extremely detailed, masterpiece"
-        }
-        
-        if request.quality in quality_keywords:
-            prompt_parts.append(quality_keywords[request.quality])
-        
-        # Add aspect ratio guidance
-        ratio_keywords = {
-            AspectRatio.SQUARE: "square composition",
-            AspectRatio.LANDSCAPE: "wide landscape composition",
-            AspectRatio.PORTRAIT: "vertical portrait composition",
-            AspectRatio.CLASSIC: "classic photo composition"
-        }
-        
-        if request.aspect_ratio in ratio_keywords:
-            prompt_parts.append(ratio_keywords[request.aspect_ratio])
-        
-        return ", ".join(prompt_parts)
-    
-    async def _generate_imagen(self, prompt: str, request: ImageGenerationRequest) -> Dict[str, Any]:
-        """Generate actual image using Imagen API"""
-        # In real implementation, this would call Google Imagen API
-        # For now, simulate image generation
-        
-        await asyncio.sleep(2)  # Simulate processing time
-        
-        # Get dimensions based on aspect ratio and quality
-        dimensions = self._get_image_dimensions(request.aspect_ratio, request.quality)
-        
-        # Simulate file URLs
-        timestamp = int(asyncio.get_event_loop().time())
-        image_filename = f"{request.style}_{request.quality}_{timestamp}.png"
-        thumbnail_filename = f"thumb_{image_filename}"
-        
-        return {
-            "image_url": f"https://storage.googleapis.com/veogen-images/{image_filename}",
-            "thumbnail_url": f"https://storage.googleapis.com/veogen-images/{thumbnail_filename}",
-            "dimensions": dimensions,
-            "file_size": self._estimate_file_size(dimensions, request.quality)
-        }
-    
-    def _get_image_dimensions(self, aspect_ratio: AspectRatio, quality: ImageQuality) -> tuple:
-        """Get image dimensions based on aspect ratio and quality"""
-        base_sizes = {
-            ImageQuality.STANDARD: 1024,
-            ImageQuality.HIGH: 1536,
-            ImageQuality.ULTRA: 2048
-        }
-        
-        base_size = base_sizes[quality]
-        
-        dimensions_map = {
-            AspectRatio.SQUARE: (base_size, base_size),
-            AspectRatio.LANDSCAPE: (int(base_size * 16/9), base_size),
-            AspectRatio.PORTRAIT: (base_size, int(base_size * 16/9)),
-            AspectRatio.CLASSIC: (int(base_size * 4/3), base_size)
-        }
-        
-        return dimensions_map.get(aspect_ratio, (base_size, base_size))
-    
-    def _estimate_file_size(self, dimensions: tuple, quality: ImageQuality) -> int:
-        """Estimate file size in bytes"""
-        width, height = dimensions
-        pixels = width * height
-        
-        # Rough estimation based on quality
-        bytes_per_pixel = {
-            ImageQuality.STANDARD: 3,
-            ImageQuality.HIGH: 4,
-            ImageQuality.ULTRA: 6
-        }
-        
-        return pixels * bytes_per_pixel.get(quality, 3)
-    
-    async def create_variations(self, original_image_data: Dict[str, Any], count: int = 4) -> List[Dict[str, Any]]:
-        """Create variations of an existing image"""
-        variations = []
-        
-        for i in range(count):
-            # Create variation request based on original
-            variation_request = ImageGenerationRequest(
-                prompt=f"Variation of: {original_image_data['prompt']}",
-                style=ImageStyle(original_image_data['style']),
-                aspect_ratio=AspectRatio(original_image_data['aspect_ratio']),
-                quality=ImageQuality(original_image_data['quality'])
-            )
+    async def delete_image(self, image_id: str, user_id: int) -> bool:
+        """Delete an image generation record"""
+        try:
+            image = self.db.query(ImageGeneration)\
+                .filter(ImageGeneration.id == image_id, ImageGeneration.user_id == user_id)\
+                .first()
+                
+            if not image:
+                return False
+                
+            self.db.delete(image)
+            self.db.commit()
             
-            # Generate variation
-            variation_result = await self.generate_image(variation_request)
-            variations.append({
-                "image_url": variation_result.image_url,
-                "thumbnail_url": variation_result.thumbnail_url,
-                "metadata": variation_result.metadata
-            })
-        
-        return variations
+            logger.info(f"Deleted image {image_id} for user {user_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error deleting image {image_id}: {e}")
+            return False
 
-# Global service instance
-imagen_service = ImagenService()
+# Global instance
+image_service = ImageService()

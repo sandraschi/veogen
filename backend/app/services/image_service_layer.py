@@ -44,11 +44,11 @@ class ImageService:
         self.active_generations[image_gen.id] = image_gen
         
         # Start background generation
-        asyncio.create_task(self._generate_image_async(image_gen))
+        asyncio.create_task(self._generate_image_async(image_gen, db, user))
         
         return image_gen
     
-    async def _generate_image_async(self, image_gen: ImageGeneration):
+    async def _generate_image_async(self, image_gen: ImageGeneration, db: AsyncSession, user: User):
         """Background task to generate image"""
         try:
             # Update status to generating
@@ -63,8 +63,12 @@ class ImageService:
                 quality=image_gen.quality
             )
             
-            # Generate image using Imagen
-            result = await self.imagen.generate_image(imagen_request)
+            # Generate image using Imagen with user settings
+            result = await self.imagen.generate_image(
+                imagen_request, 
+                db_session=db, 
+                user_id=user.id
+            )
             
             # Update generation with results
             image_gen.status = "completed"
@@ -131,8 +135,11 @@ class ImageService:
             image_gen.error_message = None
             image_gen.updated_at = datetime.utcnow()
             
+            # Get user for regeneration
+            user = User(id=image_gen.user_id)  # Simplified - in production you'd fetch from DB
+            
             # Start regeneration
-            asyncio.create_task(self._generate_image_async(image_gen))
+            asyncio.create_task(self._generate_image_async(image_gen, db, user))
     
     async def get_download_url(self, image_gen: ImageGeneration, format: str) -> str:
         """Get download URL for image file"""

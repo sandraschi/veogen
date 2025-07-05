@@ -1,183 +1,257 @@
-# Music Service Layer for Lyria Integration
+"""
+Music Generation Service for VeoGen
+Uses Google's MCP servers for Lyria music generation
+"""
 
 import asyncio
 import logging
-from typing import Optional, Dict, Any, List
-from uuid import UUID, uuid4
-from sqlalchemy.ext.asyncio import AsyncSession
+import os
+from typing import Dict, Any, Optional, List
 from datetime import datetime
+import uuid
 
-from app.services.music.lyria_service import lyria_service, MusicGenerationRequest
-from app.schemas.music import MusicGenerationCreate, MusicGeneration
-from app.models.user import User
+from .mcp_media_service import mcp_media_service
+from ..models.music import MusicGeneration
+from ..database import get_db
 
 logger = logging.getLogger(__name__)
 
 class MusicService:
-    """Music generation service layer"""
+    """Service for music generation using Google's Lyria via MCP"""
     
     def __init__(self):
-        self.lyria = lyria_service
-        self.active_generations = {}  # In-memory storage for demo
-    
-    async def create_music_generation(
-        self, 
-        db: AsyncSession, 
-        music_data: MusicGenerationCreate, 
-        user: User
-    ) -> MusicGeneration:
-        """Create and start a music generation job"""
+        self.db = get_db()
+        
+    async def generate_music(self, prompt: str, user_id: int, duration: int = 30, 
+                           style: str = "electronic") -> Dict[str, Any]:
+        """Generate music using Lyria via MCP servers"""
         
         # Create music generation record
-        music_gen = MusicGeneration(
-            id=uuid4(),
-            user_id=user.id,
-            prompt=music_data.prompt,
-            style=music_data.style,
-            mood=music_data.mood,
-            duration=music_data.duration,
-            tempo=music_data.tempo,
-            musical_key=music_data.musical_key,
-            vocal_style=music_data.vocal_style,
-            status="pending",
+        music_id = str(uuid.uuid4())
+        music_generation = MusicGeneration(
+            id=music_id,
+            user_id=user_id,
+            prompt=prompt,
+            status="processing",
+            duration=duration,
+            style=style,
             created_at=datetime.utcnow()
         )
         
-        # Store in memory for demo (would be database in production)
-        self.active_generations[music_gen.id] = music_gen
-        
-        # Start background generation
-        asyncio.create_task(self._generate_music_async(music_gen))
-        
-        return music_gen
-    
-    async def _generate_music_async(self, music_gen: MusicGeneration):
-        """Background task to generate music"""
         try:
-            # Update status to generating
-            music_gen.status = "generating"
-            music_gen.updated_at = datetime.utcnow()
+            # Add to database
+            self.db.add(music_generation)
+            self.db.commit()
             
-            # Create Lyria request
-            lyria_request = MusicGenerationRequest(
-                prompt=music_gen.prompt,
-                style=music_gen.style,
-                mood=music_gen.mood,
-                duration=music_gen.duration,
-                tempo=music_gen.tempo,
-                key=music_gen.musical_key,
-                vocal_style=music_gen.vocal_style.value if music_gen.vocal_style != "none" else None
+            logger.info(f"Starting music generation {music_id} for user {user_id}")
+            
+            # Generate music using MCP service
+            result = await mcp_media_service.generate_music(
+                prompt=prompt,
+                duration=duration,
+                user_id=user_id
             )
             
-            # Generate music using Lyria
-            result = await self.lyria.generate_music(lyria_request)
-            
-            # Update generation with results
-            music_gen.status = "completed"
-            music_gen.completed_at = datetime.utcnow()
-            music_gen.audio_url = result.audio_url
-            music_gen.preview_url = result.preview_url
-            music_gen.waveform_data = result.waveform_data
-            music_gen.lyrics = result.lyrics
-            music_gen.chord_progression = result.chord_progression
-            music_gen.generation_time = result.metadata.get("generation_time")
-            
+            if result["status"] == "success":
+                # Update database with success
+                music_generation.status = "completed"
+                music_generation.music_url = result["music_url"]
+                music_generation.completed_at = datetime.utcnow()
+                self.db.commit()
+                
+                logger.info(f"Music generation {music_id} completed successfully")
+                
+                return {
+                    "status": "success",
+                    "music_id": music_id,
+                    "music_url": result["music_url"],
+                    "duration": result["duration"],
+                    "prompt": result["prompt"]
+                }
+            else:
+                # Update database with error
+                music_generation.status = "failed"
+                music_generation.error_message = result.get("error", "Unknown error")
+                music_generation.completed_at = datetime.utcnow()
+                self.db.commit()
+                
+                logger.error(f"Music generation {music_id} failed: {result.get('error')}")
+                
+                return {
+                    "status": "error",
+                    "music_id": music_id,
+                    "error": result.get("error", "Unknown error")
+                }
+                
         except Exception as e:
-            logger.error(f"Music generation failed for {music_gen.id}: {e}")
-            music_gen.status = "failed"
-            music_gen.error_message = str(e)
-            music_gen.updated_at = datetime.utcnow()
-    
-    async def get_music_generation(
-        self, 
-        db: AsyncSession, 
-        music_id: UUID, 
-        user: User
-    ) -> Optional[MusicGeneration]:
-        """Get music generation by ID"""
-        return self.active_generations.get(music_id)
-    
-    async def list_user_music(
-        self,
-        db: AsyncSession,
-        user: User,
-        skip: int = 0,
-        limit: int = 20,
-        style: Optional[str] = None,
-        mood: Optional[str] = None,
-        status: Optional[str] = None
-    ) -> List[MusicGeneration]:
-        """List user's music generations with filtering"""
-        user_music = [
-            music for music in self.active_generations.values()
-            if music.user_id == user.id
-        ]
-        
-        # Apply filters
-        if style:
-            user_music = [m for m in user_music if m.style == style]
-        if mood:
-            user_music = [m for m in user_music if m.mood == mood]
-        if status:
-            user_music = [m for m in user_music if m.status == status]
-        
-        # Sort by creation date (newest first)
-        user_music.sort(key=lambda x: x.created_at, reverse=True)
-        
-        # Apply pagination
-        return user_music[skip:skip + limit]
-    
-    async def delete_music_generation(self, db: AsyncSession, music_id: UUID):
-        """Delete music generation"""
-        if music_id in self.active_generations:
-            del self.active_generations[music_id]
-    
-    async def regenerate_music(self, db: AsyncSession, music_id: UUID):
-        """Regenerate failed music"""
-        music_gen = self.active_generations.get(music_id)
-        if music_gen:
-            music_gen.status = "pending"
-            music_gen.error_message = None
-            music_gen.updated_at = datetime.utcnow()
+            # Update database with error
+            music_generation.status = "failed"
+            music_generation.error_message = str(e)
+            music_generation.completed_at = datetime.utcnow()
+            self.db.commit()
             
-            # Start regeneration
-            asyncio.create_task(self._generate_music_async(music_gen))
-    
-    async def get_download_url(self, music_gen: MusicGeneration, format: str) -> str:
-        """Get download URL for music file"""
-        if format == "mp3":
-            return music_gen.audio_url
-        else:
-            # Convert format (would be implemented in production)
-            base_url = music_gen.audio_url.replace('.mp3', f'.{format}')
-            return base_url
-    
-    async def create_remix(
-        self,
-        db: AsyncSession,
-        original_music: MusicGeneration,
-        remix_style: str,
-        remix_mood: Optional[str],
-        user: User
-    ) -> MusicGeneration:
-        """Create a remix of existing music"""
+            logger.error(f"Music generation {music_id} failed with exception: {e}")
+            
+            return {
+                "status": "error",
+                "music_id": music_id,
+                "error": str(e)
+            }
+            
+    async def generate_speech(self, text: str, user_id: int, voice: str = "en-US-Neural2-F") -> Dict[str, Any]:
+        """Generate speech using Chirp 3 HD via MCP"""
         
-        # Create remix generation
-        remix_prompt = f"Remix of: {original_music.prompt} in {remix_style} style"
-        if remix_mood:
-            remix_prompt += f" with {remix_mood} mood"
-        
-        remix_data = MusicGenerationCreate(
-            prompt=remix_prompt,
-            style=remix_style,
-            mood=remix_mood or original_music.mood,
-            duration=original_music.duration,
-            tempo=original_music.tempo,
-            musical_key=original_music.musical_key,
-            vocal_style=original_music.vocal_style
+        # Create speech generation record
+        speech_id = str(uuid.uuid4())
+        speech_generation = MusicGeneration(
+            id=speech_id,
+            user_id=user_id,
+            prompt=text,
+            status="processing",
+            duration=len(text.split()) * 0.5,  # Rough estimate
+            style="speech",
+            created_at=datetime.utcnow()
         )
         
-        return await self.create_music_generation(db, remix_data, user)
+        try:
+            # Add to database
+            self.db.add(speech_generation)
+            self.db.commit()
+            
+            logger.info(f"Starting speech generation {speech_id} for user {user_id}")
+            
+            # Generate speech using MCP service
+            result = await mcp_media_service.generate_speech(
+                text=text,
+                voice=voice,
+                user_id=user_id
+            )
+            
+            if result["status"] == "success":
+                # Update database with success
+                speech_generation.status = "completed"
+                speech_generation.music_url = result.get("audio_url")  # Reuse field
+                speech_generation.completed_at = datetime.utcnow()
+                self.db.commit()
+                
+                logger.info(f"Speech generation {speech_id} completed successfully")
+                
+                return {
+                    "status": "success",
+                    "speech_id": speech_id,
+                    "audio_data": result["audio_data"],
+                    "voice": result["voice"],
+                    "text": result["text"]
+                }
+            else:
+                # Update database with error
+                speech_generation.status = "failed"
+                speech_generation.error_message = result.get("error", "Unknown error")
+                speech_generation.completed_at = datetime.utcnow()
+                self.db.commit()
+                
+                logger.error(f"Speech generation {speech_id} failed: {result.get('error')}")
+                
+                return {
+                    "status": "error",
+                    "speech_id": speech_id,
+                    "error": result.get("error", "Unknown error")
+                }
+                
+        except Exception as e:
+            # Update database with error
+            speech_generation.status = "failed"
+            speech_generation.error_message = str(e)
+            speech_generation.completed_at = datetime.utcnow()
+            self.db.commit()
+            
+            logger.error(f"Speech generation {speech_id} failed with exception: {e}")
+            
+            return {
+                "status": "error",
+                "speech_id": speech_id,
+                "error": str(e)
+            }
+            
+    async def get_music_status(self, music_id: str) -> Optional[Dict[str, Any]]:
+        """Get the status of a music generation"""
+        try:
+            music = self.db.query(MusicGeneration).filter(MusicGeneration.id == music_id).first()
+            
+            if not music:
+                return None
+                
+            return {
+                "music_id": music.id,
+                "status": music.status,
+                "prompt": music.prompt,
+                "duration": music.duration,
+                "style": music.style,
+                "music_url": music.music_url,
+                "error_message": music.error_message,
+                "created_at": music.created_at.isoformat() if music.created_at else None,
+                "completed_at": music.completed_at.isoformat() if music.completed_at else None
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting music status {music_id}: {e}")
+            return None
+            
+    async def get_user_music(self, user_id: int, limit: int = 50) -> list:
+        """Get all music for a user"""
+        try:
+            music_list = self.db.query(MusicGeneration)\
+                .filter(MusicGeneration.user_id == user_id)\
+                .order_by(MusicGeneration.created_at.desc())\
+                .limit(limit)\
+                .all()
+                
+            return [
+                {
+                    "music_id": music.id,
+                    "status": music.status,
+                    "prompt": music.prompt,
+                    "duration": music.duration,
+                    "style": music.style,
+                    "music_url": music.music_url,
+                    "error_message": music.error_message,
+                    "created_at": music.created_at.isoformat() if music.created_at else None,
+                    "completed_at": music.completed_at.isoformat() if music.completed_at else None
+                }
+                for music in music_list
+            ]
+            
+        except Exception as e:
+            logger.error(f"Error getting music for user {user_id}: {e}")
+            return []
+            
+    async def get_available_voices(self) -> List[str]:
+        """Get list of available Chirp voices"""
+        try:
+            return await mcp_media_service.get_available_voices(user_id)
+        except Exception as e:
+            logger.error(f"Error getting available voices: {e}")
+            return []
+            
+    async def delete_music(self, music_id: str, user_id: int) -> bool:
+        """Delete a music generation record"""
+        try:
+            music = self.db.query(MusicGeneration)\
+                .filter(MusicGeneration.id == music_id, MusicGeneration.user_id == user_id)\
+                .first()
+                
+            if not music:
+                return False
+                
+            self.db.delete(music)
+            self.db.commit()
+            
+            logger.info(f"Deleted music {music_id} for user {user_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error deleting music {music_id}: {e}")
+            return False
 
-# Global service instance
+# Global instance
 music_service = MusicService()

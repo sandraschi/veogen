@@ -234,6 +234,14 @@ logs/
 *.sqlite
 *.db
 
+# Research and temporary files
+temp-research/
+gemini-cli/
+official-gemini-cli/
+mcp-genmedia/
+*.html
+package-lock.json
+
 # SSL certificates
 nginx/ssl/*
 !nginx/ssl/.gitkeep
@@ -241,3 +249,11 @@ nginx/ssl/*
 # Docker volumes
 postgres_data/
 redis_data/
+
+# Monitoring data (Loki, Prometheus, etc.)
+monitoring/loki-data/
+monitoring/grafana/dashboards/
+monitoring/prometheus/data/
+monitoring/alertmanager/data/
+monitoring/loki-rules/
+monitoring/rules/
