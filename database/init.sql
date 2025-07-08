@@ -10,20 +10,27 @@ CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id VARCHAR(255) PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     username VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
-    is_premium BOOLEAN DEFAULT FALSE,
+    is_verified BOOLEAN DEFAULT FALSE,
+    email_verification_token VARCHAR(255),
+    email_verification_sent_at TIMESTAMP WITH TIME ZONE,
+    plan VARCHAR(50) DEFAULT 'free',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP WITH TIME ZONE,
+    full_name VARCHAR(255),
+    avatar_url TEXT,
+    preferences JSONB DEFAULT '{}'
 );
 
 -- Video generations table
 CREATE TABLE IF NOT EXISTS video_generations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
     prompt TEXT NOT NULL,
     style VARCHAR(50) NOT NULL,
     duration INTEGER DEFAULT 30,
@@ -39,7 +46,7 @@ CREATE TABLE IF NOT EXISTS video_generations (
 -- Movie projects table
 CREATE TABLE IF NOT EXISTS movie_projects (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     style VARCHAR(50) NOT NULL,
@@ -69,10 +76,85 @@ CREATE TABLE IF NOT EXISTS movie_scenes (
     UNIQUE(project_id, scene_number)
 );
 
+-- User settings table
+CREATE TABLE IF NOT EXISTS user_settings (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    setting_key VARCHAR(255) NOT NULL,
+    setting_value TEXT,
+    setting_type VARCHAR(50) DEFAULT 'string',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- API keys table
+CREATE TABLE IF NOT EXISTS api_keys (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    service_name VARCHAR(100) NOT NULL,
+    key_name VARCHAR(255) NOT NULL,
+    encrypted_key TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_used TIMESTAMP WITH TIME ZONE,
+    usage_count INTEGER DEFAULT 0
+);
+
+-- User sessions table
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id VARCHAR(255) PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    session_token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_activity TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(45),
+    user_agent TEXT
+);
+
+-- Projects table
+CREATE TABLE IF NOT EXISTS projects (
+    id VARCHAR(255) PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    project_type VARCHAR(100) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'draft',
+    project_metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Generation history table
+CREATE TABLE IF NOT EXISTS generation_history (
+    id VARCHAR(255) PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    project_id VARCHAR(255),
+    generation_type VARCHAR(100) NOT NULL,
+    prompt TEXT NOT NULL,
+    result_url TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    error_message TEXT,
+    generation_metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Password reset tokens table
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used BOOLEAN DEFAULT FALSE
+);
+
 -- API usage tracking
 CREATE TABLE IF NOT EXISTS api_usage (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
     endpoint VARCHAR(255) NOT NULL,
     method VARCHAR(10) NOT NULL,
     status_code INTEGER NOT NULL,
@@ -94,6 +176,18 @@ CREATE TABLE IF NOT EXISTS system_metrics (
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_settings_key ON user_settings(setting_key);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_service ON api_keys(service_name);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
+CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_projects_type ON projects(project_type);
+CREATE INDEX IF NOT EXISTS idx_generation_history_user_id ON generation_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_generation_history_type ON generation_history(generation_type);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_video_generations_user_id ON video_generations(user_id);
 CREATE INDEX IF NOT EXISTS idx_video_generations_status ON video_generations(status);
 CREATE INDEX IF NOT EXISTS idx_video_generations_created_at ON video_generations(created_at);
@@ -128,9 +222,9 @@ CREATE TRIGGER update_movie_scenes_updated_at BEFORE UPDATE ON movie_scenes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert sample data for testing (optional)
-INSERT INTO users (email, username, password_hash, is_premium) VALUES
-    ('admin@veogen.com', 'admin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewLmfvvI.1oLu.YC', TRUE),
-    ('demo@veogen.com', 'demo', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewLmfvvI.1oLu.YC', FALSE)
+INSERT INTO users (id, email, username, hashed_password, is_active, is_verified, plan, full_name) VALUES
+    ('admin', 'admin@veogen.com', 'admin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewLmfvvI.1oLu.YC', TRUE, TRUE, 'admin', 'Administrator'),
+    ('demo', 'demo@veogen.com', 'demo', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewLmfvvI.1oLu.YC', TRUE, TRUE, 'free', 'Demo User')
 ON CONFLICT (email) DO NOTHING;
 
 -- Grant permissions

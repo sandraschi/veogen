@@ -11,7 +11,7 @@ from datetime import datetime
 import uuid
 
 from .mcp_media_service import mcp_media_service
-from ..models.music import MusicGeneration
+from ..models.music import MusicGenerationDB
 from ..database import get_db
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class MusicService:
         
         # Create music generation record
         music_id = str(uuid.uuid4())
-        music_generation = MusicGeneration(
+        music_generation = MusicGenerationDB(
             id=music_id,
             user_id=user_id,
             prompt=prompt,
@@ -103,7 +103,7 @@ class MusicService:
         
         # Create speech generation record
         speech_id = str(uuid.uuid4())
-        speech_generation = MusicGeneration(
+        speech_generation = MusicGenerationDB(
             id=speech_id,
             user_id=user_id,
             prompt=text,
@@ -176,7 +176,7 @@ class MusicService:
     async def get_music_status(self, music_id: str) -> Optional[Dict[str, Any]]:
         """Get the status of a music generation"""
         try:
-            music = self.db.query(MusicGeneration).filter(MusicGeneration.id == music_id).first()
+            music = self.db.query(MusicGenerationDB).filter(MusicGenerationDB.id == music_id).first()
             
             if not music:
                 return None
@@ -200,9 +200,9 @@ class MusicService:
     async def get_user_music(self, user_id: int, limit: int = 50) -> list:
         """Get all music for a user"""
         try:
-            music_list = self.db.query(MusicGeneration)\
-                .filter(MusicGeneration.user_id == user_id)\
-                .order_by(MusicGeneration.created_at.desc())\
+            music_list = self.db.query(MusicGenerationDB)\
+                .filter(MusicGenerationDB.user_id == user_id)\
+                .order_by(MusicGenerationDB.created_at.desc())\
                 .limit(limit)\
                 .all()
                 
@@ -225,7 +225,7 @@ class MusicService:
             logger.error(f"Error getting music for user {user_id}: {e}")
             return []
             
-    async def get_available_voices(self) -> List[str]:
+    async def get_available_voices(self, user_id: int) -> List[str]:
         """Get list of available Chirp voices"""
         try:
             return await mcp_media_service.get_available_voices(user_id)
@@ -236,8 +236,8 @@ class MusicService:
     async def delete_music(self, music_id: str, user_id: int) -> bool:
         """Delete a music generation record"""
         try:
-            music = self.db.query(MusicGeneration)\
-                .filter(MusicGeneration.id == music_id, MusicGeneration.user_id == user_id)\
+            music = self.db.query(MusicGenerationDB)\
+                .filter(MusicGenerationDB.id == music_id, MusicGenerationDB.user_id == user_id)\
                 .first()
                 
             if not music:

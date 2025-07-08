@@ -128,12 +128,11 @@ async def list_user_music(
         raise HTTPException(status_code=500, detail=f"Failed to get user music: {str(e)}")
 
 @router.get("/voices")
-async def get_available_voices():
+async def get_available_voices(current_user: User = Depends(get_current_user)):
     """Get list of available Chirp voices"""
     try:
-        voices = await music_service.get_available_voices()
+        voices = await music_service.get_available_voices(current_user.id)
         return {"voices": voices}
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get voices: {str(e)}")
 

@@ -1,0 +1,77 @@
+# Claude Info - VeoGen Project
+
+## 🎯 Super Comprehensive First Line for New Claude Chat
+
+Copy and paste this exactly into your new Claude chat:
+
+```
+Read this "C:\Users\sandr\AppData\Local\AnthropicClaude\app-0.11.6\veogen\CLAUDE_RESTART_GUIDE.md" and switch to veogen project in basic memory
+```
+
+## ✅ What This Single Line Will Do:
+
+### 📖 From the File (CLAUDE_RESTART_GUIDE.md):
+- ✅ Complete VeoGen project overview and architecture
+- ✅ All service URLs and ports (4710, 4700, 4725, etc.)
+- ✅ Docker commands and health checks
+- ✅ Recent session notes and accomplishments
+- ✅ Test commands and verification steps
+
+### 🧠 From Basic Memory (veogen project):
+- ✅ Your credentials: sandraschipal@hotmail.com / S3c1000vg#
+- ✅ Complete email system status and configuration
+- ✅ All test accounts and passwords
+- ✅ API endpoints and usage examples
+- ✅ Previous conversation context and solutions
+
+### 🚀 Result:
+New Claude will immediately have 100% complete context about your VeoGen platform and be ready to help with any task!
+
+## 🧠 Basic Memory Quick Commands
+
+### Memory Search Commands:
+- `Search basic memory for VeoGen password` → Sandra's credentials
+- `Search basic memory for localhost URLs` → All service URLs
+- `Search basic memory for email system` → Email configuration
+- `Search basic memory for test commands` → Verification commands
+
+### Memory Project Commands:
+- `Switch to veogen project in basic memory` → Access VeoGen knowledge
+- `List memory projects` → See available projects
+- `Search basic memory for [topic]` → Find specific information
+
+## 📍 VeoGen Quick Reference
+
+### Your Account:
+- **Email**: sandraschipal@hotmail.com
+- **Password**: S3c1000vg#
+- **Username**: sas13
+
+### System URLs:
+- **Main App**: http://localhost:4710
+- **Login**: http://localhost:4710/auth
+- **API Docs**: http://localhost:4700/docs
+- **Monitoring**: http://localhost:4725 (admin/veogen123)
+
+### Test Accounts:
+- valid@test.com / Test123!
+- test@test.com / test123
+
+## 🎬 VeoGen Project Status
+
+✅ **Complete Authentication System** - Login, registration, password reset
+✅ **Professional Email System** - Verification emails, beautiful templates
+✅ **Production-Ready Platform** - Full monitoring, Docker deployment
+✅ **Basic Memory Integration** - Persistent knowledge across Claude sessions
+✅ **Browser Automation Ready** - Playwright MCP installed
+
+## 📂 Important File Locations
+
+- **Project Root**: C:\Users\sandr\AppData\Local\AnthropicClaude\app-0.11.6\veogen
+- **Restart Guide**: CLAUDE_RESTART_GUIDE.md
+- **Email System Summary**: EMAIL_SYSTEM_SUCCESS_SUMMARY.md
+- **Dev Emails**: backend/dev_emails/
+
+## 🚀 Ready for Production Use!
+
+Created: July 6, 2025

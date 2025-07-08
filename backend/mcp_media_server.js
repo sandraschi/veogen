@@ -196,7 +196,7 @@ app.get('/models', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8090;
 app.listen(PORT, () => {
   console.log(`MCP Media Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.database import get_db
 from app.api.deps import get_current_user_optional
-from app.models.user import User
+from app.database import User
 from app.services.connection_test_service import connection_test_service
 
 router = APIRouter()

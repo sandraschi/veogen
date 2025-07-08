@@ -1,6 +1,6 @@
 // Image Generation API Service
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:7655';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4700';
 
 class ImageService {
   async generateImage(imageData) {

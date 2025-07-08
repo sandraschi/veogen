@@ -2,14 +2,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import logging
+import os
 from app.config import settings
 from app.routers import video, movie
 from app.api.api_v1.endpoints import music, image, book, code, translation, auth
 from app.api.api_v1.endpoints import settings as settings_endpoints
 from app.api.api_v1.endpoints import system
-# from app.api.api_v1.endpoints import chat
+from app.api.api_v1.endpoints import chat
+from app.api.api_v1.endpoints import enhanced_auth
+from app.api.api_v1.endpoints import logs
 from app.middleware.metrics import PrometheusMetricsMiddleware, metrics_endpoint
 import uvicorn
 
@@ -23,6 +27,14 @@ async def lifespan(app: FastAPI):
     """Application lifespan events"""
     logger.info("Starting VeoGen API...")
     logger.info("Initializing services...")
+    
+    # Initialize database first
+    try:
+        from app.database import init_db
+        init_db()
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
     
     # Initialize services here if needed
     try:
@@ -146,11 +158,35 @@ app.include_router(
 )
 
 # Chat endpoints
-# app.include_router(
-#     chat.router,
-#     prefix=f"{settings.API_V1_STR}/chat",
-#     tags=["chat"]
-# )
+app.include_router(
+    chat.router,
+    prefix=f"{settings.API_V1_STR}/chat",
+    tags=["chat"]
+)
+
+# Enhanced Authentication endpoints
+app.include_router(
+    enhanced_auth.router,
+    prefix=f"{settings.API_V1_STR}/enhanced-auth",
+    tags=["enhanced-authentication"]
+)
+
+# Logs endpoints
+app.include_router(
+    logs.router,
+    prefix=f"{settings.API_V1_STR}/logs",
+    tags=["logs"]
+)
+
+# Mount static files for documentation AFTER all API routes
+# Fix path calculation for Docker: go up from app/main.py to reach container root, then docsify_viewer
+docsify_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docsify_viewer")
+if os.path.exists(docsify_path):
+    # Mount at /documentation to avoid conflict with FastAPI's built-in /docs
+    app.mount("/documentation", StaticFiles(directory=docsify_path, html=True), name="documentation")
+    logger.info(f"Mounted docsify viewer at /documentation from {docsify_path}")
+else:
+    logger.warning(f"Docsify viewer directory not found at {docsify_path}")
 
 # Add metrics endpoint
 @app.get("/metrics")

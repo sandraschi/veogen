@@ -891,6 +891,7 @@
                      '  clear                   - Clear the console\n' +
                      '  theme [dark|light]      - Change theme\n' +
                      '  reload                  - Reload the page\n' +
+                     '  rebuild sidebar         - Regenerate navigation sidebar\n' +
                      '  version                 - Show version info\n' +
                      '  video status            - Check video generation status (mockup)\n' +
                      '  movie list              - List available movie presets (mockup)\n' +
@@ -967,6 +968,32 @@
                     '  🎵 Music Video - Dynamic, rhythm-focused\n' +
                     '  🎬 Cinematic - Hollywood blockbuster\n' +
                     '  📰 Documentary - Realistic presentation';
+            break;
+            
+          case 'rebuild':
+          case 'sidebar':
+            if (args[1] === 'rebuild' || args[1] === 'generate') {
+              result = 'Triggering sidebar rebuild...\n' +
+                      'Note: This feature requires the rebuild-sidebar.ps1 script\n' +
+                      'Run: powershell -File rebuild-sidebar.ps1\n' +
+                      'Or use the rebuild-sidebar.bat file for interactive options';
+              
+              // Try to trigger rebuild (this is a demo - actual implementation would need backend support)
+              fetch('/api/rebuild-sidebar', { method: 'POST' })
+                .then(response => {
+                  if (response.ok) {
+                    result += '\n✅ Sidebar rebuild triggered successfully!';
+                  } else {
+                    result += '\n❌ Sidebar rebuild failed (backend not available)';
+                  }
+                })
+                .catch(() => {
+                  result += '\n💡 Run rebuild-sidebar.bat manually to rebuild sidebar';
+                });
+            } else {
+              result = 'Usage: rebuild sidebar\n' +
+                      'Alternative: sidebar rebuild';
+            }
             break;
             
           case 'quota':

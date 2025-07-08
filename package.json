@@ -1,0 +1,18 @@
+{
+  "name": "veogen-auth-testing",
+  "version": "1.0.0",
+  "description": "VeoGen Authentication and Onboarding Testing Suite",
+  "main": "test_auth_onboarding.js",
+  "scripts": {
+    "test": "node test_auth_onboarding.js",
+    "install-playwright": "npx playwright install",
+    "test-debug": "node test_auth_onboarding.js --debug"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "devDependencies": {},
+  "keywords": ["testing", "playwright", "authentication", "veogen"],
+  "author": "VeoGen Team",
+  "license": "MIT"
+}

@@ -10,20 +10,19 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from datetime import datetime
 import json
+from app.config import settings
 
-# Database URL from config
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./veogen.db")
+DATABASE_URL = os.getenv("DATABASE_URL", settings.DATABASE_URL)
 
-# Create async engine for SQLAlchemy 2.0 style
-if DATABASE_URL.startswith("sqlite"):
-    # Convert to async SQLite URL
-    async_database_url = DATABASE_URL.replace("sqlite:///", "sqlite+aiosqlite:///")
-else:
-    # For PostgreSQL, MySQL, etc.
-    async_database_url = DATABASE_URL.replace("://", "+asyncpg://")
+if not DATABASE_URL or not DATABASE_URL.startswith("postgresql"):
+    raise RuntimeError("DATABASE_URL must be set to a valid Postgres URL. Current: {}".format(DATABASE_URL))
+
+# Only Postgres is supported
+async_database_url = DATABASE_URL
+sync_database_url = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
 
 # Create engines
-engine = create_engine(DATABASE_URL, echo=False)
+engine = create_engine(sync_database_url, echo=False)
 async_engine = create_async_engine(async_database_url, echo=False)
 
 # Create session factories
@@ -33,41 +32,12 @@ AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire
 # Create base class for models
 Base = declarative_base()
 
-# Database Models
-class User(Base):
-    """User model for authentication and profile management"""
-    __tablename__ = "users"
-    
-    id = Column(String, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
-    is_verified = Column(Boolean, default=False)
-    email_verification_token = Column(String, nullable=True)
-    email_verification_sent_at = Column(DateTime, nullable=True)
-    plan = Column(String, default="free")  # free, pro, studio
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    last_login = Column(DateTime)
-    
-    # Profile information
-    full_name = Column(String)
-    avatar_url = Column(String)
-    preferences = Column(JSON, default=dict)
+# Import models to ensure they are registered with SQLAlchemy
+from .models.user import User, UserSettings, UserSession, Project, PasswordResetToken
+from .models.music import MusicGenerationDB
+from .models.image import ImageGeneration
 
-class UserSettings(Base):
-    """User settings and preferences"""
-    __tablename__ = "user_settings"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, nullable=False, index=True)
-    setting_key = Column(String, nullable=False)
-    setting_value = Column(Text)
-    setting_type = Column(String, default="string")  # string, json, boolean, number
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
+# Additional models that are still in database.py
 class APIKey(Base):
     """API keys and credentials storage"""
     __tablename__ = "api_keys"
@@ -81,34 +51,6 @@ class APIKey(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     last_used = Column(DateTime)
     usage_count = Column(Integer, default=0)
-
-class UserSession(Base):
-    """User session management"""
-    __tablename__ = "user_sessions"
-    
-    id = Column(String, primary_key=True, index=True)
-    user_id = Column(String, nullable=False, index=True)
-    session_token = Column(String, unique=True, nullable=False)
-    expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    last_activity = Column(DateTime, default=datetime.utcnow)
-    ip_address = Column(String)
-    user_agent = Column(String)
-
-class Project(Base):
-    """User projects (videos, books, etc.)"""
-    __tablename__ = "projects"
-    
-    id = Column(String, primary_key=True, index=True)
-    user_id = Column(String, nullable=False, index=True)
-    project_type = Column(String, nullable=False)  # video, book, movie, etc.
-    title = Column(String, nullable=False)
-    description = Column(Text)
-    status = Column(String, default="draft")  # draft, processing, completed, failed
-    project_metadata = Column(JSON, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    completed_at = Column(DateTime)
 
 class GenerationHistory(Base):
     """History of AI generations"""
@@ -125,16 +67,6 @@ class GenerationHistory(Base):
     generation_metadata = Column(JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime)
-
-class PasswordResetToken(Base):
-    """Password reset tokens for lost password flow"""
-    __tablename__ = "password_reset_tokens"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, nullable=False, index=True)
-    token = Column(String, unique=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    expires_at = Column(DateTime, nullable=False)
-    used = Column(Boolean, default=False)
 
 # Database session management
 def get_db() -> Generator[Session, None, None]:
@@ -159,24 +91,32 @@ def init_db():
     Base.metadata.create_all(bind=engine)
     # Create default admin user if not exists
     db = SessionLocal()
-    from app.services.auth_service import AuthService
-    auth = AuthService()
-    admin = db.query(User).filter(User.username == "admin").first()
-    if not admin:
-        admin = User(
-            id="admin",
-            email="admin@localhost",
-            username="admin",
-            hashed_password=auth.hash_password("admin"),
-            is_active=True,
-            is_verified=True,
-            plan="admin",
-            created_at=datetime.utcnow(),
-            full_name="Administrator"
-        )
-        db.add(admin)
-        db.commit()
-    db.close()
+    try:
+        admin = db.query(User).filter(User.username == "admin").first()
+        if not admin:
+            # Use bcrypt directly to avoid circular import
+            import bcrypt
+            hashed_password = bcrypt.hashpw("admin".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            
+            admin = User(
+                id="admin",
+                email="admin@localhost",
+                username="admin",
+                hashed_password=hashed_password,
+                is_active=True,
+                is_verified=True,
+                plan="admin",
+                created_at=datetime.utcnow(),
+                full_name="Administrator"
+            )
+            db.add(admin)
+            db.commit()
+            print("Created default admin user")
+    except Exception as e:
+        print(f"Error creating admin user: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 async def init_async_db():
     """Initialize database tables asynchronously"""
@@ -238,5 +178,5 @@ def set_user_setting(db: Session, user_id: str, key: str, value, value_type="str
     db.commit()
     return setting
 
-# Initialize database on import
-init_db() 
+# Database will be initialized explicitly when needed
+# Remove automatic init to prevent circular imports 

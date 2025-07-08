@@ -221,14 +221,11 @@ class PersonaService:
             - communication_preferences: string
             """
             
-            # Generate background using Gemini CLI
-            background_response = await self.gemini_service.generate_text(
-                background_prompt,
-                temperature=0.8,
-                max_tokens=2000,
-                db_session=db_session,
-                user_id=user_id
-            )
+            # Generate background using direct Gemini API
+            import google.generativeai as genai
+            genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            background_response = model.generate_content(background_prompt).text
             
             # Parse the response
             try:

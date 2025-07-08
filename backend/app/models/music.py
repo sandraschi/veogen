@@ -1,17 +1,26 @@
 # Music Generation Database Models and API
 
-from sqlalchemy import Column, String, Text, Integer, Float, Boolean, JSON, ForeignKey
+import uuid
+from datetime import datetime
+from sqlalchemy import Column, String, Text, Integer, Float, Boolean, JSON, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
-from app.models.base import BaseModel
+from ..database import Base
 
-class MusicGeneration(BaseModel):
-    """Music generation model"""
+class MusicGenerationDB(Base):
+    """Music generation database model"""
     __tablename__ = "music_generations"
+    
+    # Primary key
+    id = Column(
+        String, 
+        primary_key=True,
+        default=lambda: str(uuid.uuid4())
+    )
     
     # Foreign keys
     user_id = Column(
-        UUID(as_uuid=True), 
+        String, 
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True
@@ -54,7 +63,11 @@ class MusicGeneration(BaseModel):
     retry_count = Column(Integer, default=0)
     
     # Additional metadata
-    metadata = Column(JSONB)
+    generation_metadata = Column(JSONB)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     user = relationship("User", back_populates="music_generations")

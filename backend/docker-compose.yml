@@ -1,0 +1,2 @@
+loki:
+  image: grafana/loki:2.9.7 

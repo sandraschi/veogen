@@ -40,16 +40,16 @@ try:
     from app.main import app
     print("  - Main app imported successfully")
     
-    print("\n🎉 All imports successful! The backend should start correctly.")
+    print("\nCELEBRATION: All imports successful! The backend should start correctly.")
     
 except ImportError as e:
-    print(f"\n❌ Import error: {e}")
+    print(f"\nERROR: Import error: {e}")
     print(f"Error type: {type(e)}")
     import traceback
     traceback.print_exc()
     sys.exit(1)
 except Exception as e:
-    print(f"\n❌ Unexpected error: {e}")
+    print(f"\nERROR: Unexpected error: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1) 

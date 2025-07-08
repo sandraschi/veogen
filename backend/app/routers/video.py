@@ -21,8 +21,8 @@ from ..models.video_request import (
     VideoGenerationStatus,
     VideoJobInfo
 )
-from ..deps import get_current_user
-from ..models.user import User
+from app.api.deps import get_current_user
+from ..database import User
 
 logger = logging.getLogger(__name__)
 

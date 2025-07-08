@@ -165,7 +165,7 @@ class PersonasService:
     
     async def _generate_persona_profile(self, persona_type: PersonaType, template: Dict[str, Any]) -> PersonaProfile:
         """Generate a complete persona profile with life story"""
-        model = genai.GenerativeModel("gemini-1.5-pro")
+        model = genai.GenerativeModel("gemini-2.0-flash-exp")
         
         # Generate life story
         life_story_prompt = f"""
@@ -298,7 +298,7 @@ class PersonasService:
             )
             
             # Generate response
-            model = genai.GenerativeModel("gemini-1.5-pro")
+            model = genai.GenerativeModel("gemini-2.0-flash-exp")
             response = await asyncio.to_thread(
                 model.generate_content,
                 conversation_context

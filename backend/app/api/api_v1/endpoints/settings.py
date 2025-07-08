@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.database import get_db, User
+from app.database import get_db
+from app.models.user import User
 from app.api.deps import get_current_user, get_current_user_optional
 from app.schemas.user_settings import UserSettingsRequest, UserSettingsResponse
 from app.services.user_settings_service import UserSettingsService

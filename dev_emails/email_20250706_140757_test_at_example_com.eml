@@ -1,0 +1,19 @@
+Content-Type: multipart/alternative; boundary="===============6195721994761525252=="
+MIME-Version: 1.0
+Subject: Test Email
+From: noreply@veogen.local
+To: test@example.com
+
+--===============6195721994761525252==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+This is a test email from VeoGen
+--===============6195721994761525252==
+Content-Type: text/html; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+<p>This is a <strong>test email</strong> from VeoGen</p>
+--===============6195721994761525252==--

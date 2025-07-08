@@ -9,10 +9,12 @@ import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
-from app.database import User, UserSession, get_user_setting, set_user_setting, PasswordResetToken, UserSettings
+from app.database import get_user_setting, set_user_setting
+from app.models.user import User, UserSession, PasswordResetToken, UserSettings
 from app.config import settings
 import secrets
 from app.services.email_service import send_email
+from app.services.email_templates import get_verification_email_template, get_password_reset_template
 
 class AuthService:
     """Authentication service for user management"""
@@ -263,10 +265,17 @@ class AuthService:
         user.email_verification_token = token
         user.email_verification_sent_at = datetime.utcnow()
         db.commit()
-        verify_url = f"https://yourdomain.com/verify-email?token={token}&user={user.id}"
-        subject = "Verify your VeoGen account"
-        body = f"Hello {user.username or user.email},\n\nPlease verify your email by clicking the link below:\n{verify_url}\n\nIf you did not register, ignore this email."
-        send_email(user.email, subject, body)
+        
+        # Use localhost for development, replace with your domain in production
+        verify_url = f"http://localhost:4710/verify-email?token={token}&user={user.id}"
+        
+        # Generate beautiful email template
+        subject, text_body, html_body = get_verification_email_template(
+            user_name=user.username or user.email.split('@')[0],
+            verify_url=verify_url
+        )
+        
+        send_email(user.email, subject, text_body, html_body)
 
     def verify_email(self, db: Session, user_id: str, token: str) -> bool:
         user = db.query(User).filter(User.id == user_id).first()
@@ -289,10 +298,17 @@ class AuthService:
         )
         db.add(reset_token)
         db.commit()
-        reset_url = f"https://yourdomain.com/reset-password?token={token}&user={user.id}"
-        subject = "VeoGen Password Reset"
-        body = f"Hello {user.username or user.email},\n\nTo reset your password, click the link below:\n{reset_url}\n\nIf you did not request a password reset, ignore this email."
-        send_email(user.email, subject, body)
+        
+        # Use localhost for development, replace with your domain in production  
+        reset_url = f"http://localhost:4710/reset-password?token={token}&user={user.id}"
+        
+        # Generate beautiful email template
+        subject, text_body, html_body = get_password_reset_template(
+            user_name=user.username or user.email.split('@')[0],
+            reset_url=reset_url
+        )
+        
+        send_email(user.email, subject, text_body, html_body)
 
     def verify_password_reset_token(self, db: Session, user_id: str, token: str) -> bool:
         reset_token = db.query(PasswordResetToken).filter(

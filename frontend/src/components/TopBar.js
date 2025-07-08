@@ -12,11 +12,15 @@ import {
   LanguageIcon,
   ChevronDownIcon,
   Cog6ToothIcon,
+  BookOpenIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import LogViewerModal from './LogViewerModal';
+import { useAuth } from '../contexts/AuthContext';
 
 const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [showLogViewer, setShowLogViewer] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -59,6 +63,16 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
     window.open('/help', '_blank');
   };
 
+  const handleDocumentation = () => {
+    window.open('/docs', '_blank');
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+    setShowUserMenu(false);
+  };
+
   return (
     <>
       <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40">
@@ -79,13 +93,24 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-white">VeoGen</h1>
-                  <p className="text-xs text-gray-400">AI Video Studio</p>
+                  <p className="text-xs text-gray-400">AI Creative Platform</p>
                 </div>
               </div>
             </div>
 
             {/* Right side */}
             <div className="flex items-center space-x-2">
+              {/* Documentation Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleDocumentation}
+                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                title="Documentation"
+              >
+                <BookOpenIcon className="w-5 h-5" />
+              </motion.button>
+
               {/* Help Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -187,8 +212,8 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                 >
                   <UserCircleIcon className="w-6 h-6" />
                   <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-white">Creator</p>
-                    <p className="text-xs text-gray-400">Pro Plan</p>
+                    <p className="text-sm font-medium text-white">{user?.name || user?.email || 'User'}</p>
+                    <p className="text-xs text-gray-400">{user?.plan || 'Free Plan'}</p>
                   </div>
                   <ChevronDownIcon className="w-4 h-4" />
                 </motion.button>
@@ -201,8 +226,8 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                     className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-xl overflow-hidden z-50"
                   >
                     <div className="px-4 py-3 border-b border-gray-600">
-                      <p className="text-white font-medium">Creator</p>
-                      <p className="text-gray-300 text-sm">creator@veogen.com</p>
+                      <p className="text-white font-medium">{user?.name || 'User'}</p>
+                      <p className="text-gray-300 text-sm">{user?.email || 'user@example.com'}</p>
                     </div>
                     <button 
                       onClick={() => {
@@ -224,7 +249,11 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                       Usage Stats
                     </button>
                     <div className="border-t border-gray-600">
-                      <button className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors">
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors flex items-center"
+                      >
+                        <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
                         Sign Out
                       </button>
                     </div>

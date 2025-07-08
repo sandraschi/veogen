@@ -58,7 +58,15 @@ const SettingsPage = () => {
       toast.success('Settings saved successfully!');
     } catch (error) {
       console.error('Failed to save settings:', error);
-      toast.error('Failed to save settings');
+      
+      // Show specific error message
+      const errorMessage = error.message || 'Failed to save settings';
+      toast.error(errorMessage);
+      
+      // If authentication error, suggest login
+      if (errorMessage.includes('log in') || errorMessage.includes('401')) {
+        toast.error('Please log in to save your settings');
+      }
     } finally {
       setSaving(false);
     }
@@ -66,16 +74,38 @@ const SettingsPage = () => {
 
   const testConnection = async () => {
     try {
-      const response = await fetch('/api/v1/video/health');
-      const data = await response.json();
+      // Test basic VeoGen connection
+      const result = await settingsService.testConnection();
       
-      if (data.status === 'healthy') {
-        toast.success('Connection successful!');
+      if (result.success) {
+        let successMessage = result.message || 'Connection successful!';
+        
+        if (result.details && result.details.length > 0) {
+          successMessage += `\n\nComponents:\n${result.details.join('\n')}`;
+        }
+        
+        toast.success(successMessage);
+        
+        // Also test Gemini if API key is provided
+        if (settings.geminiApiKey) {
+          toast.info('Testing Gemini API...');
+          
+          const geminiResult = await settingsService.testGeminiConnection(settings.geminiApiKey);
+          
+          if (geminiResult.success) {
+            toast.success('Gemini API connection verified!');
+          } else {
+            toast.warning(`Gemini API issue: ${geminiResult.error}`);
+          }
+        }
+        
+        // Log detailed info for debugging
+        console.log('Connection test result:', result.data);
       } else {
-        toast.error('Connection failed');
+        toast.error(`Connection failed: ${result.error}`);
       }
     } catch (error) {
-      toast.error('Connection test failed');
+      toast.error(`Connection test failed: ${error.message}`);
     }
   };
 

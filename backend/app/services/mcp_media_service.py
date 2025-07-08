@@ -17,7 +17,7 @@ from typing import Dict, Any, Optional, List, Callable
 from datetime import datetime
 
 from ..database import get_db
-from ..models.user_settings import UserSettings
+from ..database import UserSettings
 
 logger = logging.getLogger(__name__)
 

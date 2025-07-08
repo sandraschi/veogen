@@ -23,55 +23,65 @@ const LogViewerModal = ({ isOpen, onClose }) => {
   const intervalRef = useRef(null);
 
   const logLevels = ['all', 'debug', 'info', 'warning', 'error'];
-  const components = ['all', 'backend', 'frontend', 'database', 'redis', 'gemini', 'ffmpeg'];
+  const components = ['all', 'app', 'error', 'ffmpeg', 'movie_maker', 'video_generation'];
 
-  // Mock log data - replace with real API call
-  const mockLogs = [
-    {
-      id: 1,
-      timestamp: new Date().toISOString(),
-      level: 'info',
-      component: 'backend',
-      message: 'Video generation started for job abc123',
-      details: { jobId: 'abc123', userId: 'user456' }
-    },
-    {
-      id: 2,
-      timestamp: new Date(Date.now() - 5000).toISOString(),
-      level: 'debug',
-      component: 'gemini',
-      message: 'Gemini CLI response received',
-      details: { responseTime: '2.3s', tokens: 150 }
-    },
-    {
-      id: 3,
-      timestamp: new Date(Date.now() - 10000).toISOString(),
-      level: 'warning',
-      component: 'redis',
-      message: 'Redis connection timeout, retrying...',
-      details: { attempt: 2, maxRetries: 3 }
-    },
-    {
-      id: 4,
-      timestamp: new Date(Date.now() - 15000).toISOString(),
-      level: 'error',
-      component: 'ffmpeg',
-      message: 'Failed to extract frame from video',
-      details: { error: 'Invalid video format', file: 'temp_video.mp4' }
-    },
-    {
-      id: 5,
-      timestamp: new Date(Date.now() - 20000).toISOString(),
-      level: 'info',
-      component: 'database',
-      message: 'Database connection established',
-      details: { connectionPool: 5, activeConnections: 2 }
-    },
-  ];
+  // Fetch real logs from API
+  const fetchLogs = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedLevel !== 'all') params.append('level', selectedLevel);
+      if (selectedComponent !== 'all') params.append('component', selectedComponent);
+      if (searchTerm) params.append('search', searchTerm);
+      params.append('limit', '1000');
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/v1/logs/?${params}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch logs');
+      }
+
+      const data = await response.json();
+      
+      // Transform API response to match our LogEntry format
+      const transformedLogs = data.logs.map(log => ({
+        id: log.id,
+        timestamp: log.timestamp,
+        level: log.level,
+        component: log.component,
+        message: log.message,
+        details: log.details
+      }));
+
+      setLogs(transformedLogs);
+      
+    } catch (error) {
+      console.error('Failed to fetch logs:', error);
+      
+      // Fallback to a single error log entry
+      const errorLog = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        component: 'log_viewer',
+        message: `Failed to fetch logs: ${error.message}`,
+        details: { error: error.toString() }
+      };
+      
+      setLogs([errorLog]);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
-      setLogs(mockLogs);
+      fetchLogs();
       if (autoRefresh) {
         startAutoRefresh();
       }
@@ -81,9 +91,16 @@ const LogViewerModal = ({ isOpen, onClose }) => {
     return () => stopAutoRefresh();
   }, [isOpen, autoRefresh, refreshInterval]);
 
+  // Refetch logs when filters change
+  useEffect(() => {
+    if (isOpen) {
+      fetchLogs();
+    }
+  }, [selectedLevel, selectedComponent, searchTerm]);
+
   useEffect(() => {
     filterLogs();
-  }, [logs, searchTerm, selectedLevel, selectedComponent]);
+  }, [logs]);
 
   useEffect(() => {
     if (logContainerRef.current) {
@@ -105,42 +122,9 @@ const LogViewerModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const fetchLogs = async () => {
-    try {
-      const newLog = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        level: ['info', 'debug', 'warning'][Math.floor(Math.random() * 3)],
-        component: components[Math.floor(Math.random() * (components.length - 1)) + 1],
-        message: `System activity at ${new Date().toLocaleTimeString()}`,
-        details: { processId: Math.floor(Math.random() * 10000) }
-      };
-      
-      setLogs(prevLogs => [...prevLogs, newLog].slice(-1000));
-    } catch (error) {
-      console.error('Failed to fetch logs:', error);
-    }
-  };
-
   const filterLogs = () => {
-    let filtered = [...logs];
-
-    if (selectedLevel !== 'all') {
-      filtered = filtered.filter(log => log.level === selectedLevel);
-    }
-
-    if (selectedComponent !== 'all') {
-      filtered = filtered.filter(log => log.component === selectedComponent);
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(log =>
-        log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.component.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredLogs(filtered);
+    // Since filtering is now done on the server side, just set logs directly
+    setFilteredLogs([...logs]);
   };
 
   const getLevelColor = (level) => {

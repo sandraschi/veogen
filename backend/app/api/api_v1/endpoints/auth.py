@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, validator
 import re
 
-from app.database import get_db, User
+from app.database import get_db
+from app.models.user import User
 from app.services.auth_service import auth_service
 from app.services.api_key_service import api_key_service
 from app.api.deps import get_current_user, get_current_user_optional

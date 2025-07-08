@@ -9,7 +9,7 @@ from datetime import datetime
 
 from app.services.image_service import imagen_service, ImageGenerationRequest
 from app.schemas.image import ImageGenerationCreate, ImageGeneration
-from app.models.user import User
+from app.database import User
 
 logger = logging.getLogger(__name__)
 

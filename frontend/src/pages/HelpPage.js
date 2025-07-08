@@ -28,7 +28,7 @@ const HelpPage = () => (
       </ul>
     </div>
     <div className="text-center text-gray-400 text-sm">
-      For complete documentation, visit the <a href="/docsify_viewer/" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">full documentation site</a>.
+      For complete documentation, visit the <a href="http://localhost:3301" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">full documentation site</a>.
     </div>
   </div>
 );

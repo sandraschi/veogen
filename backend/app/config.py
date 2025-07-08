@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: Optional[str] = None
     
     # Gemini Configuration
-    GEMINI_MODEL: str = "gemini-2.0-flash-exp"
+    GEMINI_MODEL: str = "gemini-1.5-flash"
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_CLI_PATH: Optional[str] = None
     
@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     GENERATION_TIMEOUT: int = 300  # 5 minutes
     
     # Database Configuration
-    DATABASE_URL: Optional[str] = "sqlite:///./veogen.db"
+    DATABASE_URL: Optional[str] = "postgresql+asyncpg://veogen:veogen123@localhost:4715/veogen"
     
     # Redis Configuration
     REDIS_URL: str = "redis://localhost:6379"
@@ -61,8 +61,10 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:8080",
+        "http://localhost:4710",  # Frontend port
         "http://127.0.0.1:3000",
         "http://127.0.0.1:8080",
+        "http://127.0.0.1:4710",  # Frontend port
         "http://localhost:5173",  # Vite dev server
         "http://127.0.0.1:5173",
     ]

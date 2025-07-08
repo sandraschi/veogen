@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Any, Optional
 from datetime import datetime
 from app.database import get_user_setting, set_user_setting
+from app.models.user import UserSettings
 from app.schemas.user_settings import UserSettingsRequest, UserSettingsResponse
 
 class UserSettingsService:

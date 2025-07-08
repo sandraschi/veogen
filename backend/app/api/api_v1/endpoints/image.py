@@ -10,7 +10,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.api.deps import get_current_user, get_db
-from app.models.user import User
+from app.database import User
 from app.schemas.image import (
     ImageGeneration,
     ImageGenerationCreate,

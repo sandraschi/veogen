@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@hookform/resolvers": "^3.3.2",
+    "@mui/icons-material": "^5.14.19",
+    "@mui/material": "^5.14.20",
     "@tailwindcss/forms": "^0.5.10",
     "@tanstack/react-query": "^4.36.1",
     "@testing-library/jest-dom": "^5.17.0",
@@ -66,7 +70,7 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:7655",
+      "proxy": "http://localhost:4700",
   "devDependencies": {
     "@types/react": "^18.2.37",
     "@types/react-beautiful-dnd": "^13.1.6",
