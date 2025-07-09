@@ -31,6 +31,7 @@ import GalleryPage from './pages/GalleryPage';
 import JobsPage from './pages/JobsPage';
 import SettingsPage from './pages/SettingsPage';
 import HelpPage from './pages/HelpPage';
+import VoiceControlSideTab from './components/VoiceControlSideTab';
 
 // Auth Components
 import EnhancedAuth from './components/auth/EnhancedAuth';
@@ -265,6 +266,9 @@ function App() {
                 richColors
                 closeButton
               />
+              
+              {/* Voice Control Side Tab - Available globally */}
+              <VoiceControlSideTab />
             </div>
           </Router>
         </AuthProvider>

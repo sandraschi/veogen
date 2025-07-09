@@ -109,3 +109,106 @@ This is the canonical, protected global rulebook for all Windsurf/Cascade agenti
   - Enforce a hard cap on steps (XX), time (e.g., 10 minutes), and estimated cost.
   - Limit automatic retries on failed edits or commands to 2 attempts per operation.
   - If the same operation fails more tha
+
+---
+
+## File Size and Modular Architecture Rules
+
+### **MANDATORY FILE SIZE LIMITS**
+Never create files longer than these limits without modular refactoring:
+
+- **JavaScript/TypeScript**: 300 lines max (optimal: 150-250)
+- **HTML**: 400 lines max (optimal: 200-300)  
+- **CSS**: 500 lines max (optimal: 250-400)
+- **Documentation**: 800 lines max (optimal: 400-600)
+- **Configuration/Data Files (JSON/YAML)**: 150 lines max (optimal: 50-100)
+
+### **Pre-Writing Process**
+1. **Estimate Line Count** - Before starting any file, estimate final size
+2. **Check Against Limits** - Compare estimate with file type limits above
+3. **Plan Modular Structure** - If exceeding limits, plan folder structure first
+4. **Announce Refactoring** - Tell user: "This will be >X lines, creating modular structure instead"
+
+### **Modular Refactoring Patterns**
+
+#### **JavaScript/TypeScript Libraries (>300 lines):**
+```
+my-library/
+├── index.js                 # Main export file (~50-80 lines)
+├── README.md               # Documentation
+└── src/
+    ├── core.js             # Core functionality (~200-250 lines)
+    ├── utils.js            # Utility functions (~150-200 lines)
+    ├── api.js              # API interactions (~200-250 lines)
+    └── components.js       # UI components (~200-250 lines)
+```
+
+#### **Complex Applications (>300 lines):**
+```
+my-app/
+├── index.js                # Entry point (~80-100 lines)
+├── config.js              # Configuration (~100-150 lines)
+├── README.md              # Documentation
+└── modules/
+    ├── auth.js            # Authentication (~200-250 lines)
+    ├── ui.js              # User interface (~250-300 lines)
+    ├── data.js            # Data management (~200-250 lines)
+    └── api.js             # API calls (~150-200 lines)
+```
+
+#### **HTML Applications (>400 lines):**
+```
+my-page/
+├── index.html             # Main structure (~150-200 lines)
+├── components/
+│   ├── header.html        # Header component (~80-120 lines)
+│   ├── navigation.html    # Navigation (~100-150 lines)
+│   ├── main-content.html  # Main content (~200-300 lines)
+│   └── footer.html        # Footer component (~60-100 lines)
+└── assets/
+    ├── styles/
+    │   ├── main.css       # Main styles (~300-400 lines)
+    │   ├── components.css # Component styles (~250-350 lines)
+    │   └── responsive.css # Media queries (~200-300 lines)
+    └── scripts/
+        ├── main.js        # Main functionality (~250-300 lines)
+        ├── components.js  # Component logic (~200-250 lines)
+        └── utils.js       # Utilities (~150-200 lines)
+```
+
+### **Implementation Workflow**
+1. **Stop Before Exceeding** - If file will exceed limits, STOP immediately
+2. **Create Folder Structure** - Set up logical directory structure
+3. **Write Focused Modules** - Each file should have single responsibility
+4. **Create Index/Main** - Entry point that imports/exports modules
+5. **Document Structure** - Create README explaining architecture
+6. **Use Clear Names** - File names should describe exact purpose
+
+### **Benefits of Modular Architecture**
+- **Performance**: Smaller files load and parse faster
+- **Debugging**: Issues isolated to specific modules
+- **Maintenance**: Easier to update specific functionality
+- **Collaboration**: Multiple developers can work on different modules
+- **Testing**: Components can be tested in isolation
+- **Reusability**: Modules can be reused across projects
+
+### **Exception Handling**
+Large files are acceptable only for:
+- Auto-generated code (document this clearly)
+- Large datasets (consider database instead)
+- Legacy integration (refactor when possible)
+- Third-party libraries (don't modify)
+
+**Must be explicitly justified with refactoring plan and timeline.**
+
+### **Monitoring and Enforcement**
+- Check file size every 100 lines during writing
+- Stop at 80% of limit to plan refactoring
+- Single responsibility per file
+- Logical grouping of related functions
+- Clear naming conventions
+
+**GOLDEN RULE: "If you're thinking about writing a file longer than these limits, think modular instead!"**
+
+This prevents truncated files, unmanageable code, debugging nightmares, and promotes clean, professional architecture.
+

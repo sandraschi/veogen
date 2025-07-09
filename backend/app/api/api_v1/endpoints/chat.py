@@ -11,6 +11,7 @@ import logging
 from app.database import get_db, get_user_setting, set_user_setting
 from app.models.user import User
 from app.services.simple_persona_service import simple_persona_service
+from app.services.persona_chat_service import persona_chat_service
 from app.api.deps import get_current_user
 
 logger = logging.getLogger(__name__)

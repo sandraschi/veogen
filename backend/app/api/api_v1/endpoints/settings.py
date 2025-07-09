@@ -30,16 +30,10 @@ async def get_settings(
 @router.post("/", response_model=UserSettingsResponse)
 async def update_settings(
     settings_data: UserSettingsRequest,
-    current_user: User = Depends(get_current_user_optional),
+    current_user: User = Depends(get_current_user),  # Required authentication
     db: Session = Depends(get_db)
 ):
-    """Update current user's settings"""
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required to save settings"
-        )
-    
+    """Update current user's settings - requires authentication"""
     try:
         updated_settings = UserSettingsService.update_user_settings(
             db, current_user.id, settings_data
@@ -48,22 +42,16 @@ async def update_settings(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update settings"
+            detail=f"Failed to update settings: {str(e)}"
         )
 
 @router.get("/{setting_key}")
 async def get_setting(
     setting_key: str,
-    current_user: User = Depends(get_current_user_optional),
+    current_user: User = Depends(get_current_user),  # Required authentication
     db: Session = Depends(get_db)
 ):
-    """Get a specific setting"""
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required"
-        )
-    
+    """Get a specific setting - requires authentication"""
     try:
         value = UserSettingsService.get_setting(db, current_user.id, setting_key)
         return {"key": setting_key, "value": value}
@@ -77,16 +65,10 @@ async def get_setting(
 async def set_setting(
     setting_key: str,
     value: dict,
-    current_user: User = Depends(get_current_user_optional),
+    current_user: User = Depends(get_current_user),  # Required authentication
     db: Session = Depends(get_db)
 ):
-    """Set a specific setting"""
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required"
-        )
-    
+    """Set a specific setting - requires authentication"""
     try:
         setting_value = value.get("value")
         setting_type = value.get("type", "string")
@@ -100,4 +82,4 @@ async def set_setting(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update setting"
-        ) 
+        )

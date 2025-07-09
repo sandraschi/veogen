@@ -1,5 +1,6 @@
 ---
 newthingy: Robotic Whimsy Project (Virtual & Real-World Agentic Playground)
+permalink: docsify-viewer-windsurf-docs-backup-windsurf-generated-flows-newthingy-2025-05-06-robotic-whimsy-builder
 ---
 
 # Builder Instruction

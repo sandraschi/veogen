@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:\\Users\\sandr\\AppData\\Local\\AnthropicClaude\\app-0.11.6"
+      ]
+    },
+    "basic-memory": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@anysphere/mcp-server-basic-memory"
+      ]
+    }
+  }
+}

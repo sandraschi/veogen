@@ -1,0 +1,196 @@
+{
+  "export_metadata": {
+    "timestamp": "2025-01-17T12:00:00Z",
+    "total_entities": 11,
+    "total_relations": 10,
+    "format": "json",
+    "source": "MCP Knowledge Graph - VeoGen Project Memories",
+    "exported_from": "Windsurf rules migration"
+  },
+  "entities": [
+    {
+      "type": "entity",
+      "name": "PowerShell Syntax Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589190: Never use Linux syntax in scripts or chats",
+        "No && for chaining commands or similar Linux operators allowed",
+        "Always use proper PowerShell syntax for Windows environment",
+        "Use semicolons for command separation instead of &&"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "Change Management Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589445: Never remove, rewrite, or break major functionality without explicit user instruction",
+        "Always clarify and confirm before making changes that could disrupt workflows",
+        "Provide explicit diffs and summaries for major edits so user can review before anything is lost"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "Filesystem Safety Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589449: Never try to edit or create a file in a nonexistent directory",
+        "Always check if the target directory exists before file operations",
+        "If directory does not exist, create it first using PowerShell New-Item -ItemType Directory -Force",
+        "This applies to all automated workflows"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "Error Handling Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589454: All code must implement robust error handling",
+        "Catch and handle exceptions at logical boundaries, never silently ignore errors",
+        "Use logger service, not console (e.g. logger.error instead of console.error)",
+        "Always provide clear, actionable error messages and fail safely, informing the user"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "Transparency Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589460: For every automated action, provide a summary of what was done, why, and what rules were followed",
+        "Allow the user to request a full activity or decision log at any time",
+        "Record origin, version, and timestamp of imported code or data"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "File Size Management Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589467: Avoid creating or maintaining source files so large that they cannot be safely edited",
+        "When a file approaches system limits, proactively split it into smaller, logical modules",
+        "Use chunked editing strategies when needed",
+        "Never attempt single edit operations that risk failure due to size; prefer modularity and maintainability"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "Security Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589469: Never log, display, or transmit sensitive information unless explicitly required and approved",
+        "Always sanitize user input and validate external data sources",
+        "Use environment variables for sensitive data, never hardcode credentials",
+        "Passwords and API keys must never be logged"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "Code Quality Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589472: All code must be readable and self-documenting",
+        "Use meaningful variable and function names",
+        "Keep functions small and focused (max 50 lines)",
+        "Follow language-specific style guides",
+        "Include comments for complex logic",
+        "Maintain consistent indentation"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "User Experience Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589477: Users should always see meaningful feedback, never blank screens",
+        "Loading states must be implemented for all async operations",
+        "Error messages must be user-friendly and actionable",
+        "Always notify user of errors with clear summary and suggested next steps"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "Backup Strategy Rules",
+      "entityType": "MemoryCategory",
+      "observations": [
+        "Memory ID 2589482: Before destructive or high-impact operations, create a backup or checkpoint",
+        "Inform the user where the backup is stored and how to restore it",
+        "Offer to help set up lightweight, auto-staged commits or other safety nets",
+        "Prevent accidental loss of work and make rollbacks easy"
+      ]
+    },
+    {
+      "type": "entity",
+      "name": "VeoGen Project Memories",
+      "entityType": "ProjectMemories",
+      "observations": [
+        "Converted from Windsurf .windsurf/rules/global_rules/ directory",
+        "Contains development rules, safety protocols, and workflow preferences",
+        "Created on current session for Sandra's VeoGen project",
+        "Total memory categories: 10",
+        "Source: rules1.md, rules2.md, rules3.md from Windsurf setup"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "PowerShell Syntax Rules",
+      "relationType": "contains"
+    },
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "Change Management Rules",
+      "relationType": "contains"
+    },
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "Filesystem Safety Rules",
+      "relationType": "contains"
+    },
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "Error Handling Rules",
+      "relationType": "contains"
+    },
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "Transparency Rules",
+      "relationType": "contains"
+    },
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "File Size Management Rules",
+      "relationType": "contains"
+    },
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "Security Rules",
+      "relationType": "contains"
+    },
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "Code Quality Rules",
+      "relationType": "contains"
+    },
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "User Experience Rules",
+      "relationType": "contains"
+    },
+    {
+      "type": "relation",
+      "from": "VeoGen Project Memories",
+      "to": "Backup Strategy Rules",
+      "relationType": "contains"
+    }
+  ]
+} 

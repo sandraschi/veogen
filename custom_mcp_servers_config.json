@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "immich-mcp": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\sandr\\AppData\\Local\\AnthropicClaude\\app-0.11.6\\ImmichMCP\\dist\\index.js"
+      ],
+      "env": {
+        "IMMICH_BASE_URL": "http://localhost:2283",
+        "IMMICH_API_KEY": "your-immich-api-key-here"
+      }
+    },
+    "calibre-mcp": {
+      "command": "node", 
+      "args": [
+        "C:\\Users\\sandr\\AppData\\Local\\AnthropicClaude\\app-0.11.6\\CalibreMCP\\dist\\index.js"
+      ],
+      "env": {
+        "CALIBRE_LIBRARY_PATH": "C:\\Users\\sandr\\Documents\\Calibre Library",
+        "CALIBRE_SERVER_URL": "http://localhost:8080"
+      }
+    }
+  }
+}
