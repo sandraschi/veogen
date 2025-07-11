@@ -8,6 +8,7 @@
 
 ### ✅ Current Working State (As of July 2025)
 - **Authentication System**: ✅ FULLY FUNCTIONAL
+- **Advanced Email System**: ✅ COMPLETE - Professional workflows implemented
 - **Frontend (React)**: ✅ Running on port 4710
 - **Backend (FastAPI)**: ✅ Running on port 4700  
 - **Database (PostgreSQL)**: ✅ Running on port 4715
@@ -18,6 +19,37 @@
 ```
 C:\Users\sandr\AppData\Local\AnthropicClaude\app-0.11.6\veogen
 ```
+
+## 📂 **MANDATORY DOCUMENTATION FOLDER RULE**
+**CRITICAL**: All VeoGen project documentation MUST be stored in:
+```
+C:\Users\sandr\AppData\Local\AnthropicClaude\app-0.11.6\veogen\.windsurf\docs\Projects\VeoGen\
+```
+
+### 📁 Required Documentation Structure
+- **Network**: `\Network\` - Network configuration, IPs, Tailscale setup
+- **Authentication**: `\Authentication\` - Login systems, user management
+- **API**: `\API\` - API documentation and endpoints
+- **Deployment**: `\Deployment\` - Docker, production deployment
+- **Development**: `\Development\` - Development workflows and standards
+- **Testing**: `\Testing\` - Test procedures and results
+- **Monitoring**: `\Monitoring\` - Grafana, Prometheus, logging
+
+**Rule**: Claude must create and maintain documentation in this structure only.
+
+## 🌐 **Sandra's Network Configuration**
+
+### 📍 Network Infrastructure
+- **Public IP**: `213.47.34.131`
+- **PC Hostname**: `goliath`
+- **Tailscale IP**: `100.118.171.110`
+- **Tailscale Status**: ✅ Active on PC and iOS devices
+
+### 🎯 VeoGen Access Points
+- **✅ PC Local**: `http://127.0.0.1:4710/` (confirmed working)
+- **❌ Tailscale Hostname**: `http://goliath:4710/` (login fails - FIXED in this session)
+- **🔧 Tailscale IP**: `http://100.118.171.110:4710/` (needs testing)
+- **🔧 iOS Devices**: Via Tailscale network (needs testing)
 
 ## 📚 Documentation Structure
 
@@ -509,7 +541,20 @@ Authentication System Status: SUCCESS
 - Playwright MCP installed for browser automation
 - All tests passing, system ready for production use
 
-## 💬 Current Session (July 8, 2025) - MCP IMPLEMENTATION COMPLETE
+## 💬 Current Session (July 10, 2025) - ADVANCED EMAIL SYSTEM COMPLETE
+
+- **✅ ADVANCED EMAIL WORKFLOWS IMPLEMENTED**: Complete professional email system built and ready
+- **✅ 6 Email Types**: Enhanced registration, security challenges, password reset, notifications, digests, alerts
+- **✅ Professional Templates**: Beautiful HTML emails with VeoGen branding and responsive design
+- **✅ Security Features**: Challenge codes, token expiration, IP tracking, forensic logging
+- **✅ FastAPI Integration**: Complete API endpoints ready for frontend integration
+- **✅ Email Tracking**: 1x1 pixel tracking for analytics and engagement metrics
+- **✅ Development Ready**: Uses existing email config (sandraschipal@hotmail.com), saves to dev_emails/
+- **✅ Production Ready**: SMTP integration working, professional workflows implemented
+- **VeoGen Status**: All services healthy, authentication working, email system enhanced
+- **Files Created**: advanced_email_workflows.py, email_workflows.py, test_email_workflows.py
+
+## 💬 Previous Session (July 8, 2025) - MCP IMPLEMENTATION COMPLETE
 
 - **✅ MCP PROJECTS FULLY IMPLEMENTED**: Both ImmichMCP and CalibreMCP are complete, compiled, tested, and working
 - **✅ TypeScript Implementation**: Full MCP servers with proper SDK integration and type safety
@@ -518,10 +563,8 @@ Authentication System Status: SUCCESS
 - **✅ Documentation Updated**: All READMEs, PRDs, and example files updated with implementation details
 - **✅ Configuration Ready**: Claude integration configuration files created
 - **✅ Production Ready**: Both MCP servers ready for deployment and use
-- **VeoGen Status**: All services healthy, authentication working perfectly
-- **Next Decisions**: MCP servers complete - Sandra can choose next development focus
 
-## 👥 User Manager Tool (NEW - July 7, 2025) - ⚠️ PARTIALLY FUNCTIONAL
+## 👥 User Manager Tool (July 7-9, 2025) - ✅ FULLY FUNCTIONAL
 
 ### 🎯 Purpose
 A beautiful, standalone user management tool that connects directly to VeoGen's PostgreSQL database for easy user administration outside the main application.
@@ -530,14 +573,15 @@ A beautiful, standalone user management tool that connects directly to VeoGen's 
 - **🔒 Database Connection**: ✅ Direct connection to VeoGen PostgreSQL (veogen:veogen123@localhost:4715)
 - **🚀 FastAPI Server**: ✅ Running perfectly on port 8083
 - **📊 API Endpoints**: ✅ All REST endpoints functional and tested
-- **📈 Data Retrieval**: ✅ Successfully fetches all 16 users with stats
-- **🔧 Server Infrastructure**: ✅ Robust async PostgreSQL operations
+- **📈 Data Retrieval**: ✅ Successfully fetches all users with stats
+- **🔧 Server Infrastructure**: ✅ Robust async PostgreSQL operations with proper UUID handling
 
-### ❌ Frontend Issues - NEEDS COMPLETE REBUILD
-- **🎭 UI Rendering**: ❌ Page displays as "totally broken"
-- **⚡ JavaScript**: ❌ Button click handlers not working
-- **🎨 CSS Styling**: ❌ Layout and styling not rendering properly
-- **📝 Modal System**: ❌ Add/Edit user dialogs not functional
+### ✅ Frontend - FULLY WORKING
+- **🎭 UI Rendering**: ✅ Beautiful interface displays perfectly
+- **⚡ JavaScript**: ✅ All button click handlers working properly
+- **🎨 CSS Styling**: ✅ Enhanced readable fonts (16px) and modern styling
+- **📝 Modal System**: ✅ Add/Edit user dialogs fully functional
+- **🔧 Create User**: ✅ Fixed UUID generation and proper password hashing
 
 ### 🚀 Quick Start Commands
 ```powershell
@@ -633,3 +677,70 @@ Video generation flows while competitors sleep!
 **Quick Test**: Open http://localhost:4710 and login with `valid@test.com` / `Test123!`
 
 **🚨 IMPORTANT**: After reading this guide, always ask Sandra for specific instructions on what to work on next!
+
+## 📝 Copy-Paste Ready Commands
+## 📝 Copy-Paste Ready Commands
+
+**For complete context:**
+```
+Read this "C:\Users\sandr\AppData\Local\AnthropicClaude\app-0.11.6\veogen\CLAUDE_RESTART_GUIDE.md" and switch to veogen project in basic memory
+```
+
+**For quick access:**
+```
+Switch to veogen project in basic memory and show me VeoGen system info
+```
+
+**For bug hunting session:**
+```
+Switch to veogen project and read VeoGen Bug Hunt Plan - Evening Session
+```
+
+**For CORS/mobile issues:**
+```
+Switch to veogen project and read CORS Configuration Patches for Multi-Origin Access
+```
+
+## 🐛 Development & Bug Hunting Commands
+
+### **Quick System Status Check**
+```
+Search basic memory for system status and health monitoring
+```
+
+### **CORS & Mobile Login Issues**
+```
+Search basic memory for CORS mobile iPhone login troubleshooting
+```
+
+### **Development Tools & Linting**
+```
+Search basic memory for ESLint prettier linting development tools
+```
+
+### **Performance & Monitoring**
+```
+Search basic memory for performance monitoring grafana dashboards
+```
+
+## 🔧 Emergency Troubleshooting Commands
+
+### **Authentication Issues**
+```
+Search basic memory for authentication login JWT token issues
+```
+
+### **Docker Container Problems**
+```
+Search basic memory for docker compose rebuild restart containers
+```
+
+### **API Key & Settings Issues**
+```
+Search basic memory for API key management Google Gemini settings
+```
+
+### **Video Generation Problems**
+```
+Search basic memory for video generation failure FFmpeg movie maker
+```

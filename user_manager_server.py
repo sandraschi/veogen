@@ -14,6 +14,8 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 import uvicorn
 from datetime import datetime
+import uuid
+import hashlib
 
 # Pydantic models - FIXED for UUID support
 class UserCreate(BaseModel):
@@ -137,17 +139,21 @@ async def create_user(user: UserCreate):
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Simple password hashing (in production, use proper hashing)
-        hashed_password = f"hashed_{user.password}"
+        # Generate UUID for new user
+        user_id = str(uuid.uuid4())
+        
+        # Proper password hashing with salt
+        salt = str(uuid.uuid4())
+        hashed_password = hashlib.sha256((user.password + salt).encode()).hexdigest() + ":" + salt
         
         query = """
-        INSERT INTO users (email, username, hashed_password, full_name, is_active, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO users (id, email, username, hashed_password, full_name, is_active, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         RETURNING id::text, email, username, full_name, is_active, created_at
         """
         
         cursor.execute(query, (
-            user.email, user.username, hashed_password, 
+            user_id, user.email, user.username, hashed_password, 
             user.full_name, user.is_active, datetime.now()
         ))
         
@@ -167,10 +173,23 @@ async def create_user(user: UserCreate):
             api_usage=0
         )
         
-        print(f"✅ Created user: {new_user.username}")
+        print(f"✅ Created user: {new_user.username} (ID: {new_user.id})")
         return new_user
         
+    except psycopg2.IntegrityError as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        if "email" in str(e):
+            raise HTTPException(status_code=400, detail="Email already exists")
+        elif "username" in str(e):
+            raise HTTPException(status_code=400, detail="Username already exists")
+        else:
+            raise HTTPException(status_code=400, detail="User creation failed: duplicate data")
     except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
         print(f"❌ Error creating user: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 

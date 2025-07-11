@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "basic-memory": {
+      "command": "uvx",
+      "args": ["basic-memory"],
+      "env": {
+        "BASIC_MEMORY_PROJECT": "veogen"
+      }
+    },
+    "docker-mcp": {
+      "command": "uvx",
+      "args": ["docker-mcp"]
+    },
+    "microsoft-365": {
+      "command": "uvx",
+      "args": ["mcp-server-microsoft365"]
+    },
+    "veogen-voice-control": {
+      "command": "uvx",
+      "args": ["veogen-voice-control"]
+    },
+    "desktop-commander": {
+      "command": "uvx", 
+      "args": ["desktop-commander"]
+    }
+  }
+}

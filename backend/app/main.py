@@ -10,10 +10,13 @@ from app.config import settings
 from app.routers import video, movie
 from app.api.api_v1.endpoints import music, image, book, code, translation, auth
 from app.api.api_v1.endpoints import settings as settings_endpoints
+from app.api.api_v1.endpoints import profile
+from app.api.api_v1.endpoints import api_keys
 from app.api.api_v1.endpoints import system
 from app.api.api_v1.endpoints import chat
 from app.api.api_v1.endpoints import enhanced_auth
 from app.api.api_v1.endpoints import logs
+from app.api.api_v1.endpoints import email_workflows
 from app.middleware.metrics import PrometheusMetricsMiddleware, metrics_endpoint
 import uvicorn
 
@@ -143,6 +146,20 @@ app.include_router(
     tags=["authentication"]
 )
 
+# Profile endpoints
+app.include_router(
+    profile.router,
+    prefix=f"{settings.API_V1_STR}/auth",
+    tags=["profile"]
+)
+
+# API Keys endpoints
+app.include_router(
+    api_keys.router,
+    prefix=f"{settings.API_V1_STR}/auth",
+    tags=["api-keys"]
+)
+
 # Settings endpoints
 app.include_router(
     settings_endpoints.router,
@@ -176,6 +193,12 @@ app.include_router(
     logs.router,
     prefix=f"{settings.API_V1_STR}/logs",
     tags=["logs"]
+)
+
+# Email workflows endpoints
+app.include_router(
+    email_workflows.email_router,
+    tags=["email-workflows"]
 )
 
 # Mount static files for documentation AFTER all API routes

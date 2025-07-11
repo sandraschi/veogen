@@ -17,6 +17,7 @@
 - **✅ Settings Integration**: Easy access to API configuration
 - **✅ Production Monitoring**: 4 comprehensive dashboards
 - **✅ Security Hardening**: Encrypted API key storage
+- **✅ User Manager Tool**: Standalone user management interface with enhanced readability
 
 ## 🚀 Quick Start
 
@@ -40,6 +41,7 @@ setup.bat        # Windows
 ### Access Your Application
 - **Main App**: http://localhost:4710
 - **API Docs**: http://localhost:4700/docs
+- **User Manager**: http://localhost:8083
 - **Grafana**: http://localhost:4725 (admin/veogen123)
 - **Prometheus**: http://localhost:4740
 - **Alertmanager**: http://localhost:4745
@@ -64,6 +66,14 @@ setup.bat        # Windows
 - **API Key Management**: Secure storage and management of API keys
 - **User Settings**: Customizable preferences and defaults
 - **Usage Tracking**: Monitor video generation usage and limits
+
+### 👥 User Manager Tool
+- **Standalone Interface**: Independent user management dashboard
+- **Complete CRUD**: Create, read, update, delete user operations
+- **Real-time Stats**: User counts, video statistics, API usage
+- **Search & Filter**: Advanced user search and filtering capabilities
+- **Export Functions**: CSV export for user data analysis
+- **Status Management**: Active/inactive user status control
 
 ## 📊 Monitoring Stack Overview
 
@@ -271,6 +281,18 @@ docker-compose up -d frontend
 
 # Check frontend logs
 docker-compose logs frontend
+```
+
+**User Manager Issues**
+```bash
+# Check if User Manager is running
+curl http://localhost:8083/health
+
+# Start the User Manager Tool
+python user_manager_server.py
+
+# Check User Manager logs
+python user_manager_server.py | grep -E "(ERROR|WARNING)"
 ```
 
 **Monitoring Issues**

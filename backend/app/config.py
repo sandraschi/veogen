@@ -67,6 +67,16 @@ class Settings(BaseSettings):
         "http://127.0.0.1:4710",  # Frontend port
         "http://localhost:5173",  # Vite dev server
         "http://127.0.0.1:5173",
+        # Tailscale network access
+        "http://goliath:4710",  # Tailscale hostname frontend
+        "http://100.118.171.110:4710",  # Tailscale IP frontend
+        "http://goliath:4700",  # Tailscale hostname backend API
+        "http://100.118.171.110:4700",  # Tailscale IP backend API
+        # Public IP access (for when port forwarding is enabled)
+        "http://213.47.34.131:4710",  # Public IP frontend
+        "http://213.47.34.131:4700",  # Public IP backend API
+        "https://213.47.34.131:4710",  # Public IP frontend (HTTPS)
+        "https://213.47.34.131:4700",  # Public IP backend API (HTTPS)
     ]
     
     # Rate Limiting

@@ -1,10 +1,36 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Use relative URL if in production, absolute URL if in development
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '' // Use relative URLs in production (proxy handles it)
-  : (process.env.REACT_APP_API_URL || 'http://localhost:4700');
+// Dynamic API base URL detection for different access methods
+const getApiBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return ''; // Use relative URLs in production (proxy handles it)
+  }
+  
+  // Check if accessing via different hostnames/IPs
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  
+  // Tailscale hostname access
+  if (hostname === 'goliath') {
+    return `${protocol}//goliath:4700`;
+  }
+  
+  // Tailscale IP access
+  if (hostname === '100.118.171.110') {
+    return `${protocol}//100.118.171.110:4700`;
+  }
+  
+  // Public IP access
+  if (hostname === '213.47.34.131') {
+    return `${protocol}//213.47.34.131:4700`;
+  }
+  
+  // Default to localhost for local development
+  return process.env.REACT_APP_API_URL || 'http://localhost:4700';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const AuthContext = createContext();
 
