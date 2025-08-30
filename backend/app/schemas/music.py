@@ -94,7 +94,33 @@ class MusicRemixCreate(BaseModel):
     new_style: MusicStyle
     new_mood: Optional[MusicMood] = None
     
-class MusicRemixResponse(BaseModel):
-    job_id: UUID
-    status: str
-    message: str
+class MusicGenerationRequest(BaseModel):
+    prompt: str = Field(..., min_length=5, max_length=500, description="Music description")
+    style: MusicStyle = Field(default=MusicStyle.POP, description="Music style")
+    mood: MusicMood = Field(default=MusicMood.HAPPY, description="Music mood")
+    duration: int = Field(default=30, ge=10, le=300, description="Duration in seconds")
+    tempo: Optional[int] = Field(default=120, ge=60, le=200, description="Tempo in BPM")
+    musical_key: Optional[str] = Field(default="C major", description="Musical key")
+    vocal_style: VocalStyle = Field(default=VocalStyle.NONE, description="Vocal style")
+    
+    class Config:
+        json_encoders = {
+            MusicStyle: lambda v: v.value,
+            MusicMood: lambda v: v.value,
+            VocalStyle: lambda v: v.value,
+        }
+
+class PlaylistRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, description="Playlist name")
+    description: Optional[str] = Field(default="", max_length=500, description="Playlist description")
+    music_ids: List[UUID] = Field(default=[], description="List of music IDs")
+    is_public: bool = Field(default=False, description="Is playlist public")
+
+class PlaylistResponse(BaseModel):
+    id: UUID
+    name: str
+    description: Optional[str] = None
+    music_count: int
+    is_public: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None

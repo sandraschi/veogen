@@ -96,61 +96,69 @@ class LyriaService:
         """Get API key from user settings first, then environment variables"""
         try:
             if db_session and user_id:
-                # Try to get from user settings first
-                user_key = get_user_setting(db_session, user_id, key_name)
-                if user_key:
-                    return user_key
+                from app.crud.user_settings import get_user_setting
+                key = get_user_setting(db_session, user_id, key_name)
+                if key:
+                    return key
         except Exception as e:
             logger.warning(f"Could not get API key from user settings: {e}")
         
-        # Fall back to environment variables
-        if key_name == "gemini_api_key":
-            return settings.GEMINI_API_KEY
-        elif key_name == "google_api_key":
-            return settings.GOOGLE_API_KEY
-        elif key_name == "google_cloud_project":
-            return settings.GOOGLE_CLOUD_PROJECT
+        # Fall back to environment variables with safe attribute access
+        try:
+            if key_name == "gemini_api_key":
+                return getattr(settings, 'GEMINI_API_KEY', None)
+            elif key_name == "google_api_key":
+                return getattr(settings, 'GOOGLE_API_KEY', None)
+            elif key_name == "google_cloud_project":
+                return getattr(settings, 'GOOGLE_CLOUD_PROJECT', None)
+        except Exception as e:
+            logger.warning(f"Error getting {key_name} from settings: {e}")
         
         return None
     
     async def initialize(self, db_session=None, user_id=None):
-        """Initialize Lyria service with Google Cloud AI Platform"""
+        """Initialize Lyria service with graceful fallbacks for missing APIs"""
+        self.initialized = False
+        
         try:
             # Get API keys from user settings or environment
             gemini_key = self._get_api_key_from_user_settings(db_session, user_id, "gemini_api_key")
             google_key = self._get_api_key_from_user_settings(db_session, user_id, "google_api_key")
             project_id = self._get_api_key_from_user_settings(db_session, user_id, "google_cloud_project") or self.project_id
             
-            # Initialize Google Cloud AI Platform
-            if settings.GOOGLE_APPLICATION_CREDENTIALS:
-                aiplatform.init(
-                    project=project_id,
-                    location=self.location,
-                    credentials=settings.GOOGLE_APPLICATION_CREDENTIALS
-                )
-            else:
-                aiplatform.init(
-                    project=project_id,
-                    location=self.location
-                )
+            # Try to initialize Google Cloud AI Platform if credentials are available
+            google_cloud_initialized = False
+            if hasattr(settings, 'GOOGLE_APPLICATION_CREDENTIALS') and settings.GOOGLE_APPLICATION_CREDENTIALS:
+                try:
+                    from google.cloud import aiplatform
+                    aiplatform.init(
+                        project=project_id,
+                        location=self.location,
+                        google_api_key=google_key or None
+                    )
+                    google_cloud_initialized = True
+                    logger.info("Initialized Google Cloud AI Platform")
+                except Exception as e:
+                    logger.warning(f"Could not initialize Google Cloud AI Platform: {e}")
             
-            # Configure Gemini API for fallback and lyrics generation
+            # Configure Gemini API if key is available
             if gemini_key:
-                genai.configure(api_key=gemini_key)
+                try:
+                    genai.configure(api_key=gemini_key)
+                    logger.info("Initialized Gemini API for fallback")
+                except Exception as e:
+                    logger.warning(f"Could not initialize Gemini API: {e}")
             
-            self.initialized = True
-            logger.info("Lyria service initialized successfully with Google Cloud AI Platform")
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize Lyria service: {e}")
-            # Fallback to Gemini if Google Cloud fails
-            gemini_key = self._get_api_key_from_user_settings(db_session, user_id, "gemini_api_key")
-            if gemini_key:
-                genai.configure(api_key=gemini_key)
+            # If we have at least one service, mark as initialized
+            if google_cloud_initialized or gemini_key:
                 self.initialized = True
-                logger.info("Falling back to Gemini API for music generation")
+                logger.info("Lyria service initialized successfully")
             else:
-                raise
+                logger.warning("Lyria service initialized in limited mode - no valid API keys found")
+                
+        except Exception as e:
+            logger.error(f"Error initializing Lyria service: {e}")
+            self.initialized = False
     
     async def generate_music(self, request: MusicGenerationRequest, db_session=None, user_id=None) -> MusicGenerationResult:
         """

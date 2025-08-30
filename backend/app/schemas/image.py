@@ -74,7 +74,27 @@ class ImageVariationCreate(BaseModel):
     original_image_id: UUID
     variation_count: int = Field(default=4, ge=1, le=8)
     
-class ImageVariationResponse(BaseModel):
-    job_ids: List[UUID]
+class ImageGenerationRequest(BaseModel):
+    prompt: str = Field(..., min_length=5, max_length=500, description="Image description")
+    style: ImageStyle = Field(default=ImageStyle.PHOTOREALISTIC, description="Image style")
+    aspect_ratio: AspectRatio = Field(default=AspectRatio.SQUARE, description="Image dimensions")
+    quality: ImageQuality = Field(default=ImageQuality.STANDARD, description="Image quality")
+    
+    class Config:
+        json_encoders = {
+            ImageStyle: lambda v: v.value,
+            ImageQuality: lambda v: v.value,
+            AspectRatio: lambda v: v.value,
+        }
+
+class ImageProcessingRequest(BaseModel):
+    image_url: str = Field(..., description="URL of image to process")
+    operation: str = Field(..., description="Processing operation")
+    parameters: Optional[dict] = Field(default={}, description="Operation parameters")
+
+class ImageProcessingResponse(BaseModel):
+    job_id: UUID
     status: str
     message: str
+    result_url: Optional[str] = None
+    estimated_completion_time: Optional[datetime] = None

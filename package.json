@@ -9,10 +9,18 @@
     "test-debug": "node test_auth_onboarding.js --debug"
   },
   "dependencies": {
-    "playwright": "^1.40.0"
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "playwright": "^1.55.0"
   },
-  "devDependencies": {},
-  "keywords": ["testing", "playwright", "authentication", "veogen"],
+  "keywords": [
+    "testing",
+    "playwright",
+    "authentication",
+    "veogen"
+  ],
   "author": "VeoGen Team",
   "license": "MIT"
 }

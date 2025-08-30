@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "node",
+      "args": [
+        "-e",
+        "require('@mcp/filesystem').startServer()"
+      ],
+      "description": "File system operations"
+    },
+    "shell": {
+      "command": "node",
+      "args": [
+        "-e",
+        "require('@mcp/shell').startServer()"
+      ],
+      "description": "Shell command execution"
+    },
+    "database": {
+      "command": "node",
+      "args": [
+        "-e",
+        "require('@mcp/database').startServer()"
+      ],
+      "description": "Database operations"
+    },
+    "http": {
+      "command": "node",
+      "args": [
+        "-e",
+        "require('@mcp/http').startServer()"
+      ],
+      "description": "HTTP requests"
+    },
+    "ai": {
+      "command": "node",
+      "args": [
+        "-e",
+        "require('@mcp/ai').startServer()"
+      ],
+      "description": "AI model interactions"
+    }
+  }
+}

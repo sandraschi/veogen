@@ -160,9 +160,9 @@ services:
   loki:
     image: grafana/loki:2.9.7
     container_name: loki
-    command: -config.file=/etc/loki/local-config.yaml -target=read
+    command: -config.file=/etc/loki/local-config.yaml
     ports:
-      - "3100:3100"
+      - "4730:3100"
     volumes:
       - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
       - ./monitoring/loki-data:/tmp/loki

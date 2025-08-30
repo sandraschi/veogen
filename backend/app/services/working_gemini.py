@@ -17,27 +17,34 @@ class WorkingGeminiService:
     
     def _initialize(self):
         try:
-            if settings.GEMINI_API_KEY:
-                genai.configure(api_key=settings.GEMINI_API_KEY)
-                
-                # Try working models in order
-                models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
-                
-                for model_name in models:
-                    try:
-                        self.model = genai.GenerativeModel(model_name)
-                        logger.info(f"Initialized with {model_name}")
-                        self.initialized = True
-                        break
-                    except Exception as e:
-                        logger.warning(f"{model_name} failed: {e}")
-                        continue
-                        
-            else:
-                logger.warning("No GEMINI_API_KEY found")
-                
+            if getattr(settings, 'GEMINI_API_KEY', None):
+                try:
+                    genai.configure(api_key=settings.GEMINI_API_KEY)
+                    
+                    # Try working models in order
+                    models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+                    for model_name in models:
+                        try:
+                            self.model = genai.GenerativeModel(model_name)
+                            # Test with a simple prompt
+                            self.model.generate_content("Test connection")
+                            logger.info(f"Successfully initialized with model: {model_name}")
+                            self.initialized = True
+                            return
+                        except Exception as e:
+                            logger.warning(f"Failed to initialize with {model_name}: {e}")
+                            continue
+                except Exception as e:
+                    logger.warning(f"Failed to configure Gemini: {e}")
+            
+            # If we get here, initialization failed
+            logger.warning("Gemini API is not properly configured. Some features may be limited.")
+            
         except Exception as e:
             logger.error(f"Failed to initialize Gemini: {e}")
+            
+        # Set a flag to indicate Gemini is not available
+        self.initialized = False
     
     async def generate_text(self, prompt, temperature=0.7, **kwargs):
         """Generate text with working API"""

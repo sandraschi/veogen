@@ -1,0 +1,68 @@
+{
+  "version": "2.11.3",
+  "servers": {
+    "office365-mcp": {
+      "name": "Office 365 MCP",
+      "description": "MCP server for Office 365 integration",
+      "command": "node",
+      "args": [
+        "path/to/office365-mcp/dist/index.js"
+      ],
+      "env": {
+        "OFFICE365_CLIENT_ID": "your-client-id",
+        "OFFICE365_TENANT_ID": "your-tenant-id",
+        "OFFICE365_CLIENT_SECRET": "your-client-secret",
+        "REDIRECT_URI": "http://localhost:8000/auth/callback"
+      },
+      "autoStart": true
+    },
+    "local-llm-mcp": {
+      "name": "Local LLM MCP",
+      "description": "MCP server for local LLM integration (Ollama/LM Studio)",
+      "command": "node",
+      "args": [
+        "path/to/local-llm-mcp/dist/index.js"
+      ],
+      "env": {
+        "OLLAMA_BASE_URL": "http://localhost:11434",
+        "LM_STUDIO_BASE_URL": "http://localhost:1234",
+        "DEFAULT_MODEL": "llama3"
+      },
+      "autoStart": true
+    },
+    "filesystem-mcp": {
+      "name": "Filesystem MCP",
+      "description": "Standard MCP server for filesystem operations",
+      "command": "node",
+      "args": [
+        "path/to/filesystem-mcp/dist/index.js"
+      ],
+      "autoStart": true
+    }
+  },
+  "toolDiscovery": {
+    "enabled": true,
+    "interval": 300,
+    "autoRegister": true
+  },
+  "logging": {
+    "level": "info",
+    "file": "logs/mcp-client.log",
+    "maxSize": "10MB",
+    "maxFiles": 5
+  },
+  "security": {
+    "allowedOrigins": [
+      "http://localhost:3000",
+      "http://localhost:8000"
+    ],
+    "requireAuth": true,
+    "authToken": "your-secure-token"
+  },
+  "features": {
+    "hotReload": true,
+    "autoReconnect": true,
+    "maxReconnectAttempts": 5,
+    "reconnectDelay": 5000
+  }
+}

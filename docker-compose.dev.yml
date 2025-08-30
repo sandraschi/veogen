@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"  # Standard Create React App port
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - REACT_APP_API_URL=http://localhost:4700
+      - REACT_APP_VERSION=1.0.0
+      - REACT_APP_GRAFANA_URL=http://localhost:4715
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - /app/node_modules  # Keep node_modules in container
+    networks:
+      - veogen-network
+    stdin_open: true  # Keep container running
+    tty: true         # Allocate pseudo-TTY
+    # Use this if you need to debug container issues
+    # command: ["sh", "-c", "tail -f /dev/null"]
+
+networks:
+  veogen-network:
+    driver: bridge

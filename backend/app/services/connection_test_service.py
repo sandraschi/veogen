@@ -33,26 +33,47 @@ class ConnectionTestService:
                 "timestamp": asyncio.get_event_loop().time()
             }
             
-            # Test 1: API Key authentication
+            # Test 1: API Key validation
             if api_key:
                 try:
+                    # Basic validation for Google API key format
+                    if not api_key.startswith('AIza') or len(api_key) < 30:
+                        raise ValueError("Invalid Google API key format. It should start with 'AIza' and be at least 30 characters long.")
+                    
+                    # Test the API key with a simple request
                     genai.configure(api_key=api_key)
                     
-                    # Test with a simple model list request
-                    models = genai.list_models()
-                    model_count = len(list(models))
-                    
-                    result["details"]["api_key_auth"] = {
-                        "status": "success",
-                        "models_available": model_count,
-                        "message": f"API key authentication successful, {model_count} models available"
-                    }
-                    
+                    try:
+                        # Test with a simple model list request
+                        models = list(genai.list_models())
+                        model_count = len(models)
+                        
+                        if model_count == 0:
+                            raise ValueError("No models available with this API key. The key may not have the required permissions.")
+                            
+                        result["details"]["api_key_auth"] = {
+                            "status": "success",
+                            "models_available": model_count,
+                            "message": f"Google API key is valid. {model_count} models available"
+                        }
+                        
+                    except Exception as api_error:
+                        error_msg = str(api_error).lower()
+                        if 'quota' in error_msg:
+                            raise ValueError("API key has exceeded quota or is not enabled for the required APIs. Please check your Google Cloud Console.")
+                        elif 'permission' in error_msg or 'disabled' in error_msg:
+                            raise ValueError("API key is not authorized or the required API is not enabled. Please enable the Generative Language API in Google Cloud Console.")
+                        elif 'invalid' in error_msg or 'malformed' in error_msg:
+                            raise ValueError("Invalid Google API key. Please check the key and try again.")
+                        else:
+                            raise
+                            
                 except Exception as e:
                     result["details"]["api_key_auth"] = {
                         "status": "failed",
                         "error": str(e),
-                        "message": "API key authentication failed"
+                        "message": f"Google API key validation failed: {str(e)}",
+                        "help": "Please ensure your API key is correct and has the necessary permissions enabled in Google Cloud Console."
                     }
             
             # Test 2: Service Account authentication
@@ -140,24 +161,54 @@ class ConnectionTestService:
             # Configure Gemini
             genai.configure(api_key=api_key)
             
-            # Test 1: List available models
+            # Test 1: List available models with detailed error handling
             try:
+                # Basic validation for Gemini API key format
+                if not api_key or len(api_key) < 30:
+                    raise ValueError("Invalid Gemini API key format. It should be at least 30 characters long.")
+                
+                # Configure with the provided API key
+                genai.configure(api_key=api_key)
+                
+                # Test the API key by listing models
                 models = list(genai.list_models())
+                
+                if not models:
+                    raise ValueError("No models available. The API key may be invalid or have no access to models.")
+                
                 gemini_models = [m for m in models if 'gemini' in m.name.lower()]
+                
+                if not gemini_models:
+                    raise ValueError("No Gemini models found. The API key may not have access to Gemini models.")
                 
                 result["details"]["models"] = {
                     "status": "success",
                     "total_models": len(models),
                     "gemini_models": len(gemini_models),
                     "model_names": [m.name for m in gemini_models[:5]],  # First 5
-                    "message": f"Found {len(gemini_models)} Gemini models"
+                    "message": f"Successfully connected to Gemini API. Found {len(gemini_models)} Gemini models"
                 }
                 
             except Exception as e:
+                error_msg = str(e).lower()
+                detailed_msg = "Failed to list models"
+                help_text = "Please check your API key and ensure it has the correct permissions."
+                
+                if 'api key' in error_msg or 'invalid' in error_msg:
+                    detailed_msg = "Invalid or unauthorized API key"
+                    help_text = "Please verify your Gemini API key is correct and has the necessary permissions."
+                elif 'quota' in error_msg:
+                    detailed_msg = "API quota exceeded"
+                    help_text = "You've exceeded your API quota. Please check your Google Cloud Console for quota limits."
+                elif 'permission' in error_msg:
+                    detailed_msg = "Insufficient permissions"
+                    help_text = "The API key doesn't have permission to access Gemini models. Please check your Google Cloud IAM settings."
+                
                 result["details"]["models"] = {
                     "status": "failed",
                     "error": str(e),
-                    "message": "Failed to list models"
+                    "message": f"Gemini API connection failed: {detailed_msg}",
+                    "help": help_text
                 }
             
             # Test 2: Simple text generation

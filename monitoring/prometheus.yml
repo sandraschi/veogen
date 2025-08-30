@@ -12,7 +12,7 @@ scrape_configs:
 
   - job_name: 'veogen-backend'
     static_configs:
-      - targets: ['backend:8001']
+      - targets: ['backend:8000']  # FIXED: Changed from 8001 to 8000
     metrics_path: '/metrics'
     scrape_interval: 30s
     scrape_timeout: 10s
@@ -24,14 +24,24 @@ scrape_configs:
     scrape_interval: 30s
     scrape_timeout: 10s
 
-  - job_name: 'postgres'
+  # Node exporter (if available)
+  - job_name: 'node'
     static_configs:
-      - targets: ['postgres:5432']
+      - targets: ['node-exporter:9100']
     scrape_interval: 30s
+    scrape_timeout: 10s
 
-  - job_name: 'redis'
+  # cAdvisor for container metrics
+  - job_name: 'cadvisor'
     static_configs:
-      - targets: ['redis:6379']
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Alertmanager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
     scrape_interval: 30s
 
   - job_name: 'grafana'
@@ -55,23 +65,3 @@ scrape_configs:
       - targets: ['host.docker.internal:9323']
     scrape_interval: 30s
     scrape_timeout: 10s
-
-  # Node exporter (if available)
-  - job_name: 'node'
-    static_configs:
-      - targets: ['node-exporter:9100']
-    scrape_interval: 30s
-    scrape_timeout: 10s
-
-  # cAdvisor for container metrics
-  - job_name: 'cadvisor'
-    static_configs:
-      - targets: ['cadvisor:8080']
-    scrape_interval: 30s
-    scrape_timeout: 10s
-
-  # Alertmanager
-  - job_name: 'alertmanager'
-    static_configs:
-      - targets: ['alertmanager:9093']
-    scrape_interval: 30s

@@ -1,7 +1,7 @@
 ---
 title: Bug Hunt Plan - Evening Session
 type: note
-permalink: docs-development-bug-hunt-plan-evening-session
+permalink: docs-development-bug-hunt-plan-evening-session-1
 ---
 
 # VeoGen Bug Hunt Plan - Evening Session

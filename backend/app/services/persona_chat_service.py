@@ -291,12 +291,27 @@ class PersonaChatService:
                 import google.generativeai as genai
                 import os
                 
-                # Force configure with working API key
-                api_key = os.getenv('GEMINI_API_KEY', 'AIzaSyCokmGkNRF67OgFFX4iki5gPE_BkazivfM')
-                genai.configure(api_key=api_key)
+                # Configure with API key if available
+                api_key = os.getenv('GEMINI_API_KEY')
+                if not api_key:
+                    logger.warning("GEMINI_API_KEY not set. Some features may be limited.")
+                    return {
+                        'conversation_id': conversation_id,
+                        'response': "Gemini API is not configured. Please set GEMINI_API_KEY environment variable to enable this feature.",
+                        'status': 'error',
+                        'error': 'Gemini API not configured'
+                    }
                 
-                # Use working model
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                try:
+                    genai.configure(api_key=api_key)
+                    model = genai.GenerativeModel('gemini-1.5-flash')
+                except Exception as e:
+                    logger.error(f"Failed to initialize Gemini: {str(e)}")
+                    return {
+                        'conversation_id': conversation_id,
+                        'response': f"Failed to initialize Gemini: {str(e)}",
+                        'status': 'error'
+                    }
                 
                 # Generate response
                 import asyncio

@@ -48,6 +48,31 @@ setup.bat        # Windows
 
 ## 🎯 Key Features
 
+### 🤖 MCP Client Integration
+VeoGen includes a powerful MCP (Model Control Protocol) client that automatically connects to all MCP servers configured in Claude Desktop. This enables seamless integration with a wide range of tools and services.
+
+**Features**:
+- Auto-discovers and connects to MCP servers
+- Unified interface for all MCP tools
+- Asynchronous operations with asyncio
+- Comprehensive error handling and logging
+- Automatic tool discovery and caching
+
+**Usage Example**:
+```python
+from app.services.mcp import mcp_client
+
+# Call any MCP tool
+result = await mcp_client.call_tool(
+    server_name="microsoft-365",
+    tool_name="send_email",
+    params={"to": "user@example.com", "subject": "Test", "body": "Hello!"}
+)
+```
+
+**Documentation**: See [MCP Integration](./docs/architecture/mcp-integration.md) for details.
+
+
 ### 🎬 Video Generation
 - **Text-to-Video**: Generate 1-60 second videos from text prompts
 - **Multiple Styles**: Cinematic, realistic, animated, artistic

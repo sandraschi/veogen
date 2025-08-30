@@ -415,29 +415,37 @@ const EnhancedAuth = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/enhanced-auth/complete-onboarding`,
-        {
-          api_keys: apiKeys,
-          preferences: {
-            theme: 'dark',
-            notifications: true
-          },
-          skip_tutorial: false
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
+      if (token) {
+        try {
+          await axios.post(
+            `${API_BASE_URL}/api/v1/enhanced-auth/complete-onboarding`,
+            {
+              api_keys: apiKeys,
+              preferences: {
+                theme: 'dark',
+                notifications: true
+              },
+              skip_tutorial: true
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              timeout: 5000 // 5 second timeout
+            }
+          );
+          setSuccess('Onboarding completed! Welcome to VeoGen!');
+        } catch (apiError) {
+          console.warn('Could not update onboarding status, but continuing to dashboard', apiError);
+          // Continue to dashboard even if API call fails
         }
-      );
-
-      setSuccess('Onboarding completed! Welcome to VeoGen!');
+      }
       
-      // Navigate to main app immediately using React Router
+      // Always navigate to main app
       navigate('/');
 
     } catch (error) {
       console.error('Onboarding error:', error);
-      setError('Failed to complete onboarding. Please try again.');
+      // Still navigate to dashboard even on error
+      navigate('/');
     } finally {
       setLoading(false);
     }

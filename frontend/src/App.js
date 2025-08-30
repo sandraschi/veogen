@@ -31,12 +31,13 @@ import GalleryPage from './pages/GalleryPage';
 import JobsPage from './pages/JobsPage';
 import SettingsPage from './pages/SettingsPage';
 import HelpPage from './pages/HelpPage';
+import MCPDashboard from './components/mcp/MCPDashboard';
 import VoiceControlSideTab from './components/VoiceControlSideTab';
 
 // Auth Components
-import EnhancedAuth from './components/auth/EnhancedAuth';
-import EmailVerification from './components/auth/EmailVerification';
-import PasswordReset from './components/auth/PasswordReset';
+import EnhancedAuth from './components/auth/EnhancedAuth.jsx';
+import EmailVerification from './components/auth/EmailVerification.jsx';
+import PasswordReset from './components/auth/PasswordReset.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -253,6 +254,13 @@ function App() {
                     <ProtectedRoute>
                       <Layout>
                         <HelpPage />
+                      </Layout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mcp" element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <MCPDashboard />
                       </Layout>
                     </ProtectedRoute>
                   } />
