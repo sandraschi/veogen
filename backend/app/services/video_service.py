@@ -3,12 +3,8 @@ Video Generation Service for VeoGen
 Uses Google's Gemini CLI with MCP servers for video generation
 """
 
-import asyncio
 import logging
-import tempfile
-import os
 from typing import Dict, Any, Optional
-from pathlib import Path
 
 from .mcp_media_service import mcp_media_service
 

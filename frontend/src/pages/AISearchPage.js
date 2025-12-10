@@ -60,7 +60,7 @@ const AISearchPage = () => {
           id: 2,
           title: 'AI Image Generation Best Practices',
           url: 'https://example.com/ai-image-best-practices',
-          snippet: 'Learn the most effective techniques for generating high-quality images using AI models like Imagen and DALL-E.',
+          snippet: 'Learn the most effective techniques for generating high-quality images using AI models like Nano Banana Pro and DALL-E.',
           source: 'AI Research Blog',
           type: 'article',
           relevanceScore: 0.88,

@@ -1,136 +1,122 @@
 """
-Video Generation API Router
-Handles video generation requests using Google's Veo model via MCP
+Video Generation API Router using Gemini CLI Veo integration.
 """
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks, Depends
-from fastapi.responses import JSONResponse, StreamingResponse
-from typing import Optional, List, Dict, Any
+import base64
+import io
 import logging
 import uuid
-import base64
-from PIL import Image
-import io
-import json
 from datetime import datetime
+from typing import Dict
 
-from ..services.video_service import video_service
-from ..models.video_request import (
-    VideoGenerationRequest,
-    VideoGenerationResponse,
-    VideoGenerationStatus,
-    VideoJobInfo
-)
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+
 from app.api.deps import get_current_user
-from ..database import User
+from app.api.api_v1.endpoints import video as video_endpoints
+from app.database import User
+from app.models.video_request import (
+    VideoGenerationRequest,
+    VideoGenerationStatus,
+)
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/video", tags=["video"])
+router = APIRouter(tags=["video"])
 
-# In-memory job tracker (in production, use Redis or database)
-job_tracker = {}
+# In-memory job tracker (lightweight persistence for recent generations)
+job_tracker: Dict[str, Dict] = {}
 
-async def generate_video_background(job_id: str, request: VideoGenerationRequest, user_id: int):
-    """Background task for video generation with progress tracking"""
-    try:
-        # Update initial progress
-        job_tracker[job_id]["progress"] = 5
-        job_tracker[job_id]["status"] = "processing"
-        
-        # Progress callback function
-        def progress_callback(progress: int, status: str = None, message: str = None):
-            job_tracker[job_id]["progress"] = progress
-            if status:
-                job_tracker[job_id]["status"] = status
-            if message:
-                job_tracker[job_id]["message"] = message
-            logger.info(f"Job {job_id} progress: {progress}% - {message}")
-        
-        # Generate video using enhanced service
-        result = await video_service.generate_video(
-            prompt=request.prompt,
-            duration=request.duration,
-            aspect_ratio=request.aspect_ratio,
-            style=request.style,
-            seed=request.seed,
-            temperature=request.temperature,
-            user_id=user_id,
-            progress_callback=progress_callback
-        )
-        
-        if result["status"] == "success":
-            # Update job tracker with success
-            job_tracker[job_id].update({
-                "status": "completed",
-                "progress": 100,
-                "result": result,
-                "completed_at": result.get("completed_at")
-            })
-            logger.info(f"Video generation completed for job {job_id}")
-        else:
-            # Update job tracker with error
-            job_tracker[job_id].update({
-                "status": "failed",
-                "error": result.get("error", "Unknown error"),
-                "failed_at": result.get("failed_at")
-            })
-            logger.error(f"Video generation failed for job {job_id}: {result.get('error')}")
-        
-    except Exception as e:
-        logger.error(f"Background video generation failed for job {job_id}: {str(e)}")
-        job_tracker[job_id].update({
-            "status": "failed",
-            "error": str(e),
-            "failed_at": result.get("failed_at") if 'result' in locals() else None
-        })
-
-@router.post("/generate", response_model=VideoGenerationResponse)
+@router.post("/generate", response_model=video_endpoints.VideoGenerateResponse)
 async def generate_video(
     request: VideoGenerationRequest,
-    background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
-    Generate a video using Google's Veo model via MCP
+    Generate a video using Gemini CLI Veo integration.
     """
+    job_id = str(uuid.uuid4())
+
+    prompt_parts = [request.prompt]
+    if request.style:
+        prompt_parts.append(f"Style: {request.style}")
+    if request.aspect_ratio:
+        prompt_parts.append(f"Aspect ratio: {request.aspect_ratio}")
+    if request.temperature is not None:
+        prompt_parts.append(f"Creativity level: {request.temperature:.2f}")
+    if request.negative_prompt:
+        prompt_parts.append(f"Avoid: {request.negative_prompt}")
+    if request.camera_movement:
+        prompt_parts.append(f"Camera movement: {request.camera_movement}")
+    if request.motion_intensity:
+        prompt_parts.append(f"Motion intensity: {request.motion_intensity}")
+
+    enriched_prompt = ". ".join(prompt_parts)
+
     try:
-        # Create job ID
-        job_id = str(uuid.uuid4())
-        
-        # Initialize job tracker
-        job_tracker[job_id] = {
-            "job_id": job_id,
-            "user_id": current_user.id,
-            "status": "queued",
-            "progress": 0,
-            "request": request.dict(),
-            "created_at": datetime.utcnow().isoformat(),
-            "message": "Job queued for processing"
-        }
-        
-        # Add background task
-        background_tasks.add_task(
-            generate_video_background,
-            job_id,
-            request,
-            current_user.id
+        result = await video_endpoints.gemini_service.generate_video(
+            prompt=enriched_prompt,
+            duration=request.duration or 10,
+            aspect_ratio=request.aspect_ratio or "16:9",
+            style=request.style,
+            seed=request.seed,
+            temperature=request.temperature or 0.7,
+            db_session=None,
+            user_id=str(current_user.id),
         )
-        
-        logger.info(f"Video generation job {job_id} queued for user {current_user.id}")
-        
-        return VideoGenerationResponse(
-            status="queued",
-            job_id=job_id,
-            message="Video generation job queued successfully"
-        )
-        
-    except Exception as e:
-        logger.error(f"Error queuing video generation: {e}")
+    except Exception as exc:
+        logger.error("Gemini video generation failed: %s", exc)
+        raise HTTPException(
+            status_code=502,
+            detail="Video generation failed due to upstream error.",
+        ) from exc
+
+    if result.get("status") != "success":
+        message = result.get("message") or "Video generation failed."
+        logger.error("Gemini returned error for video generation: %s", message)
+        raise HTTPException(status_code=500, detail=message)
+
+    video_bytes = result.get("video_data", b"")
+    if not video_bytes:
+        logger.error("No video data returned from Gemini.")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to queue video generation: {str(e)}"
+            detail="Video generation did not return video data.",
         )
+
+    data_url = "data:video/mp4;base64," + base64.b64encode(video_bytes).decode("ascii")
+
+    api_used = result.get("api_used") or "gemini_cli_mcp"
+    metadata = {
+        "prompt": request.prompt,
+        "style": request.style,
+        "duration": str(request.duration),
+        "aspect_ratio": request.aspect_ratio,
+        "api_used": api_used,
+    }
+
+    job_tracker[job_id] = {
+        "job_id": job_id,
+        "user_id": current_user.id,
+        "status": "completed",
+        "progress": 100,
+        "created_at": datetime.utcnow().isoformat(),
+        "result": {
+            "video_url": data_url,
+            "metadata": metadata,
+            "api_used": api_used,
+        },
+        "message": result.get("message", "Video generated successfully."),
+    }
+
+    payload = {
+        "status": "success",
+        "video": {"url": data_url, "metadata": metadata},
+        "message": result.get("message"),
+        "api_used": api_used,
+    }
+    logger.debug("Video generation payload: %s", payload)
+    return payload
 
 @router.get("/status/{job_id}", response_model=VideoGenerationStatus)
 async def get_generation_status(
@@ -138,119 +124,44 @@ async def get_generation_status(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get the status of a video generation job
+    Get the status of a video generation job from in-memory tracker.
     """
-    try:
-        # First check in-memory tracker
-        if job_id in job_tracker:
-            job_info = job_tracker[job_id]
-            
-            # Check authorization
-            if job_info["user_id"] != current_user.id:
-                raise HTTPException(
-                    status_code=403,
-                    detail="Not authorized to view this job"
-                )
-            
-            return VideoGenerationStatus(
-                job_id=job_id,
-                status=job_info["status"],
-                progress=job_info["progress"],
-                error_message=job_info.get("error"),
-                current_step=job_info.get("message"),
-                video_url=job_info.get("result", {}).get("video_url") if job_info.get("result") else None
-            )
-        
-        # Fallback to MCP service
-        job_status = await video_service.get_generation_status(job_id, current_user.id)
-        
-        if job_status["status"] == "not_found":
-            raise HTTPException(
-                status_code=404,
-                detail="Job not found"
-            )
-        elif job_status["status"] == "unauthorized":
-            raise HTTPException(
-                status_code=403,
-                detail="Not authorized to view this job"
-            )
-        elif job_status["status"] == "error":
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error retrieving job status: {job_status['error']}"
-            )
-        
-        return VideoGenerationStatus(
-            job_id=job_id,
-            status=job_status["status"],
-            progress=job_status["progress"],
-            error_message=job_status.get("error_message"),
-            current_step=job_status.get("message"),
-            video_url=job_status.get("result", {}).get("video_url") if job_status.get("result") else None
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting generation status: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get job status: {str(e)}"
-        )
+    job_info = job_tracker.get(job_id)
+    if not job_info:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job_info["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this job")
+
+    result = job_info.get("result")
+
+    return VideoGenerationStatus(
+        job_id=job_id,
+        status=job_info["status"],
+        progress=job_info.get("progress", 0),
+        error_message=job_info.get("error"),
+        current_step=job_info.get("message"),
+        video_url=result.get("video_url") if result else None,
+    )
 
 @router.get("/jobs")
 async def list_jobs(current_user: User = Depends(get_current_user)):
     """
     List all video generation jobs for the current user
     """
-    try:
-        # Get jobs from MCP service
-        result = await video_service.list_user_jobs(current_user.id)
-        
-        if result["status"] == "error":
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error listing jobs: {result['error']}"
-            )
-        
-        # Combine with in-memory jobs
-        mcp_jobs = result["jobs"]
-        memory_jobs = [
-            {
-                "job_id": job["job_id"],
-                "status": job["status"],
-                "progress": job["progress"],
-                "created_at": job["created_at"],
-                "completed_at": job.get("completed_at")
-            }
-            for job in job_tracker.values()
-            if job["user_id"] == current_user.id
-        ]
-        
-        # Merge and deduplicate
-        all_jobs = {}
-        for job in mcp_jobs + memory_jobs:
-            if job["job_id"] not in all_jobs:
-                all_jobs[job["job_id"]] = job
-            else:
-                # Prefer memory job if it has more recent info
-                existing = all_jobs[job["job_id"]]
-                if job.get("progress", 0) > existing.get("progress", 0):
-                    all_jobs[job["job_id"]] = job
-        
-        return {
-            "jobs": list(all_jobs.values()),
-            "total": len(all_jobs)
+    jobs = [
+        {
+            "job_id": job["job_id"],
+            "status": job["status"],
+            "progress": job.get("progress", 0),
+            "created_at": job.get("created_at"),
+            "completed_at": job.get("completed_at"),
         }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error listing jobs: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list jobs: {str(e)}"
-        )
+        for job in job_tracker.values()
+        if job["user_id"] == current_user.id
+    ]
+
+    return {"jobs": jobs, "total": len(jobs)}
 
 @router.get("/download/{job_id}")
 async def download_video(
@@ -260,34 +171,41 @@ async def download_video(
     """
     Download a completed video file
     """
-    try:
-        # Try to download from MCP service
-        file_data = await video_service.download_video(job_id, current_user.id)
-        
-        if not file_data:
-            raise HTTPException(
-                status_code=404,
-                detail="Video file not found or not completed"
-            )
-        
-        # Create streaming response
-        return StreamingResponse(
-            io.BytesIO(file_data["content"]),
-            media_type=file_data["content_type"],
-            headers={
-                "Content-Disposition": f"attachment; filename={file_data['filename']}",
-                "Content-Length": str(file_data["size"])
-            }
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error downloading video: {e}")
+    job_info = job_tracker.get(job_id)
+    if not job_info:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job_info["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to download this job")
+
+    result = job_info.get("result")
+    if not result or "video_url" not in result:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to download video: {str(e)}"
+            status_code=404,
+            detail="Video data not available for this job",
         )
+
+    video_url = result["video_url"]
+    if not video_url.startswith("data:"):
+        raise HTTPException(
+            status_code=400,
+            detail="Stored video format is unsupported for download",
+        )
+
+    header, b64_data = video_url.split(",", 1)
+    media_type = header.split(";")[0].split(":")[1] if ":" in header else "video/mp4"
+    content = base64.b64decode(b64_data)
+
+    filename = f"veogen-video-{job_id}.mp4"
+
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Length": str(len(content)),
+        },
+    )
 
 @router.delete("/jobs/{job_id}")
 async def delete_job(
@@ -297,59 +215,29 @@ async def delete_job(
     """
     Delete a video generation job
     """
-    try:
-        result = await video_service.delete_job(job_id, current_user.id)
-        
-        if result["status"] == "not_found":
-            raise HTTPException(
-                status_code=404,
-                detail="Job not found"
-            )
-        elif result["status"] == "unauthorized":
-            raise HTTPException(
-                status_code=403,
-                detail="Not authorized to delete this job"
-            )
-        elif result["status"] == "error":
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error deleting job: {result['error']}"
-            )
-        
-        # Also remove from memory tracker
-        if job_id in job_tracker:
-            del job_tracker[job_id]
-        
-        return {"message": "Job deleted successfully"}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error deleting job: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete job: {str(e)}"
-        )
+    job_info = job_tracker.get(job_id)
+    if not job_info:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job_info["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this job")
+
+    del job_tracker[job_id]
+
+    return {"message": "Job deleted successfully"}
 
 @router.get("/health")
 async def health_check():
     """
     Health check for video generation service
     """
-    try:
-        health_status = await video_service.get_health_status()
-        
-        return {
-            "status": health_status["status"],
-            "mcp_veo_available": health_status["mcp_veo_available"],
-            "active_jobs": health_status["active_jobs"],
-            "error": health_status.get("error")
-        }
-    except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        return {
-            "status": "unhealthy",
-            "error": str(e),
-            "mcp_veo_available": False,
-            "active_jobs": 0
-        }
+    active_jobs = sum(
+        1
+        for job in job_tracker.values()
+        if job.get("status") == "processing"
+    )
+    return {
+        "status": "healthy",
+        "mcp_veo_available": True,
+        "active_jobs": active_jobs,
+    }

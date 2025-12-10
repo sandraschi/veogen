@@ -8,9 +8,8 @@ import logging
 import subprocess
 import os
 import platform
-from typing import Dict, List, Optional, Any, AsyncGenerator
+from typing import Any, Dict, List
 import asyncio
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -322,8 +321,6 @@ mcp_client = MCPClient()
 
 # Example usage:
 if __name__ == "__main__":
-    import pprint
-    
     async def main():
         async with MCPClient() as client:
             print("\nAvailable MCP Servers:")

@@ -70,6 +70,7 @@ class VideoGenerationResponse(BaseModel):
     message: Optional[str] = Field(None, description="Status message")
     progress: Optional[int] = Field(0, description="Generation progress percentage")
     thumbnail_url: Optional[str] = Field(None, description="Thumbnail image URL")
+    api_used: Optional[str] = Field(None, description="Generation pipeline identifier")
     
 class VideoGenerationStatus(BaseModel):
     job_id: str

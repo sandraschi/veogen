@@ -10,7 +10,7 @@ from selenium.webdriver.chrome.options import Options
 import time
 import json
 
-def debug_auth_state():
+def debug_auth_state() -> bool:
     chrome_options = Options()
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
@@ -52,7 +52,7 @@ def debug_auth_state():
             try:
                 user_obj = json.loads(user_data)
                 print(f"   User email: {user_obj.get('email', 'Not found')}")
-            except:
+            except json.JSONDecodeError:
                 print(f"   User data preview: {user_data[:100]}...")
         
         # Check React auth context state
@@ -95,7 +95,7 @@ def debug_auth_state():
         
         # Check console errors
         print("5. Checking for JavaScript errors...")
-        logs = driver.get_log('browser')
+        logs = driver.get_log("browser")
         error_count = 0
         for log in logs:
             if log['level'] in ['SEVERE', 'ERROR']:

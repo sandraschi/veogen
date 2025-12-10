@@ -6,13 +6,9 @@ Integrates with official Google Gemini CLI MCP servers for media generation
 import asyncio
 import json
 import logging
-import subprocess
-import tempfile
 import os
 import aiohttp
-import base64
 import uuid
-from pathlib import Path
 from typing import Dict, Any, Optional, List, Callable
 from datetime import datetime
 
@@ -174,7 +170,7 @@ class MCPMediaService:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"http://localhost:{port}/health", timeout=5) as response:
                     return response.status == 200
-        except:
+        except Exception:
             return False
             
     def _create_job_tracker(self, job_id: str, media_type: str, user_id: int) -> Dict[str, Any]:

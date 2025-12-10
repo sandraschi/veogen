@@ -9,7 +9,7 @@ const HelpPage = () => (
         <li><strong>Getting Started:</strong> Learn how to create, edit, and manage video, image, and music projects.</li>
         <li><strong>Navigation:</strong> Overview of Home, Generate, Movie Maker, Images, Music, Gallery, Jobs, and Settings tabs.</li>
         <li><strong>Video Generation:</strong> How to create videos using Google Veo 3 with text prompts and visual styles.</li>
-        <li><strong>Image Generation:</strong> How to create images using Google Imagen with various artistic styles.</li>
+        <li><strong>Image Generation:</strong> How to create images using Google's Nano Banana Pro with various artistic styles.</li>
         <li><strong>Music Generation:</strong> How to compose music using Google Lyria with different genres and moods.</li>
         <li><strong>Movie Maker:</strong> How to create multi-scene movies with frame-to-frame continuity.</li>
         <li><strong>Preview & Download:</strong> How to preview generated content and download results.</li>
@@ -24,7 +24,7 @@ const HelpPage = () => (
         <li><strong>Monitoring:</strong> Using Grafana, Prometheus, and Loki for logs and metrics.</li>
         <li><strong>Deployment:</strong> Docker Compose setup and service management.</li>
         <li><strong>Configuration:</strong> Environment variables and config files.</li>
-        <li><strong>AI Models:</strong> Integration with Google Veo 3, Imagen, and Lyria services.</li>
+        <li><strong>AI Models:</strong> Integration with Google Veo 3, Nano Banana Pro, and Lyria services.</li>
       </ul>
     </div>
     <div className="text-center text-gray-400 text-sm">

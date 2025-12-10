@@ -28,7 +28,7 @@ async def get_settings(
     try:
         settings = UserSettingsService.get_user_settings(db, current_user.id)
         return settings
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve settings"
@@ -84,7 +84,7 @@ async def get_setting(
     try:
         value = UserSettingsService.get_setting(db, current_user.id, setting_key)
         return {"key": setting_key, "value": value}
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve setting"
@@ -107,7 +107,7 @@ async def set_setting(
         )
         
         return {"key": setting_key, "value": setting_value, "type": setting_type}
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update setting"

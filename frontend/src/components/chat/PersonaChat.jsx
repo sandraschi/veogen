@@ -40,9 +40,7 @@ import {
   Brush
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4700';
+import { chatService } from '../../services/chatService';
 
 // Persona selection dialog
 const PersonaSelectionDialog = ({ open, onClose, onSelect, personas }) => {
@@ -241,11 +239,13 @@ const PersonaChat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [personas, setPersonas] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [sidebarLoading, setSidebarLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
-  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const [menuConversationId, setMenuConversationId] = useState(null);
   
   const messagesEndRef = useRef(null);
   const chatInputRef = useRef(null);
@@ -265,74 +265,80 @@ const PersonaChat = () => {
     loadConversations();
   }, []);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return { Authorization: `Bearer ${token}` };
-  };
+  const getAuthToken = () => localStorage.getItem('token');
 
   const loadPersonas = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/v1/chat/personas`);
-      setPersonas(response.data);
-    } catch (error) {
-      console.error('Failed to load personas:', error);
-      setError('Failed to load AI personas');
+      const result = await chatService.getPersonas();
+      setPersonas(result);
+    } catch (fetchError) {
+      console.error('Failed to load personas:', fetchError);
+      setError('Failed to load AI personas. Please retry in a moment.');
     }
   };
 
   const loadConversations = async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setError('Authentication required to load conversations.');
+      return;
+    }
+
     try {
-      setLoading(true);
-      const response = await axios.get(
-        `${API_BASE_URL}/api/v1/chat/conversations`,
-        { headers: getAuthHeaders() }
-      );
-      setConversations(response.data);
-    } catch (error) {
-      console.error('Failed to load conversations:', error);
-      setError('Failed to load conversations');
+      setSidebarLoading(true);
+      const result = await chatService.getConversations(token);
+      setConversations(result);
+      setError('');
+    } catch (fetchError) {
+      console.error('Failed to load conversations:', fetchError);
+      setError(fetchError.message || 'Failed to load conversations.');
     } finally {
-      setLoading(false);
+      setSidebarLoading(false);
     }
   };
 
   const loadConversationHistory = async (conversationId) => {
+    const token = getAuthToken();
+    if (!token) {
+      setError('Authentication required to view conversations.');
+      return;
+    }
+
     try {
-      setLoading(true);
-      const response = await axios.get(
-        `${API_BASE_URL}/api/v1/chat/${conversationId}/history`,
-        { headers: getAuthHeaders() }
-      );
-      
-      setMessages(response.data.messages);
-      setActiveConversation(response.data);
-    } catch (error) {
-      console.error('Failed to load conversation history:', error);
-      setError('Failed to load conversation history');
+      setHistoryLoading(true);
+      const result = await chatService.getConversationHistory(conversationId, token);
+      setMessages(result.messages);
+      setActiveConversation(result);
+      setError('');
+    } catch (fetchError) {
+      console.error('Failed to load conversation history:', fetchError);
+      setError(fetchError.message || 'Failed to load conversation history.');
     } finally {
-      setLoading(false);
+      setHistoryLoading(false);
     }
   };
 
   const startNewConversation = async (persona) => {
     if (!newMessage.trim()) {
-      setError('Please enter a message to start the conversation');
+      setError('Please enter a message to start the conversation.');
+      return;
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      setError('Authentication required to start a conversation.');
       return;
     }
 
     try {
       setSending(true);
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/chat/start`,
-        {
-          persona_id: persona.id,
-          initial_message: newMessage,
-          context: {}
-        },
-        { headers: getAuthHeaders() }
+      const result = await chatService.startConversation(
+        persona.id,
+        newMessage,
+        token,
+        {}
       );
 
-      // Add user message and AI response to messages
       const userMessage = {
         role: 'user',
         content: newMessage,
@@ -341,73 +347,75 @@ const PersonaChat = () => {
 
       const aiMessage = {
         role: 'assistant',
-        content: response.data.response.message,
+        content: result.response.message,
         persona_id: persona.id,
-        generated_content: response.data.response.generated_content,
-        timestamp: response.data.response.timestamp
+        generated_content: result.response.generated_content,
+        timestamp: result.response.timestamp
       };
 
       setMessages([userMessage, aiMessage]);
       setActiveConversation({
-        conversation_id: response.data.conversation_id,
-        persona: response.data.persona
+        conversation_id: result.conversation_id,
+        persona: result.persona
       });
 
       setNewMessage('');
       setPersonaDialogOpen(false);
-      
-      // Reload conversations list
-      loadConversations();
+      setError('');
 
-    } catch (error) {
-      console.error('Failed to start conversation:', error);
-      setError('Failed to start conversation');
+      await loadConversations();
+    } catch (fetchError) {
+      console.error('Failed to start conversation:', fetchError);
+      setError(fetchError.message || 'Failed to start conversation.');
     } finally {
       setSending(false);
     }
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !activeConversation) return;
+    if (!newMessage.trim() || !activeConversation) {
+      return;
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      setError('Authentication required to send messages.');
+      return;
+    }
 
     try {
       setSending(true);
-      
-      // Add user message immediately
+
       const userMessage = {
         role: 'user',
         content: newMessage,
         timestamp: new Date().toISOString()
       };
-      
+
       setMessages(prev => [...prev, userMessage]);
       const messageToSend = newMessage;
       setNewMessage('');
 
-      // Send to API
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/chat/${activeConversation.conversation_id}/message`,
-        {
-          message: messageToSend,
-          message_type: 'text'
-        },
-        { headers: getAuthHeaders() }
+      const result = await chatService.sendMessage(
+        activeConversation.conversation_id,
+        messageToSend,
+        token,
+        'text'
       );
 
-      // Add AI response
       const aiMessage = {
         role: 'assistant',
-        content: response.data.response.message,
+        content: result.response.message,
         persona_id: activeConversation.persona.id,
-        generated_content: response.data.response.generated_content,
-        timestamp: response.data.response.timestamp
+        generated_content: result.response.generated_content,
+        timestamp: result.response.timestamp
       };
 
       setMessages(prev => [...prev, aiMessage]);
-
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      setError('Failed to send message');
+      setError('');
+    } catch (fetchError) {
+      console.error('Failed to send message:', fetchError);
+      setError(fetchError.message || 'Failed to send message.');
     } finally {
       setSending(false);
     }
@@ -425,24 +433,27 @@ const PersonaChat = () => {
   };
 
   const deleteConversation = async (conversationId) => {
+    const token = getAuthToken();
+    if (!token) {
+      setError('Authentication required to delete conversations.');
+      return;
+    }
+
     try {
-      await axios.delete(
-        `${API_BASE_URL}/api/v1/chat/${conversationId}`,
-        { headers: getAuthHeaders() }
-      );
-      
-      // Remove from conversations list
+      await chatService.deleteConversation(conversationId, token);
+
       setConversations(prev => prev.filter(conv => conv.id !== conversationId));
-      
-      // Clear active conversation if it was deleted
+
       if (activeConversation?.conversation_id === conversationId) {
         setActiveConversation(null);
         setMessages([]);
       }
-      
-    } catch (error) {
-      console.error('Failed to delete conversation:', error);
-      setError('Failed to delete conversation');
+
+      await loadConversations();
+      setError('');
+    } catch (fetchError) {
+      console.error('Failed to delete conversation:', fetchError);
+      setError(fetchError.message || 'Failed to delete conversation.');
     }
   };
 
@@ -471,7 +482,7 @@ const PersonaChat = () => {
         </Box>
         
         <List sx={{ flex: 1, overflow: 'auto' }}>
-          {loading ? (
+          {sidebarLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
               <CircularProgress />
             </Box>
@@ -507,7 +518,8 @@ const PersonaChat = () => {
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setMenuAnchor(e.currentTarget);
+                    setMenuAnchorEl(e.currentTarget);
+                    setMenuConversationId(conv.id);
                   }}
                 >
                   <MoreVert />
@@ -518,13 +530,23 @@ const PersonaChat = () => {
         </List>
 
         <Menu
-          anchorEl={menuAnchor}
-          open={Boolean(menuAnchor)}
-          onClose={() => setMenuAnchor(null)}
+          anchorEl={menuAnchorEl}
+          open={Boolean(menuAnchorEl)}
+          onClose={() => {
+            setMenuAnchorEl(null);
+            setMenuConversationId(null);
+          }}
         >
-          <MenuItem onClick={() => {
-            setMenuAnchor(null);
-          }}>
+          <MenuItem
+            onClick={async () => {
+              const targetId = menuConversationId;
+              setMenuAnchorEl(null);
+              setMenuConversationId(null);
+              if (targetId) {
+                await deleteConversation(targetId);
+              }
+            }}
+          >
             Delete Conversation
           </MenuItem>
         </Menu>
@@ -559,7 +581,18 @@ const PersonaChat = () => {
             </Alert>
           )}
 
-          {!activeConversation ? (
+          {historyLoading ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%'
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          ) : !activeConversation ? (
             <Box sx={{ 
               display: 'flex', 
               alignItems: 'center', 

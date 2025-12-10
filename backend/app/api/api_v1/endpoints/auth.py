@@ -5,7 +5,6 @@ Authentication endpoints for user management
 from datetime import timedelta
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
-from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, validator
 import re
@@ -14,7 +13,7 @@ from app.database import get_db
 from app.models.user import User
 from app.services.auth_service import auth_service
 from app.services.api_key_service import api_key_service
-from app.api.deps import get_current_user, get_current_user_optional
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -141,7 +140,7 @@ async def register(
         # Create session
         ip_address = request.client.host if request else None
         user_agent = request.headers.get("user-agent") if request else None
-        session_token = auth_service.create_user_session(
+        auth_service.create_user_session(
             db, user.id, ip_address, user_agent
         )
         return {
@@ -181,7 +180,7 @@ async def login(
     # Create session
     ip_address = request.client.host if request else None
     user_agent = request.headers.get("user-agent") if request else None
-    session_token = auth_service.create_user_session(
+    auth_service.create_user_session(
         db, user.id, ip_address, user_agent
     )
     
@@ -202,9 +201,7 @@ async def logout(
     # Get session token from Authorization header
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
-        token = auth_header.split(" ")[1]
-        # In a real implementation, you'd store session tokens separately
-        # For now, we'll just return success
+        # In a real implementation, session invalidation would occur here.
         return {"message": "Successfully logged out"}
 
 # User profile endpoints

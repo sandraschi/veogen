@@ -3,7 +3,6 @@
 Debug the email template generation
 """
 import sys
-import os
 
 # Add the backend app to the path
 sys.path.append("/app")

@@ -85,10 +85,10 @@ def send_email(to: str, subject: str, body: str, html: str = None):
             print(f"[EMAIL] Successfully sent to {to}")
             return True
         else:
-            print(f"[EMAIL] Using dev mode - email saved to file only")
+            print("[EMAIL] Using dev mode - email saved to file only")
             return True
             
     except Exception as e:
         print(f"[EMAIL SMTP ERROR] {e}")
-        print(f"[EMAIL] Falling back to dev mode - email saved to file")
+        print("[EMAIL] Falling back to dev mode - email saved to file")
         return True  # Still return True since we saved to file 

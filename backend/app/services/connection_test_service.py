@@ -5,9 +5,7 @@ Tests actual API connectivity and functionality
 
 import asyncio
 import logging
-import os
 from typing import Dict, Any, Optional
-import httpx
 import google.generativeai as genai
 from google.cloud import aiplatform
 from google.auth import default

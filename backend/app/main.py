@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
@@ -17,6 +17,11 @@ from app.api.api_v1.endpoints import chat
 from app.api.api_v1.endpoints import enhanced_auth
 from app.api.api_v1.endpoints import logs
 from app.api.api_v1.endpoints import email_workflows
+from app.api.api_v1.endpoints import prompt_coach
+from app.api.api_v1.endpoints import sound_design
+from app.api.api_v1.endpoints import compliance as compliance_endpoints
+from app.api.api_v1.endpoints import workspace as workspace_endpoints
+from app.api.api_v1.endpoints import flow as flow_endpoints
 from app.middleware.metrics import PrometheusMetricsMiddleware, metrics_endpoint
 import uvicorn
 
@@ -46,11 +51,9 @@ async def lifespan(app: FastAPI):
         logger.info("FFmpeg service initialized")
         
         # Test Gemini CLI availability
-        from app.services.gemini_cli import gemini_service
         logger.info("Gemini CLI service initialized")
         
         # Test Movie Maker service
-        from app.services.movie_maker import movie_maker_service
         logger.info("Movie Maker service initialized")
         
     except Exception as e:
@@ -118,6 +121,37 @@ app.include_router(
     image.router,
     prefix=f"{settings.API_V1_STR}/image",
     tags=["image"]
+)
+
+# Flow Studio endpoints
+app.include_router(
+    flow_endpoints.router,
+    prefix=f"{settings.API_V1_STR}/flow",
+    tags=["flow"]
+)
+
+app.include_router(
+    prompt_coach.router,
+    prefix=f"{settings.API_V1_STR}/prompt-coach",
+    tags=["prompt-coach"]
+)
+
+app.include_router(
+    sound_design.router,
+    prefix=f"{settings.API_V1_STR}/sound-design",
+    tags=["sound-design"]
+)
+
+app.include_router(
+    compliance_endpoints.router,
+    prefix=f"{settings.API_V1_STR}/compliance",
+    tags=["compliance"]
+)
+
+app.include_router(
+    workspace_endpoints.router,
+    prefix=f"{settings.API_V1_STR}/workspace",
+    tags=["workspace"]
 )
 
 # New endpoints for enhanced frontend features
@@ -254,7 +288,6 @@ async def health_check():
         
         # Check FFmpeg
         try:
-            from app.services.ffmpeg import ffmpeg_service
             health_status["components"]["ffmpeg"] = "available"
         except Exception as e:
             health_status["components"]["ffmpeg"] = f"error: {str(e)}"
@@ -262,7 +295,6 @@ async def health_check():
         
         # Check Gemini CLI
         try:
-            from app.services.gemini_cli import gemini_service
             health_status["components"]["gemini_cli"] = "available"
         except Exception as e:
             health_status["components"]["gemini_cli"] = f"error: {str(e)}"

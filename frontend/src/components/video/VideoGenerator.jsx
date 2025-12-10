@@ -156,11 +156,16 @@ const VideoGenerator = () => {
       return;
     }
 
+    if (referenceImage) {
+      setError('Reference images are not yet supported in this build.');
+      return;
+    }
+
     setGenerating(true);
     setError('');
+    setSuccess('');
     setProgress(0);
 
-    // Simulate progress
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 90) {
@@ -172,24 +177,23 @@ const VideoGenerator = () => {
     }, 1000);
 
     try {
-      const formData = new FormData();
-      formData.append('prompt', prompt);
-      formData.append('style', style);
-      formData.append('duration', duration);
-      formData.append('aspect_ratio', aspectRatio);
-      formData.append('temperature', temperature);
-      
-      if (seed) formData.append('seed', seed);
-      if (negativePrompt) formData.append('negative_prompt', negativePrompt);
-      if (referenceImage) formData.append('reference_image', referenceImage.file);
+      const payload = {
+        prompt,
+        style,
+        duration,
+        aspect_ratio: aspectRatio,
+        temperature,
+        seed: seed || undefined,
+        negative_prompt: negativePrompt || undefined
+      };
 
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/video/generate`,
-        formData,
+        payload,
         {
           headers: {
             ...getAuthHeaders(),
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -197,20 +201,27 @@ const VideoGenerator = () => {
       clearInterval(progressInterval);
       setProgress(100);
 
+      const videoPayload = response.data.video;
+      if (!videoPayload?.url) {
+        setError('No video data returned. Please try again.');
+        return;
+      }
+
       const videoData = {
         id: Date.now(),
         prompt,
         style,
         duration,
         aspect_ratio: aspectRatio,
-        video_url: response.data.video_url,
+        video_url: videoPayload.url,
         created_at: new Date().toISOString(),
-        status: 'completed'
+        status: 'completed',
+        metadata: videoPayload.metadata
       };
 
       setGeneratedVideo(videoData);
       setVideoHistory(prev => [videoData, ...prev]);
-      setSuccess('Video generated successfully!');
+      setSuccess(response.data.message || 'Video generated successfully!');
 
     } catch (error) {
       clearInterval(progressInterval);

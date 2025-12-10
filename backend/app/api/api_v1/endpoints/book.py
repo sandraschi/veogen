@@ -76,7 +76,6 @@ async def generate_book(request: BookRequest, background_tasks: BackgroundTasks)
         plot_summary = ""
         chapter_breakdown = []
         
-        current_section = ""
         for section in sections:
             if "outline" in section.lower() or "chapter" in section.lower():
                 outline += section + "\n\n"

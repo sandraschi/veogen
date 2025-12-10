@@ -82,7 +82,7 @@ const ImagesPage = () => {
             </h1>
           </div>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Create stunning images from text descriptions using Google's Imagen AI
+            Create stunning images from text descriptions using Google's Nano Banana Pro
           </p>
         </motion.div>
 

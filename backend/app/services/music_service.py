@@ -3,9 +3,7 @@ Music Generation Service for VeoGen
 Uses Google's MCP servers for Lyria music generation
 """
 
-import asyncio
 import logging
-import os
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import uuid

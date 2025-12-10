@@ -11,7 +11,7 @@ const vertexAI = new VertexAI({
 });
 
 // Initialize models
-const veoModel = 'projects/google-cloud-project/locations/us-central1/publishers/google/models/veo-3.0';
+const veoModel = 'projects/google-cloud-project/locations/us-central1/publishers/google/models/veo-3.1';
 const imageGenerationModel = 'imagegeneration@003';
 const lyriaModel = 'lyria@003';
 
@@ -156,7 +156,7 @@ app.post('/generate/text', async (req, res) => {
     const { prompt, temperature = 0.7, max_tokens = 1000 } = req.body;
     
     const textResponse = await vertexAI.preview.getGenerativeModel({
-      model: 'gemini-1.5-pro',
+      model: 'gemini-3.0-pro',
       generationConfig: {
         temperature,
         maxOutputTokens: max_tokens,
@@ -186,10 +186,10 @@ app.post('/generate/text', async (req, res) => {
 app.get('/models', (req, res) => {
   res.json({
     models: [
-      'gemini-1.5-pro',
-      'gemini-1.5-pro-vision',
-      'veo-3',
-      'imagen-3',
+      'gemini-3.0-pro',
+      'gemini-3.0-pro-vision',
+      'veo-3.1',
+      'gemini-3.0-pro-image',
       'lyria'
     ]
   });

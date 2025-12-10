@@ -1,13 +1,12 @@
 # AI Chat Personas Service with Generated Life Stories
 
-import asyncio
 import logging
+import os
 import json
 import random
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from enum import Enum
-import google.generativeai as genai
 from app.config import settings
 from app.database import get_user_setting
 from app.middleware.metrics import track_chat_interaction

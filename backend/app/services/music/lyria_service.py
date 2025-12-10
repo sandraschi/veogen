@@ -7,16 +7,13 @@ Music Service Architecture
 """
 import asyncio
 import logging
-import base64
 import json
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from enum import Enum
 import google.generativeai as genai
 from google.cloud import aiplatform
-from google.cloud.aiplatform_v1.types import prediction_service
 from app.config import settings
-from app.database import get_user_setting
 from app.middleware.metrics import track_music_generation
 from app.utils.logging_config import log_music_generation_event
 
@@ -340,7 +337,7 @@ class LyriaService:
             """
             
             # Generate music using Gemini (this is a simplified approach)
-            response = await asyncio.to_thread(
+            await asyncio.to_thread(
                 model.generate_content,
                 music_prompt
             )

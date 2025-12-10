@@ -1,43 +1,58 @@
 """
-Music Generation API Endpoints
-Uses MCP-based music service for Lyria generation
+Music Generation API Endpoints backed by Gemini CLI Lyria calls.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+import base64
+import logging
+from typing import Dict, List, Optional
 from uuid import UUID
-from pydantic import BaseModel
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.schemas.music import (
-    MusicGeneration,
-    MusicGenerationCreate,
     MusicGenerationResponse,
+    MusicMood,
     MusicStyle,
-    MusicMood
 )
+from app.services.gemini_cli import gemini_service
 from app.services.music_service import music_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 class MusicGenerationRequest(BaseModel):
-    prompt: str
-    duration: int = 30
-    style: str = "electronic"
+    prompt: str = Field(..., description="Describe the music to generate")
+    duration: int = Field(30, ge=5, le=180, description="Length of track in seconds")
+    genre: str = Field("electronic", description="High-level genre label")
+    mood: Optional[str] = Field(None, description="Desired mood (e.g. uplifting, calm)")
+    tempo: Optional[int] = Field(None, ge=40, le=200, description="Target tempo in BPM")
+    creativity: Optional[float] = Field(
+        None, ge=0.0, le=1.0, description="Creativity hint relayed in prompt"
+    )
+    instruments: Optional[str] = Field(
+        None, description="Comma separated instruments to highlight"
+    )
 
 class SpeechGenerationRequest(BaseModel):
     text: str
     voice: str = "en-US-Neural2-F"
 
-class MusicGenerationResponse(BaseModel):
+class GeneratedTrack(BaseModel):
+    url: str
+    metadata: Dict[str, Optional[str]]
+
+
+class MusicGenerateResponse(BaseModel):
     status: str
-    music_id: str
-    music_url: Optional[str] = None
-    duration: Optional[int] = None
-    prompt: Optional[str] = None
-    error: Optional[str] = None
+    track: GeneratedTrack
+    message: Optional[str] = None
+    api_used: Optional[str] = None
 
 class SpeechGenerationResponse(BaseModel):
     status: str
@@ -58,24 +73,75 @@ class MusicStatusResponse(BaseModel):
     created_at: Optional[str] = None
     completed_at: Optional[str] = None
 
-@router.post("/generate", response_model=MusicGenerationResponse)
+@router.post("/generate", response_model=MusicGenerateResponse)
 async def generate_music(
     request: MusicGenerationRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Generate music using Lyria via MCP"""
-    try:
-        result = await music_service.generate_music(
-            prompt=request.prompt,
-            user_id=current_user.id,
-            duration=request.duration,
-            style=request.style
+    """Generate music using Gemini CLI Lyria support."""
+    prompt_parts = [request.prompt]
+
+    if request.genre:
+        prompt_parts.append(f"Genre: {request.genre}")
+    if request.mood:
+        prompt_parts.append(f"Mood: {request.mood}")
+    if request.tempo:
+        prompt_parts.append(f"Tempo: {request.tempo} BPM")
+    if request.instruments:
+        prompt_parts.append(f"Instruments: {request.instruments}")
+    if request.creativity is not None:
+        prompt_parts.append(
+            f"Creativity level target: {request.creativity:.2f} (0 structured, 1 experimental)"
         )
-        
-        return MusicGenerationResponse(**result)
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Music generation failed: {str(e)}")
+
+    enriched_prompt = ". ".join(prompt_parts)
+
+    try:
+        result = await gemini_service.generate_music(
+            prompt=enriched_prompt,
+            duration=request.duration,
+            style=request.genre,
+            db_session=None,
+            user_id=str(current_user.id),
+        )
+    except Exception as exc:
+        logger.error("Gemini music generation failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Music generation failed due to upstream error.",
+        ) from exc
+
+    if result.get("status") != "success":
+        message = result.get("message") or "Music generation failed."
+        logger.error("Gemini returned error for music generation: %s", message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+
+    music_bytes = result.get("music_data", b"")
+    if not music_bytes:
+        logger.error("No music data returned from Gemini.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Music generation did not return audio data.",
+        )
+
+    data_url = "data:audio/mpeg;base64," + base64.b64encode(music_bytes).decode("ascii")
+
+    metadata = {
+        "prompt": request.prompt,
+        "genre": request.genre,
+        "mood": request.mood,
+        "duration": str(request.duration),
+        "tempo": str(request.tempo) if request.tempo else None,
+        "instruments": request.instruments,
+        "api_used": result.get("api_used"),
+    }
+
+    return MusicGenerateResponse(
+        status="success",
+        track=GeneratedTrack(url=data_url, metadata=metadata),
+        message=result.get("message"),
+        api_used=result.get("api_used"),
+    )
 
 @router.post("/speech", response_model=SpeechGenerationResponse)
 async def generate_speech(

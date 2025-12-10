@@ -3,7 +3,6 @@ Prometheus metrics middleware for VeoGen API
 """
 import time
 import logging
-from typing import Callable
 from fastapi import Request, Response
 from fastapi.routing import Match
 from prometheus_client import Counter, Histogram, Gauge, Info, generate_latest, CONTENT_TYPE_LATEST
@@ -281,7 +280,6 @@ class PrometheusMetricsMiddleware:
                 pass
                 
         # Process request
-        response_data = {}
         status_code = 500
         response_size = 0
         

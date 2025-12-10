@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
-from fastapi.responses import JSONResponse, StreamingResponse
-from typing import Optional, List, Dict, Any
+from fastapi.responses import StreamingResponse
+from typing import Optional
 import logging
 from app.services.movie_maker import movie_maker_service
 from app.models.movie_request import (
@@ -9,8 +9,6 @@ from app.models.movie_request import (
     MovieStatusResponse,
     ScriptUpdateRequest
 )
-import uuid
-from datetime import datetime
 import os
 
 logger = logging.getLogger(__name__)

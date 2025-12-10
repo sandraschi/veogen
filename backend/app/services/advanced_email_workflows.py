@@ -16,10 +16,9 @@ import asyncio
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional, Dict, List, Any
+from typing import Dict, Any
 from enum import Enum
 import secrets
-import hashlib
 import logging
 
 # Email workflow types
@@ -65,8 +64,6 @@ class AdvancedEmailService:
         
         # Generate tracking ID
         tracking_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow()
-        
         # Add tracking pixel to HTML if provided
         if html and workflow_id:
             tracking_pixel = f'<img src="{self.base_url}/api/email/track/open/{tracking_id}" width="1" height="1" style="display:none;">'
@@ -594,7 +591,7 @@ async def demo_email_workflows():
     
     print("\n" + "=" * 50)
     print("🎉 Advanced email workflows demonstrated!")
-    print(f"📁 Check email files in: dev_emails/")
+    print("📁 Check email files in: dev_emails/")
     
     return {
         "workflow_id": workflow_id,

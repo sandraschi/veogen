@@ -33,9 +33,9 @@ AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire
 Base = declarative_base()
 
 # Import models to ensure they are registered with SQLAlchemy
-from .models.user import User, UserSettings, UserSession, Project, PasswordResetToken
-from .models.music import MusicGenerationDB
-from .models.image import ImageGeneration
+from .models.user import User, UserSettings  # noqa: E402
+from .models import flow  # noqa: F401  (ensures Flow tables are registered)
+
 
 # Additional models that are still in database.py
 class APIKey(Base):
@@ -144,11 +144,11 @@ def get_user_setting(db: Session, user_id: str, key: str, default=None):
     else:
         return setting.setting_value or default
 
-def set_user_setting(db: Session, user_id: str, key: str, value, value_type="string"):
-    """Set a user setting"""
+def set_user_setting(db: Session, user_id: str, key: str, value, value_type: str = "string"):
+    """Set or update a user setting"""
     # Convert value to string for storage
     if value_type == "json":
-        value_str = json.dumps(value) if value else None
+        value_str = json.dumps(value) if value is not None else None
     elif value_type == "boolean":
         value_str = str(value).lower() if value is not None else None
     elif value_type == "number":

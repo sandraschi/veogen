@@ -1,31 +1,48 @@
 """
-Video Generation API Endpoints
-Uses MCP-based video service for Veo generation
+Video Generation API Endpoints backed by Gemini CLI Veo calls.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from typing import List, Optional
-from pydantic import BaseModel
+import base64
+import logging
+from typing import Dict, List, Optional
 
-from app.services.video_service import video_service
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+
 from app.api.deps import get_current_user
 from app.database import User
+from app.services.gemini_cli import gemini_service
+from app.services.video_service import video_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-class VideoGenerationRequest(BaseModel):
-    prompt: str
-    duration: int = 10
-    aspect_ratio: str = "16:9"
-    style: str = "cinematic"
 
-class VideoGenerationResponse(BaseModel):
+class VideoGenerationRequest(BaseModel):
+    prompt: str = Field(..., description="Describe the video to generate")
+    duration: int = Field(10, ge=5, le=60, description="Duration in seconds (5-60)")
+    aspect_ratio: str = Field("16:9", description="Desired aspect ratio")
+    style: str = Field("cinematic", description="Stylistic direction")
+    temperature: Optional[float] = Field(
+        None, ge=0.0, le=1.0, description="Creativity level hint for prompt"
+    )
+    seed: Optional[int] = Field(None, description="Optional seed for reproducibility")
+    negative_prompt: Optional[str] = Field(
+        None, description="Elements that must NOT appear in the video"
+    )
+
+
+class GeneratedVideo(BaseModel):
+    url: str
+    metadata: Dict[str, Optional[str]]
+
+
+class VideoGenerateResponse(BaseModel):
     status: str
-    video_id: str
-    video_url: Optional[str] = None
-    duration: Optional[int] = None
-    prompt: Optional[str] = None
-    error: Optional[str] = None
+    video: GeneratedVideo
+    message: Optional[str] = None
+    api_used: Optional[str] = None
 
 class VideoStatusResponse(BaseModel):
     video_id: str
@@ -39,25 +56,71 @@ class VideoStatusResponse(BaseModel):
     created_at: Optional[str] = None
     completed_at: Optional[str] = None
 
-@router.post("/generate", response_model=VideoGenerationResponse)
+@router.post("/generate", response_model=VideoGenerateResponse)
 async def generate_video(
     request: VideoGenerationRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Generate a video using Veo via MCP"""
+    """Generate a video using Gemini CLI Veo support."""
+    prompt_parts = [request.prompt]
+    prompt_parts.append(f"Style: {request.style}")
+    prompt_parts.append(f"Aspect ratio: {request.aspect_ratio}")
+    if request.temperature is not None:
+        prompt_parts.append(f"Creativity level: {request.temperature:.2f}")
+    if request.negative_prompt:
+        prompt_parts.append(f"Avoid: {request.negative_prompt}")
+    if request.seed is not None:
+        prompt_parts.append(f"Seed value: {request.seed}")
+
+    enriched_prompt = ". ".join(prompt_parts)
+
     try:
-        result = await video_service.generate_video(
-            prompt=request.prompt,
-            user_id=current_user.id,
+        result = await gemini_service.generate_video(
+            prompt=enriched_prompt,
             duration=request.duration,
             aspect_ratio=request.aspect_ratio,
-            style=request.style
+            style=request.style,
+            seed=request.seed,
+            temperature=request.temperature or 0.7,
+            db_session=None,
+            user_id=str(current_user.id),
         )
-        
-        return VideoGenerationResponse(**result)
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Video generation failed: {str(e)}")
+    except Exception as exc:
+        logger.error("Gemini video generation failed: %s", exc)
+        raise HTTPException(
+            status_code=502,
+            detail="Video generation failed due to upstream error.",
+        ) from exc
+
+    if result.get("status") != "success":
+        message = result.get("message") or "Video generation failed."
+        logger.error("Gemini returned error for video generation: %s", message)
+        raise HTTPException(status_code=500, detail=message)
+
+    video_bytes = result.get("video_data", b"")
+    if not video_bytes:
+        logger.error("No video data returned from Gemini.")
+        raise HTTPException(
+            status_code=500,
+            detail="Video generation did not return video data.",
+        )
+
+    data_url = "data:video/mp4;base64," + base64.b64encode(video_bytes).decode("ascii")
+
+    metadata = {
+        "prompt": request.prompt,
+        "style": request.style,
+        "duration": str(request.duration),
+        "aspect_ratio": request.aspect_ratio,
+        "api_used": result.get("api_used"),
+    }
+
+    return VideoGenerateResponse(
+        status="success",
+        video=GeneratedVideo(url=data_url, metadata=metadata),
+        message=result.get("message"),
+        api_used=result.get("api_used"),
+    )
 
 @router.get("/status/{video_id}", response_model=VideoStatusResponse)
 async def get_video_status(

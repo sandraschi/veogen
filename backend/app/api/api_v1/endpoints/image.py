@@ -1,40 +1,64 @@
 """
-Image Generation API Endpoints
-Uses MCP-based image service for Imagen generation
+Image Generation API Endpoints backed by Gemini CLI Imagen calls.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+import base64
+import logging
+from typing import Dict, List, Optional
 from uuid import UUID
-from pydantic import BaseModel
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.database import User
 from app.schemas.image import (
     ImageGeneration,
-    ImageGenerationCreate,
     ImageGenerationResponse,
+    ImageQuality,
     ImageStyle,
-    ImageQuality
 )
+from app.services.gemini_cli import gemini_service
 from app.services.image_service import image_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-class ImageGenerationRequest(BaseModel):
-    prompt: str
-    aspect_ratio: str = "1:1"
-    num_images: int = 1
-    style: str = "photorealistic"
 
-class ImageGenerationResponse(BaseModel):
+ASPECT_RATIO_TO_RESOLUTION: Dict[str, str] = {
+    "1:1": "1024x1024",
+    "16:9": "1344x768",
+    "9:16": "768x1344",
+    "4:3": "1152x896",
+    "3:2": "1216x832",
+}
+
+
+class ImageGenerationRequest(BaseModel):
+    prompt: str = Field(..., description="Image description for Nano Banana Pro")
+    aspect_ratio: str = Field("1:1", description="Aspect ratio hint (e.g. 1:1, 16:9)")
+    style: Optional[str] = Field(None, description="Optional artistic style label")
+    num_images: int = Field(1, ge=1, le=4, description="Number of images to generate")
+    creativity: Optional[float] = Field(
+        None, ge=0.0, le=1.0, description="Creativity level mapped to temperature"
+    )
+    reference_image: Optional[str] = Field(None, description="Base64 encoded image for editing or OCR")
+    mode: Optional[str] = Field("generate", description="Mode: 'generate', 'edit', or 'ocr'")
+
+
+class GeneratedImage(BaseModel):
+    url: str
+    metadata: Dict[str, Optional[str]]
+
+
+class ImageGenerateResponse(BaseModel):
     status: str
-    image_id: str
-    image_urls: Optional[List[str]] = None
-    prompt: Optional[str] = None
-    aspect_ratio: Optional[str] = None
-    error: Optional[str] = None
+    images: List[GeneratedImage]
+    message: Optional[str] = None
+    api_used: Optional[str] = None
+
 
 class ImageStatusResponse(BaseModel):
     image_id: str
@@ -48,25 +72,66 @@ class ImageStatusResponse(BaseModel):
     created_at: Optional[str] = None
     completed_at: Optional[str] = None
 
-@router.post("/generate", response_model=ImageGenerationResponse)
+@router.post("/generate", response_model=ImageGenerateResponse)
 async def generate_image(
     request: ImageGenerationRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Generate an image using Imagen via MCP"""
-    try:
-        result = await image_service.generate_image(
-            prompt=request.prompt,
-            user_id=current_user.id,
-            aspect_ratio=request.aspect_ratio,
-            num_images=request.num_images,
-            style=request.style
+    """Generate, edit, or OCR an image using Nano Banana Pro (Gemini 3 Pro Image)."""
+    resolution = ASPECT_RATIO_TO_RESOLUTION.get(request.aspect_ratio, "1024x1024")
+
+    if request.num_images > 1:
+        logger.info(
+            "Multiple image request (%s) received; returning single image for now.",
+            request.num_images,
         )
-        
-        return ImageGenerationResponse(**result)
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+
+    try:
+        result = await gemini_service.generate_image(
+            prompt=request.prompt,
+            style=request.style,
+            resolution=resolution,
+            reference_image=request.reference_image,
+            mode=request.mode or "generate",
+            db_session=None,
+            user_id=str(current_user.id),
+        )
+    except Exception as exc:
+        logger.error("Gemini Imagen generation failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Image generation failed due to upstream error.",
+        ) from exc
+
+    if result.get("status") != "success":
+        message = result.get("message") or "Image generation failed."
+        logger.error("Gemini Imagen returned error: %s", message)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+
+    image_bytes = result.get("image_data", b"")
+    if not image_bytes:
+        logger.error("Gemini Imagen returned no image bytes.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Image generation did not return image data.",
+        )
+
+    data_url = "data:image/png;base64," + base64.b64encode(image_bytes).decode("ascii")
+
+    image_metadata = {
+        "prompt": request.prompt,
+        "style": request.style or "default",
+        "aspect_ratio": request.aspect_ratio,
+        "resolution": resolution,
+        "api_used": result.get("api_used"),
+    }
+
+    return ImageGenerateResponse(
+        status="success",
+        images=[GeneratedImage(url=data_url, metadata=image_metadata)],
+        message=result.get("message"),
+        api_used=result.get("api_used"),
+    )
 
 @router.get("/status/{image_id}", response_model=ImageStatusResponse)
 async def get_image_status(

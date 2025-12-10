@@ -4,10 +4,9 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import cv2
 import numpy as np
-from PIL import Image
 import json
 
 logger = logging.getLogger(__name__)
@@ -222,7 +221,7 @@ class FFmpegService:
             
             try:
                 os.remove(file_list_path)
-            except:
+            except OSError:
                 pass
             
             logger.info(f"Successfully concatenated {len(video_paths)} videos to {output_path}")
@@ -247,7 +246,7 @@ class FFmpegService:
         filter_parts = []
         for i in range(len(video_paths) - 1):
             if i == 0:
-                filter_parts.append(f"[0:v][1:v]xfade=transition=fade:duration=0.5:offset=7.5[v01]")
+                filter_parts.append("[0:v][1:v]xfade=transition=fade:duration=0.5:offset=7.5[v01]")
             else:
                 filter_parts.append(f"[v0{i}][{i+1}:v]xfade=transition=fade:duration=0.5:offset=7.5[v0{i+1}]")
         

@@ -271,38 +271,53 @@ const MusicGenerator = () => {
 
     setGenerating(true);
     setError('');
+    setSuccess('');
 
     try {
+      const payload = {
+        prompt,
+        genre,
+        mood,
+        duration,
+        tempo,
+        creativity,
+        instruments: instruments || undefined
+      };
+
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/music/generate`,
+        payload,
         {
-          prompt,
-          genre,
-          mood,
-          duration,
-          tempo,
-          creativity,
-          instruments: instruments || undefined
-        },
-        { headers: getAuthHeaders() }
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json'
+          }
+        }
       );
+
+      const trackData = response.data.track;
+      if (!trackData?.url) {
+        setError('No audio data returned. Please try again.');
+        return;
+      }
 
       const newTrack = {
         id: Date.now(),
-        title: prompt.substring(0, 50),
-        url: response.data.music_url,
+        title: prompt.substring(0, 50) || 'Untitled Track',
+        url: trackData.url,
         prompt,
         genre,
         mood,
         duration,
         tempo,
         created_at: new Date().toISOString(),
-        favorite: false
+        favorite: false,
+        metadata: trackData.metadata
       };
 
       setCurrentTrack(newTrack);
       setTrackHistory(prev => [newTrack, ...prev]);
-      setSuccess('Music generated successfully!');
+      setSuccess(response.data.message || 'Music generated successfully!');
 
     } catch (error) {
       console.error('Music generation error:', error);

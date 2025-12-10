@@ -2,25 +2,62 @@
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4700';
 
-class ChatService {
-  constructor() {
-    this.conversations = new Map(); // Store conversations client-side for demo
+const buildHeaders = (token, extraHeaders = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...extraHeaders
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
-  async sendMessage(messageData) {
+  return headers;
+};
+
+class ChatService {
+  constructor() {
+    this.conversations = new Map(); // Client-side cache for quick access
+  }
+
+  async startConversation(personaId, initialMessage, token, context = {}) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/message`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/start`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization header when auth is implemented
-          // 'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(messageData)
+        headers: buildHeaders(token),
+        body: JSON.stringify({
+          persona_id: personaId,
+          initial_message: initialMessage,
+          context
+        })
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || `Failed to start conversation (${response.status})`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+      throw error;
+    }
+  }
+
+  async sendMessage(conversationId, message, token, messageType = 'text') {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/${conversationId}/message`, {
+        method: 'POST',
+        headers: buildHeaders(token),
+        body: JSON.stringify({
+          message,
+          message_type: messageType
+        })
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || `Failed to send message (${response.status})`);
       }
 
       return await response.json();
@@ -35,7 +72,7 @@ class ChatService {
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/personas`);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Failed to load personas (${response.status})`);
       }
 
       return await response.json();
@@ -45,41 +82,15 @@ class ChatService {
     }
   }
 
-  async createConversation(personaId, title = null) {
+  async getConversations(token) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          persona_id: personaId,
-          title
-        })
+        headers: buildHeaders(token, { 'Content-Type': 'application/json' })
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to create conversation:', error);
-      throw error;
-    }
-  }
-
-  async getConversations() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations`, {
-        headers: {
-          // 'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || `Failed to fetch conversations (${response.status})`);
       }
 
       return await response.json();
@@ -89,36 +100,34 @@ class ChatService {
     }
   }
 
-  async getConversationMessages(conversationId) {
+  async getConversationHistory(conversationId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/messages`, {
-        headers: {
-          // 'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/${conversationId}/history`, {
+        headers: buildHeaders(token, { 'Content-Type': 'application/json' })
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || `Failed to load conversation history (${response.status})`);
       }
 
       return await response.json();
     } catch (error) {
-      console.error('Failed to get conversation messages:', error);
+      console.error('Failed to get conversation history:', error);
       throw error;
     }
   }
 
-  async deleteConversation(conversationId) {
+  async deleteConversation(conversationId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/${conversationId}`, {
         method: 'DELETE',
-        headers: {
-          // 'Authorization': `Bearer ${token}`
-        }
+        headers: buildHeaders(token, { 'Content-Type': 'application/json' })
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || `Failed to delete conversation (${response.status})`);
       }
 
       return await response.json();
@@ -128,38 +137,15 @@ class ChatService {
     }
   }
 
-  async updateConversationTitle(conversationId, title) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ title })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to update conversation title:', error);
-      throw error;
-    }
-  }
-
-  async exportConversation(conversationId, format = 'json') {
+  async exportConversation(conversationId, format = 'json', token) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/export?format=${format}`, {
-        headers: {
-          // 'Authorization': `Bearer ${token}`
-        }
+        headers: buildHeaders(token, { 'Content-Type': 'application/json' })
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || `Failed to export conversation (${response.status})`);
       }
 
       if (format === 'json') {
@@ -173,17 +159,16 @@ class ChatService {
     }
   }
 
-  async regenerateResponse(conversationId, messageId) {
+  async regenerateResponse(conversationId, messageId, token) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/messages/${messageId}/regenerate`, {
         method: 'POST',
-        headers: {
-          // 'Authorization': `Bearer ${token}`
-        }
+        headers: buildHeaders(token)
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || `Failed to regenerate response (${response.status})`);
       }
 
       return await response.json();
@@ -193,7 +178,7 @@ class ChatService {
     }
   }
 
-  // Client-side conversation management for demo
+  // Client-side conversation management helpers
   saveConversationLocally(conversationId, messages) {
     this.conversations.set(conversationId, {
       id: conversationId,

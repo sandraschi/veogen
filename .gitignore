@@ -231,3 +231,6 @@ monitoring/prometheus/data/
 monitoring/alertmanager/data/
 monitoring/loki-rules/
 monitoring/rules/
+
+# Private documentation (internal dev notes, not for public)
+docs-private/

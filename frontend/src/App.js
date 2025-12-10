@@ -31,8 +31,14 @@ import GalleryPage from './pages/GalleryPage';
 import JobsPage from './pages/JobsPage';
 import SettingsPage from './pages/SettingsPage';
 import HelpPage from './pages/HelpPage';
+import FlowStudioPage from './pages/FlowStudioPage';
+import SoundDesignPage from './pages/SoundDesignPage';
+import ComplianceCenterPage from './pages/ComplianceCenterPage';
+import WorkspaceSyncPage from './pages/WorkspaceSyncPage';
 import MCPDashboard from './components/mcp/MCPDashboard';
 import VoiceControlSideTab from './components/VoiceControlSideTab';
+import PromptCoachWidget from './components/prompt/PromptCoachWidget.jsx';
+import VideoCallDemo from './pages/VideoCallDemo';
 
 // Auth Components
 import EnhancedAuth from './components/auth/EnhancedAuth.jsx';
@@ -85,6 +91,9 @@ function App() {
                   <Route path="/auth" element={<EnhancedAuth />} />
                   <Route path="/verify-email" element={<EmailVerification />} />
                   <Route path="/reset-password" element={<PasswordReset />} />
+                  <Route path="/mcp" element={<MCPDashboard />} />
+                  <Route path="/voice-control" element={<VoiceControlSideTab />} />
+                  <Route path="/video-call" element={<VideoCallDemo />} />
                   
                   {/* Dashboard redirect to home */}
                   <Route path="/dashboard" element={
@@ -114,6 +123,13 @@ function App() {
                     <ProtectedRoute>
                       <Layout>
                         <MovieMakerPage />
+                      </Layout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/flow" element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <FlowStudioPage />
                       </Layout>
                     </ProtectedRoute>
                   } />
@@ -180,6 +196,13 @@ function App() {
                       </Layout>
                     </ProtectedRoute>
                   } />
+                  <Route path="/sound-design" element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <SoundDesignPage />
+                      </Layout>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/predictor" element={
                     <ProtectedRoute>
                       <Layout>
@@ -198,6 +221,13 @@ function App() {
                     <ProtectedRoute>
                       <Layout>
                         <ContentSafetyPage />
+                      </Layout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/compliance" element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <ComplianceCenterPage />
                       </Layout>
                     </ProtectedRoute>
                   } />
@@ -233,6 +263,13 @@ function App() {
                     <ProtectedRoute>
                       <Layout>
                         <GalleryPage />
+                      </Layout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/workspace" element={
+                    <ProtectedRoute>
+                      <Layout>
+                        <WorkspaceSyncPage />
                       </Layout>
                     </ProtectedRoute>
                   } />
@@ -277,6 +314,7 @@ function App() {
               
               {/* Voice Control Side Tab - Available globally */}
               <VoiceControlSideTab />
+              <PromptCoachWidget />
             </div>
           </Router>
         </AuthProvider>

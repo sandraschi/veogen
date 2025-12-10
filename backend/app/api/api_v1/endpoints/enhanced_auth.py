@@ -5,7 +5,6 @@ Enhanced authentication endpoints with connection testing and user onboarding
 from datetime import timedelta
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
-from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, validator
 import re
@@ -170,7 +169,7 @@ async def register(
         # Create session
         ip_address = request.client.host if request else None
         user_agent = request.headers.get("user-agent") if request else None
-        session_token = auth_service.create_user_session(
+        auth_service.create_user_session(
             db, user.id, ip_address, user_agent
         )
         
@@ -243,12 +242,12 @@ async def login(
         # Create session
         ip_address = request.client.host if request else None
         user_agent = request.headers.get("user-agent") if request else None
-        session_token = auth_service.create_user_session(
+        auth_service.create_user_session(
             db, user.id, ip_address, user_agent
         )
         
-        # Get user profile for onboarding status
-        profile = auth_service.get_user_profile(db, user.id)
+        # Get user profile
+        auth_service.get_user_profile(db, user.id)
         
         # Check onboarding status
         has_api_keys = bool(api_key_service.list_api_keys(db, user.id))

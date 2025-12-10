@@ -1,6 +1,7 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function(app) {
+  // API Proxy
   app.use(
     '/api',
     createProxyMiddleware({
@@ -11,7 +12,29 @@ module.exports = function(app) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-        'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization'
+        'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization, X-MCP-Server'
+      },
+      onProxyReq: (proxyReq) => {
+        proxyReq.setHeader('origin', 'http://localhost:3000');
+      }
+    })
+  );
+
+  // MCP Server Proxy
+  app.use(
+    '/mcp',
+    createProxyMiddleware({
+      target: 'http://goliath:3000',
+      changeOrigin: true,
+      secure: false,
+      logLevel: 'debug',
+      pathRewrite: {
+        '^/mcp': '' // Remove /mcp prefix when forwarding
+      },
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization, X-MCP-Server'
       },
       onProxyReq: (proxyReq) => {
         proxyReq.setHeader('origin', 'http://localhost:3000');

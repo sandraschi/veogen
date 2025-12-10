@@ -1,6 +1,5 @@
 # User Database Models
 
-import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Boolean, DateTime, JSON, Integer, Text
 from sqlalchemy.orm import relationship

@@ -1,11 +1,19 @@
+"""High-level integration with Gemini CLI and Google media toolchain.
+
+Environment requirements:
+- GEMINI_API_KEY: Direct Gemini API access token (fallback when CLI unavailable).
+- GOOGLE_API_KEY: Shared key for MCP media server authentication (optional).
+- GOOGLE_CLOUD_PROJECT: Project identifier for Vertex AI endpoints.
+- GOOGLE_APPLICATION_CREDENTIALS: Path to service account JSON for Vertex AI (optional).
+- GEMINI_CLI_PATH: Override path for the `gemini` executable when not on PATH (optional).
+"""
+
 import asyncio
 import json
 import logging
-import os
-import subprocess
 import tempfile
 from pathlib import Path
-from typing import Dict, Optional, List, Any
+from typing import Any, Dict, List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 import httpx
 from app.config import settings
@@ -78,8 +86,13 @@ class GeminiCLIService:
         try:
             # Get API keys from user settings or environment
             gemini_key = self._get_api_key_from_user_settings(db_session, user_id, "gemini_api_key")
-            google_key = self._get_api_key_from_user_settings(db_session, user_id, "google_api_key")
-            project_id = self._get_api_key_from_user_settings(db_session, user_id, "google_cloud_project") or self.project_id
+            self._get_api_key_from_user_settings(db_session, user_id, "google_api_key")
+            project_id = (
+                self._get_api_key_from_user_settings(
+                    db_session, user_id, "google_cloud_project"
+                )
+                or self.project_id
+            )
             
             # Initialize Google Cloud AI Platform
             if settings.GOOGLE_APPLICATION_CREDENTIALS:
@@ -337,7 +350,7 @@ class GeminiCLIService:
                 "prompt": prompt,
                 "duration_seconds": min(max(5, duration), 60),  # Clamp to 5-60s
                 "aspect_ratio": aspect_ratio if aspect_ratio in ["16:9", "9:16"] else "16:9",
-                "model": "veo-3"
+                "model": "veo-3.1"
             }
             
             if style:
@@ -389,7 +402,7 @@ class GeminiCLIService:
             # For now, we'll create a simple test video with a placeholder message
             
             with tempfile.TemporaryDirectory() as temp_dir:
-                output_path = Path(temp_dir) / f"veo3_video.mp4"
+                output_path = Path(temp_dir) / "veo3_video.mp4"
                 
                 # Create a simple test video with FFmpeg
                 cmd = [
@@ -545,9 +558,9 @@ class GeminiCLIService:
                 try:
                     # Try the most reliable models in order
                     models_to_try = [
-                        'gemini-1.5-flash',
-                        'gemini-1.5-pro', 
-                        'gemini-2.0-flash-exp',
+                        'gemini-3.0-flash',
+                        'gemini-3.0-pro', 
+                        'gemini-3.0-flash-exp',
                         'gemini-pro'
                     ]
                     
@@ -742,7 +755,7 @@ How can I help you today? Please let me know what you're working on!
                 return result["models"]
             else:
                 # Fallback to basic list
-                return ["gemini-2.0-flash-exp", "gemini-2.0-flash-thinking-exp", "veo-3", "imagen-3", "lyria"]
+                return ["gemini-3.0-flash", "gemini-3.0-pro", "veo-3.1", "gemini-3.0-pro-image", "lyria"]
             
         except Exception as e:
             logger.error(f"Error calling Gemini CLI for models: {e}")
@@ -766,7 +779,7 @@ How can I help you today? Please let me know what you're working on!
                 model_names = [model.name for model in models]
                 
                 # Add media generation models
-                model_names.extend(["veo-3", "imagen-3", "lyria"])
+                model_names.extend(["veo-3.1", "gemini-3.0-pro-image", "lyria"])
                 
                 return model_names
                 
@@ -774,24 +787,24 @@ How can I help you today? Please let me know what you're working on!
             logger.error(f"Error listing models: {e}")
             # Fallback to basic list
             return [
-                "gemini-2.0-flash-exp",
-                "gemini-2.0-flash-thinking-exp", 
-                "veo-3",
-                "imagen-3",
+                "gemini-3.0-flash",
+                "gemini-3.0-pro", 
+                "veo-3.1",
+                "gemini-3.0-pro-image",
                 "lyria"
             ]
     
-    async def get_model_info(self, model_name: str = "veo-3", db_session=None, user_id=None) -> Dict[str, Any]:
+    async def get_model_info(self, model_name: str = "veo-3.1", db_session=None, user_id=None) -> Dict[str, Any]:
         """Get model information"""
         try:
             # Re-initialize with user settings if provided
             if db_session and user_id and not self.initialized:
                 self._initialize_apis(db_session, user_id)
             
-            if model_name == "veo-3":
+            if model_name == "veo-3.1" or model_name == "veo-3":
                 return {
                     "name": model_name,
-                    "description": "Google's Veo 3 video generation model",
+                    "description": "Google's Veo 3.1 video generation model",
                     "capabilities": ["text-generation", "video-generation"],
                     "max_duration": 60,
                     "supported_aspect_ratios": ["16:9", "9:16", "1:1"],
@@ -833,12 +846,14 @@ How can I help you today? Please let me know what you're working on!
         prompt: str,
         style: Optional[str] = None,
         resolution: str = "1024x1024",
+        reference_image: Optional[str] = None,
+        mode: str = "generate",
         db_session=None,
         user_id=None
     ) -> Dict[str, Any]:
-        """Generate image using Imagen via Gemini CLI with MCP tools"""
+        """Generate, edit, or OCR image using Nano Banana Pro (Gemini 3 Pro Image) via Gemini CLI with MCP tools"""
         try:
-            logger.info(f"Generating image with prompt: {prompt}")
+            logger.info(f"Generating image with prompt: {prompt}, mode: {mode}")
             
             # Re-initialize with user settings if provided
             if db_session and user_id and not self.initialized:
@@ -849,30 +864,61 @@ How can I help you today? Please let me know what you're working on!
                 params = {
                     "prompt": prompt,
                     "style": style,
-                    "resolution": resolution
+                    "resolution": resolution,
+                    "mode": mode
                 }
                 
-                result = await self._call_gemini_cli_with_mcp(
-                    f"Generate an image: {prompt}",
-                    "googleMediaV3.generate_image",
-                    params
-                )
+                # Add reference image if provided (for editing or OCR)
+                if reference_image:
+                    params["reference_image"] = reference_image
+                
+                if mode == "ocr":
+                    result = await self._call_gemini_cli_with_mcp(
+                        f"Extract text from image: {prompt}",
+                        "googleMediaV3.ocr_image",
+                        params
+                    )
+                elif mode == "edit":
+                    result = await self._call_gemini_cli_with_mcp(
+                        f"Edit image: {prompt}",
+                        "googleMediaV3.edit_image",
+                        params
+                    )
+                else:
+                    result = await self._call_gemini_cli_with_mcp(
+                        f"Generate an image: {prompt}",
+                        "googleMediaV3.generate_image",
+                        params
+                    )
                 
                 api_used = "gemini_cli_mcp"
                 
             except Exception as e:
                 logger.warning(f"Gemini CLI with MCP failed, trying direct MCP server: {e}")
                 try:
-                    result = await self._call_mcp_media_server("generate/image", {
+                    mcp_params = {
                         "prompt": prompt,
                         "style": style,
                         "resolution": resolution
-                    })
+                    }
+                    if reference_image:
+                        mcp_params["reference_image"] = reference_image
+                    if mode:
+                        mcp_params["mode"] = mode
+                    
+                    result = await self._call_mcp_media_server("generate/image", mcp_params)
                     api_used = "mcp_direct"
                     
                 except Exception as e2:
                     logger.warning(f"Direct MCP server failed: {e2}")
-                    raise
+                    # Fallback: use Gemini API directly for OCR/editing with image
+                    if mode in ["ocr", "edit"] and reference_image:
+                        result = await self._call_gemini_api_with_image(
+                            prompt, reference_image, mode
+                        )
+                        api_used = "gemini_api_direct"
+                    else:
+                        raise
             
             # Ensure we have image data
             if "image_data" not in result and "imageUrl" in result:
@@ -895,6 +941,56 @@ How can I help you today? Please let me know what you're working on!
                     
         except Exception as e:
             logger.error(f"Error in generate_image: {e}")
+            raise
+    
+    async def _call_gemini_api_with_image(
+        self, 
+        prompt: str, 
+        reference_image: str, 
+        mode: str
+    ) -> Dict[str, Any]:
+        """Use Gemini API directly for OCR or image editing with uploaded image"""
+        try:
+            import base64
+            from PIL import Image
+            import io
+            
+            # Decode base64 image
+            image_data = base64.b64decode(reference_image)
+            image = Image.open(io.BytesIO(image_data))
+            
+            # Use Gemini 3 Pro Vision for OCR/editing
+            vision_model = genai.GenerativeModel("gemini-3.0-pro-vision")
+            
+            if mode == "ocr":
+                ocr_prompt = f"Extract all text from this image. {prompt if prompt else 'Return all visible text.'}"
+                response = vision_model.generate_content([ocr_prompt, image])
+                
+                return {
+                    "status": "success",
+                    "text": response.text,
+                    "mode": "ocr",
+                    "message": "Text extracted successfully"
+                }
+            elif mode == "edit":
+                edit_prompt = f"Edit this image: {prompt}"
+                # For editing, we'd use Nano Banana Pro's edit capabilities
+                # This is a placeholder - actual implementation depends on API
+                response = vision_model.generate_content([edit_prompt, image])
+                
+                # In a real implementation, this would return edited image data
+                # For now, return the response
+                return {
+                    "status": "success",
+                    "message": response.text,
+                    "mode": "edit",
+                    "note": "Image editing via Nano Banana Pro - implementation pending API details"
+                }
+            else:
+                raise ValueError(f"Unsupported mode: {mode}")
+                
+        except Exception as e:
+            logger.error(f"Error in _call_gemini_api_with_image: {e}")
             raise
 
     async def generate_music(

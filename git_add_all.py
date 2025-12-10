@@ -2,38 +2,50 @@
 """
 Git add all changes script
 """
-import subprocess
 import os
+import subprocess
+from pathlib import Path
+from typing import List
 
-def run_git_add():
+def run_git_add() -> None:
     """Run git add . in the VeoGen directory"""
-    
+
     # Change to the VeoGen directory
-    veogen_dir = r"C:\Users\sandr\AppData\Local\AnthropicClaude\app-0.11.6\veogen"
-    os.chdir(veogen_dir)
+    repo_root = Path(__file__).resolve().parent
+    os.chdir(repo_root)
     
     print("📦 Adding all changes to git...")
     print(f"📍 Working directory: {os.getcwd()}")
     
     try:
         # Run git add .
-        result = subprocess.run(['git', 'add', '.'], 
-                              capture_output=True, 
-                              text=True, 
-                              timeout=30)
+        result = subprocess.run(
+            ["git", "add", "."],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
         
         if result.returncode == 0:
             print("✅ Successfully added all changes to git!")
             
             # Show git status
             print("\n📊 Git status:")
-            status_result = subprocess.run(['git', 'status', '--porcelain'], 
-                                         capture_output=True, 
-                                         text=True, 
-                                         timeout=10)
+            status_result = subprocess.run(
+                ["git", "status", "--porcelain"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
             
             if status_result.returncode == 0:
-                staged_files = status_result.stdout.strip().split('\n') if status_result.stdout.strip() else []
+                staged_files: List[str] = (
+                    status_result.stdout.strip().splitlines()
+                    if status_result.stdout.strip()
+                    else []
+                )
                 if staged_files and staged_files[0]:
                     print(f"   📁 {len(staged_files)} files staged for commit")
                     for file_line in staged_files[:10]:  # Show first 10 files
@@ -45,10 +57,10 @@ def run_git_add():
                     print("   📝 No changes to stage (working tree clean)")
             
             # Suggest next step
-            print("\n🚀 Next step: Run 'git commit -m \"Fix User Manager UUID support and rebuild frontend\"'")
+            print('\n🚀 Next step: Run \'git commit -m "Fix User Manager UUID support and rebuild frontend"\'')
             
         else:
-            print(f"❌ Git add failed:")
+            print("❌ Git add failed:")
             print(f"   Return code: {result.returncode}")
             print(f"   Error: {result.stderr}")
             

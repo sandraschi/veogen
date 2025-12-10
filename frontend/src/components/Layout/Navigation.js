@@ -8,14 +8,20 @@ import {
   BookOpenIcon,
   PhotoIcon,
   Cog6ToothIcon,
+  VideoCameraIcon,
+  Squares2X2Icon,
+  SpeakerWaveIcon,
 } from '@heroicons/react/24/outline';
 
 const navigationItems = [
   { name: 'Home', href: '/', icon: HomeIcon },
   { name: 'Generate', href: '/generate', icon: SparklesIcon },
   { name: 'Movies', href: '/moviemaker', icon: FilmIcon },
+  { name: 'Flow', href: '/flow', icon: Squares2X2Icon },
   { name: 'Books', href: '/bookmaker', icon: BookOpenIcon },
+  { name: 'Sound', href: '/sound-design', icon: SpeakerWaveIcon },
   { name: 'Gallery', href: '/gallery', icon: PhotoIcon },
+  { name: 'Video Call', href: '/video-call', icon: VideoCameraIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
 

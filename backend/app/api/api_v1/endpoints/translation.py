@@ -141,7 +141,7 @@ async def detect_language(request: LanguageDetectionRequest):
             elif "confidence:" in line.lower():
                 try:
                     confidence = float(line.split(":", 1)[1].strip())
-                except:
+                except ValueError:
                     pass
         
         return LanguageDetectionResponse(

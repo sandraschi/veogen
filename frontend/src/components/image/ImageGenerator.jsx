@@ -211,6 +211,7 @@ const ImageGenerator = () => {
   const [seed, setSeed] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
   const [referenceImage, setReferenceImage] = useState(null);
+  const [imageMode, setImageMode] = useState('generate'); // 'generate', 'edit', 'ocr'
   
   const [generating, setGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState([]);
@@ -253,49 +254,60 @@ const ImageGenerator = () => {
 
     setGenerating(true);
     setError('');
+    setSuccess('');
 
     try {
-      const formData = new FormData();
-      formData.append('prompt', prompt);
-      formData.append('style', style);
-      formData.append('aspect_ratio', aspectRatio);
-      formData.append('quality', quality);
-      formData.append('creativity', creativity);
-      formData.append('batch_count', batchCount);
+      const payload = {
+        prompt,
+        style,
+        aspect_ratio: aspectRatio,
+        num_images: batchCount,
+        creativity,
+        mode: imageMode
+      };
       
-      if (seed) formData.append('seed', seed);
-      if (negativePrompt) formData.append('negative_prompt', negativePrompt);
-      if (referenceImage) formData.append('reference_image', referenceImage.file);
+      // Add reference image if uploaded (for editing or OCR)
+      if (referenceImage && imageMode !== 'generate') {
+        // Convert image to base64
+        const base64Image = referenceImage.preview.split(',')[1];
+        payload.reference_image = base64Image;
+      }
 
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/image/generate`,
-        formData,
+        payload,
         {
           headers: {
             ...getAuthHeaders(),
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'application/json'
           }
         }
       );
 
-      const newImages = response.data.images.map(imageData => ({
+      const newImages = (response.data.images || []).map((imageData) => ({
         id: Date.now() + Math.random(),
         url: imageData.url,
-        prompt,
-        style,
-        resolution: aspectRatio,
+        prompt: imageData.metadata?.prompt || prompt,
+        style: imageData.metadata?.style || style,
+        resolution: imageData.metadata?.resolution || aspectRatio,
         quality,
         created_at: new Date().toISOString(),
         favorite: false
       }));
 
+      if (newImages.length === 0) {
+        setError('No images were returned. Please try again.');
+        return;
+      }
+
       setGeneratedImages(newImages);
       setImageHistory(prev => [...newImages, ...prev]);
-      setSuccess(`Generated ${newImages.length} image(s) successfully!`);
+      setSuccess(response.data.message || `Generated ${newImages.length} image(s) successfully!`);
 
     } catch (error) {
       console.error('Image generation error:', error);
-      setError(error.response?.data?.detail || 'Failed to generate images. Please try again.');
+      const detail = error.response?.data?.detail || 'Failed to generate images. Please try again.';
+      setError(detail);
     } finally {
       setGenerating(false);
     }
@@ -344,7 +356,7 @@ const ImageGenerator = () => {
         🎨 Image Generator
       </Typography>
       <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
-        Create stunning AI-generated images with Imagen 3. From photorealistic to artistic styles.
+        Create stunning AI-generated images with Nano Banana Pro. From photorealistic to artistic styles.
       </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
@@ -363,17 +375,81 @@ const ImageGenerator = () => {
             <TabPanel value={activeTab} index={0}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Mode</InputLabel>
+                    <Select 
+                      value={imageMode} 
+                      onChange={(e) => setImageMode(e.target.value)} 
+                      disabled={generating}
+                    >
+                      <MenuItem value="generate">Generate New Image</MenuItem>
+                      <MenuItem value="edit">Edit Uploaded Image</MenuItem>
+                      <MenuItem value="ocr">Extract Text (OCR)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Image Description"
-                    placeholder="Describe the image you want to generate... (e.g., 'A beautiful sunset over mountains')"
+                    label={imageMode === 'ocr' ? 'OCR Instructions (Optional)' : 'Image Description'}
+                    placeholder={
+                      imageMode === 'ocr' 
+                        ? 'Optional: Describe what text to extract or focus on...'
+                        : imageMode === 'edit'
+                        ? 'Describe how to edit the uploaded image... (e.g., "Add a sunset sky", "Remove background")'
+                        : "Describe the image you want to generate... (e.g., 'A beautiful sunset over mountains')"
+                    }
                     multiline
                     rows={4}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     disabled={generating}
+                    required={imageMode !== 'ocr'}
                   />
                 </Grid>
+                
+                {(imageMode === 'edit' || imageMode === 'ocr') && (
+                  <Grid item xs={12}>
+                    <Typography variant="h6" gutterBottom>
+                      {imageMode === 'ocr' ? 'Upload Image for OCR' : 'Upload Image to Edit'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {imageMode === 'ocr' 
+                        ? 'Nano Banana Pro can extract text from images with high accuracy.'
+                        : 'Upload an image to edit using Nano Banana Pro\'s AI editing capabilities.'}
+                    </Typography>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={() => fileInputRef.current?.click()}
+                      startIcon={<Upload />}
+                      disabled={generating}
+                      color={imageMode === 'ocr' ? 'secondary' : 'primary'}
+                    >
+                      {referenceImage ? 'Change Image' : 'Upload Image'}
+                    </Button>
+                    
+                    {referenceImage && (
+                      <Box sx={{ mt: 2 }}>
+                        <img
+                          src={referenceImage.preview}
+                          alt={imageMode === 'ocr' ? 'Image for OCR' : 'Image to Edit'}
+                          style={{ maxWidth: 200, maxHeight: 200, objectFit: 'cover', borderRadius: 4 }}
+                        />
+                        <IconButton onClick={() => setReferenceImage(null)} sx={{ ml: 1 }}>
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </Grid>
+                )}
 
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth>
@@ -505,37 +581,47 @@ const ImageGenerator = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>Reference Image (Optional)</Typography>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageUpload}
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={() => fileInputRef.current?.click()}
-                    startIcon={<Upload />}
-                    disabled={generating}
-                  >
-                    Upload Reference Image
-                  </Button>
-                  
-                  {referenceImage && (
-                    <Box sx={{ mt: 2 }}>
-                      <img
-                        src={referenceImage.preview}
-                        alt="Reference"
-                        style={{ maxWidth: 200, maxHeight: 200, objectFit: 'cover' }}
-                      />
-                      <IconButton onClick={() => setReferenceImage(null)}>
-                        <Delete />
-                      </IconButton>
-                    </Box>
-                  )}
-                </Grid>
+                {(imageMode === 'edit' || imageMode === 'ocr') && (
+                  <Grid item xs={12}>
+                    <Typography variant="h6" gutterBottom>
+                      {imageMode === 'ocr' ? 'Upload Image for OCR' : 'Upload Image to Edit'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {imageMode === 'ocr' 
+                        ? 'Nano Banana Pro can extract text from images with high accuracy.'
+                        : 'Upload an image to edit using Nano Banana Pro\'s AI editing capabilities.'}
+                    </Typography>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={() => fileInputRef.current?.click()}
+                      startIcon={<Upload />}
+                      disabled={generating}
+                      color={imageMode === 'ocr' ? 'secondary' : 'primary'}
+                    >
+                      {referenceImage ? 'Change Image' : 'Upload Image'}
+                    </Button>
+                    
+                    {referenceImage && (
+                      <Box sx={{ mt: 2 }}>
+                        <img
+                          src={referenceImage.preview}
+                          alt={imageMode === 'ocr' ? 'Image for OCR' : 'Image to Edit'}
+                          style={{ maxWidth: 200, maxHeight: 200, objectFit: 'cover', borderRadius: 4 }}
+                        />
+                        <IconButton onClick={() => setReferenceImage(null)} sx={{ ml: 1 }}>
+                          <Delete />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </Grid>
+                )}
               </Grid>
             </TabPanel>
 

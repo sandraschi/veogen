@@ -6,7 +6,6 @@ import logging.config
 import json
 import sys
 from datetime import datetime
-from typing import Dict, Any
 import os
 
 class JSONFormatter(logging.Formatter):

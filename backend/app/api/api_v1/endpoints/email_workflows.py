@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any
 import uuid
 from datetime import datetime
 
-from app.services.advanced_email_workflows import VeoGenEmailOrchestrator, EmailWorkflowType
+from app.services.advanced_email_workflows import VeoGenEmailOrchestrator
 from app.services.auth_service import auth_service
 from app.database import get_db
 from fastapi import Depends
@@ -95,8 +95,7 @@ async def initiate_security_challenge(
             raise HTTPException(status_code=404, detail="User not found")
         
         user_email = user.email
-        user_name = user.full_name or user.username or "User"
-        
+
         client_ip = http_request.client.host
         user_agent = http_request.headers.get("user-agent", "Unknown")
         

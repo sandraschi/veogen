@@ -4,7 +4,6 @@ Simple script to create a test user with a known password
 """
 import bcrypt
 import psycopg2
-import os
 
 # Database connection
 DB_URL = "postgresql://veogen:veogen123@localhost:4715/veogen"
@@ -38,8 +37,8 @@ def create_test_user():
         ))
         
         conn.commit()
-        print(f"SUCCESS: Created test user:")
-        print(f"   Email: test@test.com")
+        print("SUCCESS: Created test user:")
+        print("   Email: test@test.com")
         print(f"   Password: {password}")
         print(f"   Hash: {hashed}")
         

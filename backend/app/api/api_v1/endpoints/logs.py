@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
-import os
 import json
 import re
 from pathlib import Path
@@ -88,7 +87,7 @@ def parse_log_line(line: str, component: str) -> Optional[LogEntry]:
                         timestamp_str += 'Z'
                     # Validate timestamp
                     datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-                except:
+                except (ValueError, TypeError):
                     timestamp_str = datetime.now().isoformat() + 'Z'
                 
                 return LogEntry(

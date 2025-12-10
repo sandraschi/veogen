@@ -1,16 +1,10 @@
 import google.generativeai as genai
 from google.cloud import aiplatform
-from google.auth.transport.requests import Request
-from google.oauth2 import service_account
 import asyncio
-import json
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 from app.config import settings
 from app.models.video_request import VideoGenerationRequest, VideoGenerationResponse
-import tempfile
-import os
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +96,7 @@ class GeminiService:
                 "aspect_ratio": request.aspect_ratio or "16:9",
                 "duration_seconds": min(max(5, request.duration or 5), 60),  # 5-60s
                 "style": request.style or "cinematic",
-                "model": "veo-3"  # Explicitly use Veo 3
+                "model": "veo-3.1"  # Explicitly use Veo 3.1
             }
             
             # Add reference image if provided
@@ -131,7 +125,6 @@ class GeminiService:
             # The exact implementation depends on Google's Veo API structure
             
             # For now, we'll simulate the API call
-            import time
             await asyncio.sleep(2)  # Simulate processing time
             
             # Use MCP media service for actual Veo generation
@@ -146,17 +139,17 @@ class GeminiService:
                 user_id=None  # Will be set by the calling service
             )
             
-            if video_result and "video_path" in video_result:
-                response = {
-                    "video_url": video_result["video_path"],
-                    "generation_time": video_result.get("generation_time", 0),
-                    "status": "completed"
-                }
-            else:
-                raise Exception("Video generation failed")
-            
+            if not video_result or "video_path" not in video_result:
+                raise RuntimeError("Video generation failed")
+
+            response_payload = {
+                "video_url": video_result["video_path"],
+                "generation_time": video_result.get("generation_time", 0),
+                "status": "completed",
+            }
+
             logger.info("Veo API call completed successfully")
-            return mock_response
+            return response_payload
             
         except Exception as e:
             logger.error(f"Veo API call failed: {str(e)}")

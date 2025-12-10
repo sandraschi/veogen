@@ -106,8 +106,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "4720:6379"  # Redis
-    command: redis-server --appendonly yes --requirepass veogen123
+      - "4712:6379"  # Redis
     volumes:
       - redis_data:/data
     networks:
@@ -120,12 +119,42 @@ services:
         max-file: "3"
         labels: "service=redis"
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --dev --bind 0.0.0.0
+    ports:
+      - "7880:7880"  # WebSocket & HTTP
+      - "7881:7881"  # WebRTC
+      - "7882:7882/udp"  # TURN/UDP
+      - "3478:3478/udp"  # STUN/UDP
+    environment:
+      - LIVEKIT_KEYS_API_KEY=${LIVEKIT_API_KEY}
+      - LIVEKIT_KEYS_API_SECRET=${LIVEKIT_API_SECRET}
+      - LIVEKIT_KEYS_REDIS_ADDR=redis:6379
+      - LIVEKIT_TURN_STATIC_CREDS=${LIVEKIT_TURN_CREDS}
+    depends_on:
+      - redis
+    networks:
+      - veogen-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=livekit"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7880/rtc/health"]
       interval: 30s
       timeout: 5s
       retries: 5
     labels:
       - "promtail.enabled=true"
+      - "promtail.job=livekit"
       - "promtail.job=redis"
 
   # Grafana for dashboards and visualization

@@ -1,11 +1,10 @@
 import hashlib
-import secrets
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, func
 
-from app.database import APIKey, User
+from app.database import APIKey
 
 
 class APIKeyService:
@@ -181,7 +180,7 @@ class APIKeyService:
         
         # Get active API keys
         active_keys = db.query(func.count(APIKey.id)).filter(
-            and_(APIKey.user_id == user_id, APIKey.is_active == True)
+            and_(APIKey.user_id == user_id, APIKey.is_active)
         ).scalar()
         
         # Get total usage count
@@ -215,7 +214,7 @@ class APIKeyService:
         expired_keys = db.query(APIKey).filter(
             and_(
                 APIKey.last_used < cutoff_date,
-                APIKey.is_active == False
+                APIKey.is_active.is_(False)
             )
         ).all()
         

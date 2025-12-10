@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChatBubbleLeftRightIcon,
@@ -20,8 +20,11 @@ import {
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { chatService } from '../services/chatService';
+import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 const ChatPage = () => {
+  const { token, isAuthenticated, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [selectedPersona, setSelectedPersona] = useState('creative_director');
@@ -29,7 +32,9 @@ const ChatPage = () => {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [personas, setPersonas] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [personasLoading, setPersonasLoading] = useState(true);
+  const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+  const [conversationsLoading, setConversationsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -79,6 +84,7 @@ const ChatPage = () => {
         }
       } catch (error) {
         console.error('Failed to load personas:', error);
+        toast.error('Failed to load personas', { description: error.message });
         // Fallback to default persona if API fails
         setPersonas([{
           id: 'creative_director',
@@ -90,12 +96,91 @@ const ChatPage = () => {
           personality: 'Visionary creative leader with a passion for compelling visual narratives'
         }]);
       } finally {
-        setLoading(false);
+        setPersonasLoading(false);
       }
     };
     
     loadPersonas();
   }, []);
+
+  const mapHistoryMessages = useCallback((historyMessages = [], personaId) => {
+    return historyMessages.map((message, index) => ({
+      id: `${personaId || 'persona'}-${message.timestamp || Date.now()}-${index}`,
+      type: message.role === 'user' ? 'user' : 'assistant',
+      content: message.content,
+      persona: personaId,
+      timestamp: message.timestamp ? new Date(message.timestamp) : new Date(),
+      isError: Boolean(message.error)
+    }));
+  }, []);
+
+  const formatAssistantMessage = useCallback((response, personaId) => {
+    const timestamp = response?.timestamp ? new Date(response.timestamp) : new Date();
+    return {
+      id: `assistant-${timestamp.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+      type: 'assistant',
+      content: response?.message ?? '',
+      persona: personaId,
+      timestamp,
+      isError: Boolean(response?.error),
+      error: response?.error
+    };
+  }, []);
+
+  const loadConversations = useCallback(async () => {
+    if (!token) {
+      setConversations([]);
+      return;
+    }
+
+    setConversationsLoading(true);
+    try {
+      const data = await chatService.getConversations(token);
+      setConversations(data);
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+      toast.error('Failed to load conversations', { description: error.message });
+    } finally {
+      setConversationsLoading(false);
+    }
+  }, [token]);
+
+  const handleSelectConversation = useCallback(async (conversationSummary) => {
+    if (!token) {
+      toast.error('Please log in to load conversations', {
+        description: 'Authentication is required to resume Enhance Chat sessions.'
+      });
+      return;
+    }
+
+    setIsFetchingHistory(true);
+    try {
+      const history = await chatService.getConversationHistory(conversationSummary.id, token);
+      const personaId = history.persona?.id || conversationSummary.persona?.id || selectedPersona;
+      setActiveConversation({
+        id: conversationSummary.id,
+        personaId,
+        persona: history.persona || conversationSummary.persona || null
+      });
+
+      if (personaId && personas.some(p => p.id === personaId)) {
+        setSelectedPersona(personaId);
+      }
+
+      setMessages(mapHistoryMessages(history.messages, personaId));
+    } catch (error) {
+      console.error('Failed to load conversation history:', error);
+      toast.error('Failed to load conversation', { description: error.message });
+    } finally {
+      setIsFetchingHistory(false);
+    }
+  }, [mapHistoryMessages, personas, token, selectedPersona]);
+
+  useEffect(() => {
+    if (!authLoading) {
+      loadConversations();
+    }
+  }, [authLoading, loadConversations]);
 
   useEffect(() => {
     scrollToBottom();
@@ -103,33 +188,55 @@ const ChatPage = () => {
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, [selectedPersona]);
+  }, [selectedPersona, activeConversation]);
 
   // Initialize with welcome message
   useEffect(() => {
-    if (messages.length === 0) {
+    if (
+      !activeConversation &&
+      !personasLoading &&
+      messages.length === 0 &&
+      personas.length > 0
+    ) {
+      const personaInfo =
+        personas.find(p => p.id === selectedPersona) || personas[0];
+
+      if (!personaInfo) {
+        return;
+      }
+
       const welcomeMessage = {
-        id: Date.now(),
+        id: `welcome-${Date.now()}`,
         type: 'assistant',
-        content: `Hello! I'm your ${personas.find(p => p.id === selectedPersona)?.name}. I'm here to help you with ${personas.find(p => p.id === selectedPersona)?.description.toLowerCase()}. What would you like to work on today?`,
-        persona: selectedPersona,
+        content: `Hello! I'm your ${personaInfo.name}. I'm here to help you with ${personaInfo.description?.toLowerCase()}. What would you like to work on today?`,
+        persona: personaInfo.id,
         timestamp: new Date()
       };
       setMessages([welcomeMessage]);
     }
-  }, [selectedPersona]);
+  }, [activeConversation, personasLoading, personas, selectedPersona, messages.length]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+    const trimmedMessage = inputMessage.trim();
+    if (!trimmedMessage) {
+      return;
+    }
+
+    if (!token) {
+      toast.error('Please log in to chat', {
+        description: 'Sign in to send messages with Gemini personas.'
+      });
+      return;
+    }
 
     const userMessage = {
-      id: Date.now(),
+      id: `user-${Date.now()}`,
       type: 'user',
-      content: inputMessage.trim(),
+      content: trimmedMessage,
       timestamp: new Date()
     };
 
@@ -138,32 +245,58 @@ const ChatPage = () => {
     setIsTyping(true);
 
     try {
-      const response = await chatService.sendMessage({
-        message: inputMessage.trim(),
-        persona: selectedPersona,
-        conversation_history: messages
-      });
+      let assistantMessage = null;
 
-      const assistantMessage = {
-        id: Date.now() + 1,
-        type: 'assistant',
-        content: response.response,
-        persona: selectedPersona,
-        timestamp: new Date()
-      };
+      if (!activeConversation) {
+        const response = await chatService.startConversation(
+          selectedPersona,
+          trimmedMessage,
+          token
+        );
 
-      setMessages(prev => [...prev, assistantMessage]);
+        const personaId = response.persona?.id || selectedPersona;
+        setActiveConversation({
+          id: response.conversation_id,
+          personaId,
+          persona: response.persona || null
+        });
+
+        assistantMessage = formatAssistantMessage(response.response, personaId);
+      } else {
+        const response = await chatService.sendMessage(
+          activeConversation.id,
+          trimmedMessage,
+          token
+        );
+
+        const personaId = activeConversation.personaId || selectedPersona;
+        assistantMessage = formatAssistantMessage(response.response, personaId);
+      }
+
+      if (assistantMessage) {
+        setMessages(prev => [...prev, assistantMessage]);
+        if (assistantMessage.isError && assistantMessage.error) {
+          toast.error('Gemini response error', {
+            description: assistantMessage.error
+          });
+        }
+      }
+
+      await loadConversations();
     } catch (error) {
       console.error('Chat error:', error);
-      const errorMessage = {
-        id: Date.now() + 1,
-        type: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again.',
-        persona: selectedPersona,
-        timestamp: new Date(),
-        isError: true
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      toast.error('Unable to send message', { description: error.message });
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `error-${Date.now()}`,
+          type: 'assistant',
+          content: 'I encountered an error while responding. Please try again.',
+          persona: selectedPersona,
+          timestamp: new Date(),
+          isError: true
+        }
+      ]);
     } finally {
       setIsTyping(false);
     }
@@ -177,22 +310,35 @@ const ChatPage = () => {
   };
 
   const startNewConversation = () => {
-    setMessages([]);
     setActiveConversation(null);
+    setMessages([]);
   };
 
   const clearCurrentChat = () => {
+    setActiveConversation(null);
     setMessages([]);
   };
 
   const changePersona = (personaId) => {
     setSelectedPersona(personaId);
-    setMessages([]); // Clear messages when changing persona
+    setActiveConversation(null);
+    setMessages([]);
   };
 
   const currentPersona = personas.find(p => p.id === selectedPersona);
+  const fallbackPersona = currentPersona
+    ? null
+    : activeConversation?.persona
+    ? {
+        ...activeConversation.persona,
+        icon: SparklesIcon,
+        color: 'from-purple-500 to-pink-500',
+        expertise: activeConversation.persona?.expertise || []
+      }
+    : null;
+  const personaForDisplay = currentPersona || fallbackPersona;
 
-  if (loading) {
+  if (personasLoading || authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-800 text-white flex items-center justify-center">
         <div className="text-center">
@@ -278,28 +424,110 @@ const ChatPage = () => {
               </div>
             </div>
 
+            <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-4 border border-white/10">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold">Recent Conversations</h3>
+                <button
+                  type="button"
+                  onClick={() => loadConversations()}
+                  className="p-1 rounded-md border border-white/10 hover:border-purple-400 transition-colors"
+                  aria-label="Refresh conversations"
+                >
+                  <ArrowPathIcon
+                    className={`w-4 h-4 ${conversationsLoading ? 'animate-spin text-purple-300' : 'text-gray-300'}`}
+                  />
+                </button>
+              </div>
+
+              {!token ? (
+                <p className="text-sm text-gray-400">
+                  Sign in to save and resume conversations.
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {conversationsLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400"></div>
+                    </div>
+                  ) : conversations.length === 0 ? (
+                    <p className="text-sm text-gray-400">
+                      Start a new chat to see it listed here.
+                    </p>
+                  ) : (
+                    conversations.map((conversation) => {
+                      const personaMeta = personas.find(
+                        (p) => p.id === conversation.persona?.id
+                      );
+                      const IconComponent = personaMeta?.icon || SparklesIcon;
+                      const cardGradient = personaMeta?.color || 'from-purple-500 to-pink-500';
+                      const isActive = activeConversation?.id === conversation.id;
+
+                      return (
+                        <button
+                          key={conversation.id}
+                          onClick={() => handleSelectConversation(conversation)}
+                          disabled={isFetchingHistory && isActive}
+                          className={`w-full p-3 rounded-lg border transition-all text-left ${
+                            isActive
+                              ? 'border-purple-500 bg-purple-500/10'
+                              : 'border-gray-600 bg-gray-700/30 hover:border-gray-500'
+                          } ${isFetchingHistory && isActive ? 'opacity-70 cursor-wait' : ''}`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-lg bg-gradient-to-r ${cardGradient}`}>
+                              <IconComponent className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm">
+                                {conversation.persona?.name || 'Conversation'}
+                              </div>
+                              <div className="text-xs text-gray-400 truncate">
+                                {conversation.last_message || 'No messages yet'}
+                              </div>
+                              <div className="text-[10px] text-gray-500 mt-1">
+                                {conversation.message_count || 0} message
+                                {conversation.message_count === 1 ? '' : 's'}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {isFetchingHistory && token && (
+                <p className="mt-3 text-xs text-purple-300">Loading conversation...</p>
+              )}
+            </div>
+
             {/* Current Persona Info */}
-            {currentPersona && (
+            {personaForDisplay && (
               <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-4 border border-white/10">
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className={`p-2 rounded-lg bg-gradient-to-r ${currentPersona.color}`}>
-                    <currentPersona.icon className="w-5 h-5 text-white" />
+                  <div className={`p-2 rounded-lg bg-gradient-to-r ${personaForDisplay.color}`}>
+                    <personaForDisplay.icon className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-medium">{currentPersona.name}</h4>
-                    <p className="text-xs text-gray-400">{currentPersona.personality}</p>
+                    <h4 className="font-medium">{personaForDisplay.name}</h4>
+                    {personaForDisplay.personality && (
+                      <p className="text-xs text-gray-400">{personaForDisplay.personality}</p>
+                    )}
                   </div>
                 </div>
-                <div className="text-xs text-gray-300">
-                  <div className="font-medium mb-1">Expertise:</div>
-                  <div className="flex flex-wrap gap-1">
-                    {currentPersona.expertise.map((skill, index) => (
-                      <span key={index} className="px-2 py-1 bg-gray-700 rounded text-xs">
-                        {skill}
-                      </span>
-                    ))}
+                {personaForDisplay.expertise && personaForDisplay.expertise.length > 0 && (
+                  <div className="text-xs text-gray-300">
+                    <div className="font-medium mb-1">Expertise:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {personaForDisplay.expertise.map((skill, index) => (
+                        <span key={index} className="px-2 py-1 bg-gray-700 rounded text-xs">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </motion.div>
@@ -315,16 +543,21 @@ const ChatPage = () => {
               <div className="p-4 border-b border-gray-600">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    {currentPersona && (
+                    {personaForDisplay ? (
                       <>
-                        <div className={`p-2 rounded-lg bg-gradient-to-r ${currentPersona.color}`}>
-                          <currentPersona.icon className="w-5 h-5 text-white" />
+                        <div className={`p-2 rounded-lg bg-gradient-to-r ${personaForDisplay.color}`}>
+                          <personaForDisplay.icon className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold">{currentPersona.name}</h3>
+                          <h3 className="font-semibold">{personaForDisplay.name || 'AI Assistant'}</h3>
                           <p className="text-sm text-gray-400">Ready to assist you</p>
                         </div>
                       </>
+                    ) : (
+                      <div className="flex items-center space-x-2 text-gray-300">
+                        <SparklesIcon className="w-5 h-5 text-purple-400" />
+                        <span className="text-sm">Select a persona to begin</span>
+                      </div>
                     )}
                   </div>
                   <div className="flex items-center space-x-2">
@@ -358,13 +591,13 @@ const ChatPage = () => {
                         <div className="flex items-start space-x-2">
                           {message.type === 'assistant' && (
                             <div className="flex-shrink-0 mt-1">
-                              {currentPersona ? (
-                                <div className={`p-1 rounded bg-gradient-to-r ${currentPersona.color}`}>
-                                  <currentPersona.icon className="w-4 h-4 text-white" />
-                                </div>
-                              ) : (
-                                <SparklesIcon className="w-5 h-5 text-purple-400" />
-                              )}
+                          {personaForDisplay ? (
+                            <div className={`p-1 rounded bg-gradient-to-r ${personaForDisplay.color}`}>
+                              <personaForDisplay.icon className="w-4 h-4 text-white" />
+                            </div>
+                          ) : (
+                            <SparklesIcon className="w-5 h-5 text-purple-400" />
+                          )}
                             </div>
                           )}
                           <div className="flex-1">
@@ -387,8 +620,12 @@ const ChatPage = () => {
                     className="flex justify-start"
                   >
                     <div className="bg-gray-700/50 rounded-lg p-3 flex items-center space-x-2">
-                      <div className={`p-1 rounded bg-gradient-to-r ${currentPersona?.color}`}>
-                        {currentPersona?.icon && <currentPersona.icon className="w-4 h-4 text-white" />}
+                      <div className={`p-1 rounded bg-gradient-to-r ${personaForDisplay?.color || 'from-purple-500 to-pink-500'}`}>
+                        {personaForDisplay?.icon ? (
+                          <personaForDisplay.icon className="w-4 h-4 text-white" />
+                        ) : (
+                          <SparklesIcon className="w-4 h-4 text-white" />
+                        )}
                       </div>
                       <div className="flex space-x-1">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
@@ -410,7 +647,7 @@ const ChatPage = () => {
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder={`Ask ${currentPersona?.name} anything...`}
+                    placeholder={`Ask ${personaForDisplay?.name || 'your assistant'} anything...`}
                     className="flex-1 bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                     rows="2"
                     disabled={isTyping}

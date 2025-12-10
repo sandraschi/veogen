@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import uuid
 from datetime import datetime
@@ -12,9 +11,6 @@ from google.cloud import aiplatform
 from app.services.gemini_cli import gemini_service
 from app.services.ffmpeg import ffmpeg_service
 from app.config import settings
-from app.database import get_user_setting
-from app.middleware.metrics import track_video_generation
-from app.utils.logging_config import log_video_generation_event
 
 logger = logging.getLogger(__name__)
 
@@ -313,7 +309,6 @@ Maintain consistent style throughout. Ensure smooth transitions between scenes."
                     # Extract scene number and title
                     parts = line.split(":", 1)
                     if len(parts) == 2:
-                        scene_info = parts[0].strip()
                         scene_title = parts[1].strip()
                         
                         current_scene = {
@@ -330,7 +325,7 @@ Maintain consistent style throughout. Ensure smooth transitions between scenes."
                     duration_text = line.split(":", 1)[1].strip()
                     try:
                         current_scene["duration"] = int(duration_text.split()[0])
-                    except:
+                    except ValueError:
                         pass
                 
                 elif current_scene and line.startswith("Description:"):
@@ -534,7 +529,7 @@ Maintain consistent style throughout. Ensure smooth transitions between scenes."
             """
             
             # Generate video using Gemini (this is a simplified approach)
-            response = await asyncio.to_thread(
+            await asyncio.to_thread(
                 model.generate_content,
                 video_prompt
             )

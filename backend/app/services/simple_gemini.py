@@ -5,7 +5,6 @@ Emergency Gemini Fix - Simple working text generation
 import google.generativeai as genai
 import asyncio
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

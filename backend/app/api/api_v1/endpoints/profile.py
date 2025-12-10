@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.api.deps import get_current_user
-from app.schemas.user import UserUpdate, UserResponse
 from typing import Optional
 from pydantic import BaseModel
 

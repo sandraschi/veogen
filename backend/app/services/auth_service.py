@@ -2,7 +2,6 @@
 Authentication and user management service
 """
 
-import os
 import uuid
 import jwt
 import bcrypt
@@ -314,7 +313,7 @@ class AuthService:
         reset_token = db.query(PasswordResetToken).filter(
             PasswordResetToken.user_id == user_id,
             PasswordResetToken.token == token,
-            PasswordResetToken.used == False,
+            PasswordResetToken.used.is_(False),
             PasswordResetToken.expires_at > datetime.utcnow()
         ).first()
         return bool(reset_token)
@@ -323,7 +322,7 @@ class AuthService:
         reset_token = db.query(PasswordResetToken).filter(
             PasswordResetToken.user_id == user_id,
             PasswordResetToken.token == token,
-            PasswordResetToken.used == False,
+            PasswordResetToken.used.is_(False),
             PasswordResetToken.expires_at > datetime.utcnow()
         ).first()
         if not reset_token:

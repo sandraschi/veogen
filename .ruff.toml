@@ -1,0 +1,48 @@
+target-version = "py312"
+line-length = 120
+
+# Exclude legacy utilities, experimental scripts, and Blender assets from linting.
+extend-exclude = [
+    "legacy",
+    "backend/blender_scripts",
+    "backend/run_server.py",
+    "backend/start_server.py",
+    "backend/simple_test.py",
+    "backend/init_database.py",
+    "backend/check_routes.py",
+    "backend/check_services.py",
+    "backend/quick_test.py",
+    "backend/setup_sandra_account.py",
+    "backend/show_personas.py",
+    "backend/app/services/enhanced_email_workflows_v2.py",
+    "backend/app/api/api_v1/endpoints/enhanced_email_workflows_v2.py",
+    "backend/start_user_manager_smart.py",
+    "backend/user_manager_server.py",
+    "backend/user_manager_server_old_int.py",
+    "backend/port_manager.py",
+    "backend/simple_fix.py",
+    "backend/configure_api_key.py",
+    "backend/claude_onboard.py",
+    "backend/force_working_gemini.py",
+    "backend/fix_*.py",
+    "backend/test_imports.py",
+    "check_routes.py",
+    "claude_onboard.py",
+    "configure_api_key.py",
+    "fix_gemini_services.py",
+    "fix_persona_chat.py",
+    "fix_unicode.py",
+    "force_working_gemini.py",
+    "get_onenote_content.py",
+    "port_manager.py",
+    "quick_test.py",
+    "setup_sandra_account.py",
+    "show_personas.py",
+    "simple_fix.py",
+    "start_user_manager_smart.py",
+    "start_user_manager.py",
+]
+
+[lint]
+per-file-ignores = { "backend/app/database.py" = ["E402"] }
+

@@ -34,10 +34,10 @@ def create_valid_user():
         ))
         
         conn.commit()
-        print(f"SUCCESS: Created valid test user:")
-        print(f"   Email: valid@test.com")
+        print("SUCCESS: Created valid test user:")
+        print("   Email: valid@test.com")
         print(f"   Password: {password}")
-        print(f"   Password meets all requirements: 8+ chars, uppercase, lowercase, digit, special char")
+        print("   Password meets all requirements: 8+ chars, uppercase, lowercase, digit, special char")
         
         # Verify the user was created
         cursor.execute("SELECT email, username, is_active FROM users WHERE email = 'valid@test.com'")

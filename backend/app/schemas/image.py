@@ -1,7 +1,7 @@
 # Image Generation Schemas
 
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 from uuid import UUID
 from enum import Enum

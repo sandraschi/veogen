@@ -1,15 +1,16 @@
+import time
+
 import requests
 
 # Test the resend verification endpoint with proper authentication
 API_BASE = "http://localhost:4700"
 
-# First, let's register a user to get a token
-import time
-test_email = f"debug-resend-{int(time.time())}@example.com"
+timestamp = int(time.time())
+test_email = f"debug-resend-{timestamp}@example.com"
 register_data = {
     "email": test_email,
     "password": "TestPass123!",
-    "username": f"debuguser{int(time.time())}",
+    "username": f"debuguser{timestamp}",
     "full_name": "Debug User"
 }
 

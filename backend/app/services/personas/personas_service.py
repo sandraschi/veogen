@@ -226,7 +226,7 @@ class PersonasService:
         try:
             # Parse personality data
             personality_data = json.loads(personality_response.text)
-        except:
+        except json.JSONDecodeError:
             # Fallback if JSON parsing fails
             personality_data = {
                 "communication_style": f"Speaks with the wisdom and expertise of a seasoned {persona_type.replace('_', ' ')}",
