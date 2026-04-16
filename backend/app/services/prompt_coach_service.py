@@ -1,2 +1,76 @@
-"\"\"\"\nAI Prompt coach built on Gemini Live/Pro.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport asyncio\nimport logging\nimport uuid\nfrom datetime import datetime\nfrom typing import Dict, List\n\nimport google.generativeai as genai\n\nfrom app.config import settings\n\nlogger = logging.getLogger(__name__)\n\n\nclass PromptCoachService:\n    \"\"\"Provides quick critique + rewrite suggestions.\"\"\"\n\n    def __init__(self):\n        self.enabled = settings.PROMPT_COACH_ENABLED and bool(settings.GEMINI_API_KEY)\n        self.model = None\n        self.sessions: Dict[str, Dict] = {}\n        if self.enabled:\n            try:\n                genai.configure(api_key=settings.GEMINI_API_KEY)\n                self.model = genai.GenerativeModel(settings.PROMPT_COACH_MODEL)\n            except Exception as exc:\n                logger.error(\"Prompt coach initialization failed: %s\", exc)\n                self.enabled = False\n\n    def start_session(self, user_id: str) -> Dict[str, str]:\n        if not self.enabled:\n            raise RuntimeError(\"Prompt coach disabled\")\n        session_id = str(uuid.uuid4())\n        self.sessions[session_id] = {\n            \"user_id\": user_id,\n            \"created_at\": datetime.utcnow(),\n            \"messages\": [],\n        }\n        return {\"session_id\": session_id}\n\n    async def critique_prompt(self, session_id: str, prompt: str) -> Dict[str, List[str]]:\n        if not self.enabled or not self.model:\n            raise RuntimeError(\"Prompt coach disabled\")\n        if session_id not in self.sessions:\n            raise ValueError(\"Session not found\")\n\n        instructions = (\n            \"Act as a creative director for Veo/Imagen/Lyria prompts. \"\n            \"Rate clarity, cinematic detail, safety compliance, and supply a\"\n            \" bullet list of actionable fixes. Return JSON with 'summary',\"\n            \" 'score', and 'recommendations'.\"\n        )\n\n        response = await asyncio.to_thread(\n            self.model.generate_content,\n            f\"{instructions}\\nUSER PROMPT:\\n{prompt}\\n\",\n            generation_config={\"response_mime_type\": \"application/json\"},\n        )\n        data = self._parse_response(response)\n        entry = {\"prompt\": prompt, \"response\": data, \"timestamp\": datetime.utcnow()}\n        self.sessions[session_id][\"messages\"].append(entry)\n        return data\n\n    def _parse_response(self, response):\n        try:\n            return genai.types.content_types.from_json(response.text)\n        except Exception:\n            return {\"summary\": response.text, \"recommendations\": []}\n\n\nprompt_coach_service = PromptCoachService()\n*** End Patch
+"""
+AI Prompt coach built on Gemini Live/Pro.
+"""
 
+from __future__ import annotations
+
+import asyncio
+import logging
+import uuid
+from datetime import datetime
+from typing import Dict, List
+
+import google.generativeai as genai
+
+from app.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+class PromptCoachService:
+    """Provides quick critique + rewrite suggestions."""
+
+    def __init__(self):
+        self.enabled = settings.PROMPT_COACH_ENABLED and bool(settings.GEMINI_API_KEY)
+        self.model = None
+        self.sessions: Dict[str, Dict] = {}
+        if self.enabled:
+            try:
+                genai.configure(api_key=settings.GEMINI_API_KEY)
+                self.model = genai.GenerativeModel(settings.PROMPT_COACH_MODEL)
+            except Exception as exc:
+                logger.error("Prompt coach initialization failed: %s", exc)
+                self.enabled = False
+
+    def start_session(self, user_id: str) -> Dict[str, str]:
+        if not self.enabled:
+            raise RuntimeError("Prompt coach disabled")
+        session_id = str(uuid.uuid4())
+        self.sessions[session_id] = {
+            "user_id": user_id,
+            "created_at": datetime.utcnow(),
+            "messages": [],
+        }
+        return {"session_id": session_id}
+
+    async def critique_prompt(self, session_id: str, prompt: str) -> Dict[str, List[str]]:
+        if not self.enabled or not self.model:
+            raise RuntimeError("Prompt coach disabled")
+        if session_id not in self.sessions:
+            raise ValueError("Session not found")
+
+        instructions = (
+            "Act as a creative director for Veo/Imagen/Lyria prompts. "
+            "Rate clarity, cinematic detail, safety compliance, and supply a"
+            " bullet list of actionable fixes. Return JSON with 'summary',"
+            " 'score', and 'recommendations'."
+        )
+
+        response = await asyncio.to_thread(
+            self.model.generate_content,
+            f"{instructions}\nUSER PROMPT:\n{prompt}\n",
+            generation_config={"response_mime_type": "application/json"},
+        )
+        data = self._parse_response(response)
+        entry = {"prompt": prompt, "response": data, "timestamp": datetime.utcnow()}
+        self.sessions[session_id]["messages"].append(entry)
+        return data
+
+    def _parse_response(self, response):
+        try:
+            return genai.types.content_types.from_json(response.text)
+        except Exception:
+            return {"summary": response.text, "recommendations": []}
+
+
+prompt_coach_service = PromptCoachService()

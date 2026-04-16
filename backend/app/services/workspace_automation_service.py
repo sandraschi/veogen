@@ -1,2 +1,53 @@
-"\"\"\"\nWorkspace automation helpers (Docs/Slides to Flow import).\n\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\nimport uuid\nfrom typing import Dict\n\nfrom sqlalchemy.orm import Session\n\nfrom app.config import settings\nfrom app.models.flow import FlowProject, FlowScene\n\nlogger = logging.getLogger(__name__)\n\n\nclass WorkspaceAutomationService:\n    \"\"\"Transforms Workspace briefs into Flow projects.\"\"\"\n\n    def __init__(self):\n        self.enabled = settings.WORKSPACE_AUTOMATION_ENABLED\n\n    def import_brief(self, db: Session, title: str, outline: Dict) -> FlowProject:\n        if not self.enabled:\n            raise RuntimeError(\"Workspace automation disabled\")\n        project_id = outline.get(\"projectId\") or str(uuid.uuid4())\n        project = FlowProject(\n            id=project_id,\n            title=title,\n            status=\"draft\",\n            synopsis=outline.get(\"synopsis\"),\n            metadata=outline,\n        )\n        db.add(project)\n        for idx, beat in enumerate(outline.get(\"beats\", [])):\n            scene = FlowScene(\n                id=beat.get(\"id\") or f\"{project_id}-scene-{idx}\",\n                project_id=project_id,\n                title=beat.get(\"title\", f\"Scene {idx+1}\"),\n                order_index=idx,\n                prompt=beat.get(\"prompt\"),\n                duration_seconds=beat.get(\"duration\", 10),\n                style=beat.get(\"style\", \"cinematic\"),\n            )\n            db.add(scene)\n        db.commit()\n        db.refresh(project)\n        return project\n\n\nworkspace_automation_service = WorkspaceAutomationService()\n*** End Patch
+"""
+Workspace automation helpers (Docs/Slides to Flow import).
+"""
 
+from __future__ import annotations
+
+import logging
+import uuid
+from typing import Dict
+
+from sqlalchemy.orm import Session
+
+from app.config import settings
+from app.models.flow import FlowProject, FlowScene
+
+logger = logging.getLogger(__name__)
+
+
+class WorkspaceAutomationService:
+    """Transforms Workspace briefs into Flow projects."""
+
+    def __init__(self):
+        self.enabled = settings.WORKSPACE_AUTOMATION_ENABLED
+
+    def import_brief(self, db: Session, title: str, outline: Dict) -> FlowProject:
+        if not self.enabled:
+            raise RuntimeError("Workspace automation disabled")
+        project_id = outline.get("projectId") or str(uuid.uuid4())
+        project = FlowProject(
+            id=project_id,
+            title=title,
+            status="draft",
+            synopsis=outline.get("synopsis"),
+            flow_metadata=outline,
+        )
+        db.add(project)
+        for idx, beat in enumerate(outline.get("beats", [])):
+            scene = FlowScene(
+                id=beat.get("id") or f"{project_id}-scene-{idx}",
+                project_id=project_id,
+                title=beat.get("title", f"Scene {idx+1}"),
+                order_index=idx,
+                prompt=beat.get("prompt"),
+                duration_seconds=beat.get("duration", 10),
+                style=beat.get("style", "cinematic"),
+            )
+            db.add(scene)
+        db.commit()
+        db.refresh(project)
+        return project
+
+
+workspace_automation_service = WorkspaceAutomationService()

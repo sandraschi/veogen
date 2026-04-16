@@ -31,7 +31,7 @@ class FlowProject(Base):
     region = Column(String, default="us")
     owner_email = Column(String, index=True)
     poster_frame_url = Column(String)
-    metadata = Column(JSON, default=dict)
+    flow_metadata = Column(JSON, default=dict)  # renamed: 'metadata' is reserved by SQLAlchemy
     last_flow_sync = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -68,7 +68,7 @@ class FlowScene(Base):
     reference_frames = Column(JSON, default=list)
     audio_notes = Column(Text)
     checklist = Column(JSON, default=dict)
-    metadata = Column(JSON, default=dict)
+    flow_metadata = Column(JSON, default=dict)  # renamed: 'metadata' is reserved by SQLAlchemy
     poster_frame_url = Column(String)
     last_rendered_at = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -94,7 +94,7 @@ class FlowIngredient(Base):
     ingredient_type = Column(String, nullable=False)  # character, location, prop, style
     description = Column(Text)
     reference_image_url = Column(String)
-    metadata = Column(JSON, default=dict)
+    flow_metadata = Column(JSON, default=dict)  # renamed: 'metadata' is reserved by SQLAlchemy
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

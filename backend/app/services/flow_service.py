@@ -68,7 +68,7 @@ class FlowService:
         project.region = project_payload.get("region") or project.region or self.default_region
         project.owner_email = project_payload.get("ownerEmail") or project.owner_email
         project.poster_frame_url = project_payload.get("posterFrameUrl") or project.poster_frame_url
-        project.metadata = project_payload
+        project.flow_metadata = project_payload
         project.last_flow_sync = datetime.utcnow()
         project.updated_at = datetime.utcnow()
 
@@ -98,7 +98,7 @@ class FlowService:
         scene.reference_frames = scene_payload.get("referenceFrames") or scene.reference_frames or []
         scene.audio_notes = scene_payload.get("audioNotes") or scene.audio_notes
         scene.checklist = scene_payload.get("checklist") or scene.checklist or {}
-        scene.metadata = scene_payload
+        scene.flow_metadata = scene_payload
         scene.poster_frame_url = scene_payload.get("posterFrameUrl") or scene.poster_frame_url
         scene.updated_at = datetime.utcnow()
 
@@ -138,7 +138,7 @@ class FlowService:
 
             ingredient.description = item.get("description") or ingredient.description
             ingredient.reference_image_url = item.get("referenceImageUrl") or ingredient.reference_image_url
-            ingredient.metadata = item
+            ingredient.flow_metadata = item
             ingredient.updated_at = datetime.utcnow()
 
     # ------------------------------------------------------------------ #
@@ -189,7 +189,7 @@ class FlowService:
         self, db: Session, scene: FlowScene, user_id: str
     ) -> Dict[str, str]:
         """Kick off Veo render for a scene using stored metadata."""
-        prompt = scene.prompt or scene.metadata.get("prompt") if scene.metadata else None
+        prompt = scene.prompt or scene.flow_metadata.get("prompt") if scene.flow_metadata else None
         if not prompt:
             raise ValueError("Scene missing prompt")
 

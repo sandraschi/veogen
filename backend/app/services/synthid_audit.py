@@ -58,7 +58,7 @@ class SynthIDAuditService:
         scenes = db.query(FlowScene).filter(FlowScene.status == "rendering").all()
         issues = []
         for scene in scenes:
-            metadata = scene.metadata or {}
+            metadata = scene.flow_metadata or {}
             synthid = metadata.get("synthId") or scene.checklist.get("synthId") if scene.checklist else None
             if not synthid:
                 issues.append(

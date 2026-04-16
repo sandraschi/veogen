@@ -27,12 +27,12 @@ services:
       - ./backend/logs:/app/logs
       - ./backend/dev_emails:/app/dev_emails
       - google_credentials:/app/credentials
-      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
     depends_on:
       - postgres
       - redis
     networks:
       - veogen-network
+      - unified-monitoring
     restart: unless-stopped
     logging:
       driver: json-file
@@ -58,11 +58,12 @@ services:
     environment:
       - REACT_APP_API_URL=http://localhost:4700
       - REACT_APP_VERSION=1.0.0
-      - REACT_APP_GRAFANA_URL=http://localhost:4715
+      - REACT_APP_GRAFANA_URL=http://localhost:3000
     depends_on:
       - backend
     networks:
       - veogen-network
+      - unified-monitoring
     restart: unless-stopped
     logging:
       driver: json-file
@@ -87,6 +88,7 @@ services:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - veogen-network
+      - unified-monitoring
     restart: unless-stopped
     logging:
       driver: json-file
@@ -111,6 +113,7 @@ services:
       - redis_data:/data
     networks:
       - veogen-network
+      - unified-monitoring
     restart: unless-stopped
     logging:
       driver: json-file
@@ -140,6 +143,7 @@ services:
       - redis
     networks:
       - veogen-network
+      - unified-monitoring
     restart: unless-stopped
     logging:
       driver: json-file
@@ -157,180 +161,6 @@ services:
       - "promtail.job=livekit"
       - "promtail.job=redis"
 
-  # Grafana for dashboards and visualization
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "4725:3000"  # Grafana
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=veogen123
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./monitoring/grafana/dashboard-configs:/var/lib/grafana/dashboards:ro
-    networks:
-      - veogen-network
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: "service=grafana"
-    labels:
-      - "promtail.enabled=true"
-      - "promtail.job=grafana"
-
-  # Loki for log aggregation
-  loki:
-    image: grafana/loki:2.9.7
-    container_name: loki
-    command: -config.file=/etc/loki/local-config.yaml
-    ports:
-      - "4730:3100"
-    volumes:
-      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
-      - ./monitoring/loki-data:/tmp/loki
-    networks:
-      - veogen-network
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: "service=loki"
-    labels:
-      - "promtail.enabled=true"
-      - "promtail.job=loki"
-
-
-  # Promtail for log shipping
-  promtail:
-    image: grafana/promtail:latest
-    ports:
-      - "4735:9080"  # Promtail
-    volumes:
-      - /var/log:/var/log:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
-      - ./backend/logs:/app/logs:ro
-    command: -config.file=/etc/promtail/config.yml
-    networks:
-      - veogen-network
-    restart: unless-stopped
-
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: "service=promtail"
-
-  # Prometheus for metrics collection
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "4740:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/rules:/etc/prometheus/rules:ro
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    depends_on:
-      - alertmanager
-    networks:
-      - veogen-network
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: "service=prometheus"
-    labels:
-      - "promtail.enabled=true"
-      - "promtail.job=prometheus"
-
-  # Alertmanager for alert handling
-  alertmanager:
-    image: prom/alertmanager:latest
-    ports:
-      - "4745:9093"  # Alertmanager
-    volumes:
-      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data:/alertmanager
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
-      - '--web.external-url=http://localhost:4745'
-    networks:
-      - veogen-network
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: "service=alertmanager"
-    labels:
-      - "promtail.enabled=true"
-      - "promtail.job=alertmanager"
-
-  # Node Exporter for system metrics
-  node-exporter:
-    image: prom/node-exporter:latest
-    ports:
-      - "4750:9100"  # Node Exporter
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    networks:
-      - veogen-network
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: "service=node-exporter"
-
-  # cAdvisor for container metrics
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    ports:
-      - "4755:8080"  # cAdvisor
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    privileged: true
-    networks:
-      - veogen-network
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: "service=cadvisor"
-
   nginx:
     image: nginx:alpine
     ports:
@@ -343,9 +173,9 @@ services:
     depends_on:
       - frontend
       - backend
-      - grafana
     networks:
       - veogen-network
+      - unified-monitoring
     restart: unless-stopped
     logging:
       driver: json-file
@@ -366,15 +196,10 @@ volumes:
     driver: local
   static_files:
     driver: local
-  grafana_data:
-    driver: local
-  loki_data:
-    driver: local
-  prometheus_data:
-    driver: local
-  alertmanager_data:
-    driver: local
 
 networks:
   veogen-network:
     driver: bridge
+  unified-monitoring:
+    external: true
+    name: configs_unified-monitoring

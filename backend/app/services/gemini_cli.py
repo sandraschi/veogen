@@ -23,17 +23,20 @@ from app.database import get_user_setting
 
 logger = logging.getLogger(__name__)
 
+
 class GeminiCLIService:
     """Service for interacting with Google Gemini via CLI and MCP tools"""
-    
+
     def __init__(self):
         self.project_id = settings.GOOGLE_CLOUD_PROJECT
         self.location = settings.GOOGLE_CLOUD_LOCATION
         self.initialized = False
         self.mcp_server_url = "http://localhost:3000"  # Default MCP media server
         self._initialize_apis()
-    
-    def _get_api_key_from_user_settings(self, db_session=None, user_id=None, key_name="gemini_api_key"):
+
+    def _get_api_key_from_user_settings(
+        self, db_session=None, user_id=None, key_name="gemini_api_key"
+    ):
         """Get API key from user settings first, then environment variables"""
         try:
             if db_session and user_id:
@@ -43,7 +46,7 @@ class GeminiCLIService:
                     return user_key
         except Exception as e:
             logger.warning(f"Could not get API key from user settings: {e}")
-        
+
         # Fall back to environment variables
         if key_name == "gemini_api_key":
             return settings.GEMINI_API_KEY
@@ -51,41 +54,43 @@ class GeminiCLIService:
             return settings.GOOGLE_API_KEY
         elif key_name == "google_cloud_project":
             return settings.GOOGLE_CLOUD_PROJECT
-        
+
         return None
-    
+
     async def initialize(self, db_session=None, user_id=None):
         """Initialize Gemini CLI service with user settings"""
         try:
             # Initialize APIs
             self._initialize_apis(db_session, user_id)
-            
+
             # Check if Gemini CLI is available
             cli_available = await self.check_gemini_cli_available()
             if cli_available:
                 logger.info("Gemini CLI is available for enhanced functionality")
             else:
                 logger.warning("Gemini CLI not available, using API fallback")
-            
+
             # Check MCP server availability
             mcp_available = await self.check_mcp_server_available()
             if mcp_available:
                 logger.info("MCP media server is available")
             else:
                 logger.warning("MCP media server not available")
-            
+
             self.initialized = True
             logger.info("Gemini CLI service initialization completed")
-            
+
         except Exception as e:
             logger.error(f"Failed to initialize Gemini CLI service: {e}")
             # Continue with basic functionality
-    
+
     def _initialize_apis(self, db_session=None, user_id=None):
         """Initialize Google Cloud AI Platform and Gemini APIs"""
         try:
             # Get API keys from user settings or environment
-            gemini_key = self._get_api_key_from_user_settings(db_session, user_id, "gemini_api_key")
+            gemini_key = self._get_api_key_from_user_settings(
+                db_session, user_id, "gemini_api_key"
+            )
             self._get_api_key_from_user_settings(db_session, user_id, "google_api_key")
             project_id = (
                 self._get_api_key_from_user_settings(
@@ -93,122 +98,129 @@ class GeminiCLIService:
                 )
                 or self.project_id
             )
-            
+
             # Initialize Google Cloud AI Platform
             if settings.GOOGLE_APPLICATION_CREDENTIALS:
                 aiplatform.init(
                     project=project_id,
                     location=self.location,
-                    credentials=settings.GOOGLE_APPLICATION_CREDENTIALS
+                    credentials=settings.GOOGLE_APPLICATION_CREDENTIALS,
                 )
             else:
-                aiplatform.init(
-                    project=project_id,
-                    location=self.location
-                )
-            
+                aiplatform.init(project=project_id, location=self.location)
+
             # Configure Gemini API
             if gemini_key:
                 genai.configure(api_key=gemini_key)
-            
+
             logger.info("APIs initialized with Google Cloud AI Platform")
-            
+
         except Exception as e:
             logger.error(f"Failed to initialize APIs: {e}")
             # Continue with fallback to Gemini for text generation
-    
+
     async def install_gemini_cli(self) -> bool:
         """Install Gemini CLI if not present"""
         try:
             # Check if gemini CLI is available (this could be the official Google CLI or a compatible one)
             result = await asyncio.create_subprocess_exec(
-                "gemini", "--help",
+                "gemini",
+                "--help",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await result.communicate()
-            
+
             if result.returncode == 0:
                 logger.info("Gemini CLI already available")
                 return True
-            
+
             # Try alternative CLI names
             for cli_name in ["gemini-cli", "google-gemini", "gemini"]:
                 result = await asyncio.create_subprocess_exec(
-                    cli_name, "--help",
+                    cli_name,
+                    "--help",
                     stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    stderr=asyncio.subprocess.PIPE,
                 )
                 stdout, stderr = await result.communicate()
-                
+
                 if result.returncode == 0:
                     logger.info(f"Found Gemini CLI: {cli_name}")
                     return True
-            
-            logger.warning("Gemini CLI not found - media generation will use fallback methods")
+
+            logger.warning(
+                "Gemini CLI not found - media generation will use fallback methods"
+            )
             return False
-                
+
         except Exception as e:
             logger.error(f"Error checking Gemini CLI: {e}")
             return False
 
-    async def _call_mcp_media_server(self, endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    async def _call_mcp_media_server(
+        self, endpoint: str, params: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Call the MCP media server for generation"""
         try:
             url = f"{self.mcp_server_url}/{endpoint}"
             headers = {
                 "Content-Type": "application/json",
-                "X-API-Key": settings.GOOGLE_API_KEY or ""
+                "X-API-Key": settings.GOOGLE_API_KEY or "",
             }
-            
+
             async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=params, headers=headers, timeout=300.0)
+                response = await client.post(
+                    url, json=params, headers=headers, timeout=300.0
+                )
                 response.raise_for_status()
                 return response.json()
-                
+
         except Exception as e:
             logger.error(f"Error calling MCP media server: {e}")
             raise
 
-    async def _call_gemini_cli_with_mcp(self, prompt: str, tool_name: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def _call_gemini_cli_with_mcp(
+        self, prompt: str, tool_name: str, params: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
         """Call Gemini CLI with MCP tools for media generation"""
         try:
             # Prepare the command for Gemini CLI with MCP tool
             cmd = ["gemini", prompt, "--tool", tool_name]
-            
+
             if params:
                 cmd.extend(["--params", json.dumps(params)])
-            
+
             logger.info(f"Calling Gemini CLI with MCP tool: {' '.join(cmd)}")
-            
+
             # Execute the command
             process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
-            
+
             stdout, stderr = await process.communicate()
-            
+
             if process.returncode != 0:
                 logger.error(f"Gemini CLI error: {stderr.decode()}")
                 raise Exception(f"Gemini CLI failed: {stderr.decode()}")
-            
+
             # Parse the output
             output = stdout.decode().strip()
-            
+
             try:
                 # Try to parse as JSON
                 return json.loads(output)
             except json.JSONDecodeError:
                 # Return as text if not JSON
                 return {"text": output, "raw_output": output}
-            
+
         except Exception as e:
             logger.error(f"Error calling Gemini CLI with MCP: {e}")
             raise
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+    @retry(
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
+    )
     async def generate_video(
         self,
         prompt: str,
@@ -219,11 +231,11 @@ class GeminiCLIService:
         temperature: float = 0.7,
         output_format: str = "mp4",
         db_session=None,
-        user_id=None
+        user_id=None,
     ) -> Dict[str, Any]:
         """
         Generate video using Veo 3 model via Gemini CLI with MCP tools
-        
+
         Args:
             prompt: Text description of the video to generate
             duration: Duration in seconds (5-60)
@@ -234,17 +246,17 @@ class GeminiCLIService:
             output_format: Output format (mp4 or webm)
             db_session: Database session for user settings
             user_id: User ID for getting API keys from settings
-            
+
         Returns:
             Dictionary containing video data and metadata
         """
         try:
             logger.info(f"Generating Veo 3 video with prompt: {prompt}")
-            
+
             # Re-initialize with user settings if provided
             if db_session and user_id and not self.initialized:
                 self._initialize_apis(db_session, user_id)
-            
+
             # Try Gemini CLI with MCP first, then fallback to direct MCP server, then API
             try:
                 # Use Gemini CLI with MCP tool
@@ -253,39 +265,52 @@ class GeminiCLIService:
                     "duration": duration,
                     "aspect_ratio": aspect_ratio,
                     "style": style,
-                    "temperature": temperature
+                    "temperature": temperature,
                 }
-                
+
                 result = await self._call_gemini_cli_with_mcp(
                     f"Generate a {duration}-second video: {prompt}",
                     "googleMediaV3.generate_video",
-                    params
+                    params,
                 )
-                
+
                 api_used = "gemini_cli_mcp"
-                
+
             except Exception as e:
-                logger.warning(f"Gemini CLI with MCP failed, trying direct MCP server: {e}")
+                logger.warning(
+                    f"Gemini CLI with MCP failed, trying direct MCP server: {e}"
+                )
                 try:
                     # Try direct MCP server call
-                    result = await self._call_mcp_media_server("generate/video", {
-                        "prompt": prompt,
-                        "duration": duration,
-                        "resolution": "1080p",
-                        "style": style
-                    })
+                    result = await self._call_mcp_media_server(
+                        "generate/video",
+                        {
+                            "prompt": prompt,
+                            "duration": duration,
+                            "resolution": "1080p",
+                            "style": style,
+                        },
+                    )
                     api_used = "mcp_direct"
-                    
+
                 except Exception as e2:
-                    logger.warning(f"Direct MCP server failed, falling back to API: {e2}")
+                    logger.warning(
+                        f"Direct MCP server failed, falling back to API: {e2}"
+                    )
                     # Fallback to direct API call
-                    video_data = await self._call_veo_api_real(prompt, duration, aspect_ratio, style, seed, temperature, db_session, user_id)
-                    result = {
-                        "video_data": video_data,
-                        "status": "success"
-                    }
+                    video_data = await self._call_veo_api_real(
+                        prompt,
+                        duration,
+                        aspect_ratio,
+                        style,
+                        seed,
+                        temperature,
+                        db_session,
+                        user_id,
+                    )
+                    result = {"video_data": video_data, "status": "success"}
                     api_used = "veo_api_direct"
-            
+
             # Ensure we have video data
             if "video_data" not in result and "videoUrl" in result:
                 # Download video from URL
@@ -294,7 +319,7 @@ class GeminiCLIService:
                     video_response = await client.get(video_url)
                     video_response.raise_for_status()
                     result["video_data"] = video_response.content
-            
+
             final_result = {
                 "status": "success",
                 "message": f"Video generated with Veo 3: {prompt}",
@@ -304,30 +329,32 @@ class GeminiCLIService:
                 "aspect_ratio": aspect_ratio,
                 "style": style,
                 "temperature": temperature,
-                "api_used": api_used
+                "api_used": api_used,
             }
-            
-            logger.info(f"Veo 3 video generation completed: {len(final_result['video_data'])} bytes")
+
+            logger.info(
+                f"Veo 3 video generation completed: {len(final_result['video_data'])} bytes"
+            )
             return final_result
-                    
+
         except Exception as e:
             logger.error(f"Error in generate_video: {e}")
             raise
-    
+
     async def _call_veo_api_real(
-        self, 
-        prompt: str, 
-        duration: int, 
-        aspect_ratio: str, 
-        style: Optional[str] = None, 
-        seed: Optional[int] = None, 
+        self,
+        prompt: str,
+        duration: int,
+        aspect_ratio: str,
+        style: Optional[str] = None,
+        seed: Optional[int] = None,
         temperature: float = 0.7,
         db_session=None,
-        user_id=None
+        user_id=None,
     ) -> bytes:
         """
         Call the real Veo 3 API via Google Cloud AI Platform
-        
+
         Args:
             prompt: Text description of the video to generate
             duration: Duration in seconds
@@ -337,147 +364,162 @@ class GeminiCLIService:
             temperature: Creativity level
             db_session: Database session for user settings
             user_id: User ID for getting API keys from settings
-            
+
         Returns:
             Video data as bytes
         """
         try:
             # Get project ID from user settings or environment
-            project_id = self._get_api_key_from_user_settings(db_session, user_id, "google_cloud_project") or self.project_id
-            
+            project_id = (
+                self._get_api_key_from_user_settings(
+                    db_session, user_id, "google_cloud_project"
+                )
+                or self.project_id
+            )
+
             # Prepare the request for Veo
             veo_request = {
                 "prompt": prompt,
                 "duration_seconds": min(max(5, duration), 60),  # Clamp to 5-60s
-                "aspect_ratio": aspect_ratio if aspect_ratio in ["16:9", "9:16"] else "16:9",
-                "model": "veo-3.1"
+                "aspect_ratio": aspect_ratio
+                if aspect_ratio in ["16:9", "9:16"]
+                else "16:9",
+                "model": "veo-3.1",
             }
-            
+
             if style:
                 veo_request["style"] = style
             if seed is not None:
                 veo_request["seed"] = seed
             if temperature is not None:
                 veo_request["temperature"] = max(0.0, min(1.0, temperature))
-            
+
             # Call Veo API via Google Cloud AI Platform
             endpoint = aiplatform.Endpoint(
                 endpoint_name=f"projects/{project_id}/locations/{self.location}/endpoints/veo"
             )
-            
+
             # Make prediction request
             response = await asyncio.to_thread(
-                endpoint.predict,
-                instances=[veo_request]
+                endpoint.predict, instances=[veo_request]
             )
-            
+
             # Extract video data from response
             video_data = response.predictions[0]
-            
+
             # Convert to bytes if needed
             if isinstance(video_data, str):
                 import base64
+
                 video_data = base64.b64decode(video_data)
-            
+
             return video_data
-            
+
         except Exception as e:
             logger.error(f"Real Veo API call failed: {e}")
             raise
-    
-    async def _call_veo_api_test(self, prompt: str, duration: int, aspect_ratio: str) -> bytes:
+
+    async def _call_veo_api_test(
+        self, prompt: str, duration: int, aspect_ratio: str
+    ) -> bytes:
         """
         Create a test video using FFmpeg for development purposes
-        
+
         Args:
             prompt: Text description of the video to generate
             duration: Duration in seconds
             aspect_ratio: Video aspect ratio
-            
+
         Returns:
             Video data as bytes
         """
         try:
             # In a real implementation, this would make an API call to Veo 3
             # For now, we'll create a simple test video with a placeholder message
-            
+
             with tempfile.TemporaryDirectory() as temp_dir:
                 output_path = Path(temp_dir) / "veo3_video.mp4"
-                
+
                 # Create a simple test video with FFmpeg
                 cmd = [
                     "ffmpeg",
-                    "-f", "lavfi",
-                    "-i", f"color=c=blue:s=1920x1080:d={duration}",
-                    "-vf", f"drawtext=text='Veo 3: {prompt}':fontsize=40:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=black@0.5:boxborderw=10",
-                    "-c:v", "libx264",
-                    "-preset", "fast",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    f"color=c=blue:s=1920x1080:d={duration}",
+                    "-vf",
+                    f"drawtext=text='Veo 3: {prompt}':fontsize=40:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=black@0.5:boxborderw=10",
+                    "-c:v",
+                    "libx264",
+                    "-preset",
+                    "fast",
                     "-y",
-                    str(output_path)
+                    str(output_path),
                 ]
-                
+
                 # Veo 3 handles audio natively - no need to add audio track
-                
+
                 process = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
                 )
-                
+
                 stdout, stderr = await process.communicate()
-                
+
                 if process.returncode != 0:
                     logger.error(f"FFmpeg error: {stderr.decode()}")
                     raise Exception(f"Failed to create test video: {stderr.decode()}")
-                
+
                 # Read the generated video
                 if output_path.exists():
                     return output_path.read_bytes()
-                
+
                 return b""
-                
+
         except Exception as e:
             logger.error(f"Error in _call_veo_api_test: {e}")
             raise
-    
+
     async def _create_test_video(self, output_path: str, prompt: str, duration: int):
         """Create a test video using ffmpeg for development purposes"""
         try:
             # Create a simple colored video with text overlay
             cmd = [
                 "ffmpeg",
-                "-f", "lavfi",
-                "-i", f"color=c=blue:s=1920x1080:d={duration}",
-                "-vf", f"drawtext=text='{prompt}':fontsize=60:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2",
-                "-c:v", "libx264",
-                "-preset", "fast",
+                "-f",
+                "lavfi",
+                "-i",
+                f"color=c=blue:s=1920x1080:d={duration}",
+                "-vf",
+                f"drawtext=text='{prompt}':fontsize=60:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2",
+                "-c:v",
+                "libx264",
+                "-preset",
+                "fast",
                 "-y",
-                output_path
+                output_path,
             ]
-            
+
             process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
-            
+
             stdout, stderr = await process.communicate()
-            
+
             if process.returncode != 0:
                 logger.warning(f"FFmpeg test video creation failed: {stderr.decode()}")
                 raise Exception("Test video creation failed")
-                
+
         except Exception as e:
             logger.warning(f"Could not create test video with FFmpeg: {e}")
             # Create an empty file as fallback
             Path(output_path).write_bytes(b"")
-    
+
     async def check_generation_status(self, job_id: str) -> Dict[str, Any]:
         """Check the status of a video generation job"""
         try:
             # Use MCP media service to check job status
             from .mcp_media_service import mcp_media_service
-            
+
             job_status = await mcp_media_service.get_job_status(job_id)
             if job_status:
                 return {
@@ -485,33 +527,30 @@ class GeminiCLIService:
                     "job_id": job_id,
                     "progress": job_status["progress"],
                     "message": job_status.get("message"),
-                    "result": job_status.get("result")
+                    "result": job_status.get("result"),
                 }
             else:
                 return {
                     "status": "not_found",
                     "job_id": job_id,
                     "progress": 0,
-                    "error": "Job not found"
+                    "error": "Job not found",
                 }
         except Exception as e:
             logger.error(f"Error checking generation status: {e}")
-            return {
-                "status": "error",
-                "job_id": job_id,
-                "progress": 0,
-                "error": str(e)
-            }
-    
-    async def _call_gemini_cli_text(self, prompt: str, temperature: float = 0.7, max_tokens: int = 1000) -> str:
+            return {"status": "error", "job_id": job_id, "progress": 0, "error": str(e)}
+
+    async def _call_gemini_cli_text(
+        self, prompt: str, temperature: float = 0.7, max_tokens: int = 1000
+    ) -> str:
         """
         Call Gemini CLI for text generation
-        
+
         Args:
             prompt: Text prompt for generation
             temperature: Creativity level
             max_tokens: Maximum tokens to generate
-            
+
         Returns:
             Generated text
         """
@@ -520,16 +559,16 @@ class GeminiCLIService:
             result = await self._call_gemini_cli_with_mcp(
                 prompt,
                 "googleMediaV3.generate_text",
-                {"temperature": temperature, "max_tokens": max_tokens}
+                {"temperature": temperature, "max_tokens": max_tokens},
             )
-            
+
             if "text" in result:
                 return result["text"]
             elif "raw_output" in result:
                 return result["raw_output"]
             else:
                 return str(result)
-            
+
         except Exception as e:
             logger.error(f"Error calling Gemini CLI for text: {e}")
             raise
@@ -540,17 +579,19 @@ class GeminiCLIService:
         temperature: float = 0.7,
         max_tokens: int = 1000,
         db_session=None,
-        user_id=None
+        user_id=None,
     ) -> str:
         """Generate text using Gemini CLI with MCP tools"""
         try:
             # Re-initialize with user settings if provided
             if db_session and user_id and not self.initialized:
                 self._initialize_apis(db_session, user_id)
-            
+
             # Try Gemini CLI with MCP first, then fallback to API
             try:
-                response = await self._call_gemini_cli_text(prompt, temperature, max_tokens)
+                response = await self._call_gemini_cli_text(
+                    prompt, temperature, max_tokens
+                )
                 return response
             except Exception as e:
                 logger.warning(f"Gemini CLI with MCP failed, falling back to API: {e}")
@@ -558,43 +599,45 @@ class GeminiCLIService:
                 try:
                     # Try the most reliable models in order
                     models_to_try = [
-                        'gemini-3.0-flash',
-                        'gemini-3.0-pro', 
-                        'gemini-3.0-flash-exp',
-                        'gemini-pro'
+                        "gemini-3-flash",
+                        "gemini-3-pro",
+                        "gemini-3-flash-exp",
+                        "gemini-2.0-flash",
+                        "gemini-pro",
                     ]
-                    
+
                     for model_name in models_to_try:
                         try:
                             model = genai.GenerativeModel(model_name)
                             response = await asyncio.to_thread(
-                                model.generate_content,
-                                prompt
+                                model.generate_content, prompt
                             )
                             logger.info(f"Successfully used model: {model_name}")
                             return response.text
                         except Exception as model_error:
                             logger.warning(f"Model {model_name} failed: {model_error}")
                             continue
-                    
+
                     # If all models fail, provide a fallback response
                     return self._get_intelligent_fallback(prompt)
-                        
+
                 except Exception as api_error:
                     logger.error(f"All API models failed: {api_error}")
                     return self._get_intelligent_fallback(prompt)
-                
+
         except Exception as e:
             logger.error(f"Error generating text: {e}")
             # Fallback to intelligent response
             return self._get_intelligent_fallback(prompt)
-    
+
     def _get_intelligent_fallback(self, prompt: str) -> str:
         """Provide intelligent fallback responses when API is unavailable"""
         prompt_lower = prompt.lower()
-        
+
         # Check if this is a Creative Assistant
-        if "creative assistant" in prompt_lower or ("creative" in prompt_lower and "video" in prompt_lower):
+        if "creative assistant" in prompt_lower or (
+            "creative" in prompt_lower and "video" in prompt_lower
+        ):
             return """✨ Hello! I'm your Creative Assistant, ready to spark your imagination! 
 
 I'd love to help you with video ideas! Here are some exciting directions we could explore:
@@ -616,7 +659,9 @@ What type of video project are you most excited about? I'm here to help brainsto
 *Note: I'm currently running in offline mode, but I'm still here to help with creative guidance!*"""
 
         # Technical Guide fallback
-        elif "technical guide" in prompt_lower or ("technical" in prompt_lower and "help" in prompt_lower):
+        elif "technical guide" in prompt_lower or (
+            "technical" in prompt_lower and "help" in prompt_lower
+        ):
             return """🔧 Hello! I'm your Technical Guide, here to help with the technical aspects of your projects.
 
 I can assist with:
@@ -631,7 +676,9 @@ What technical challenge can I help you solve today?
 *Note: Running in offline mode - for full technical analysis, please check your API configuration.*"""
 
         # Story Director fallback
-        elif "story director" in prompt_lower or ("story" in prompt_lower and "narrative" in prompt_lower):
+        elif "story director" in prompt_lower or (
+            "story" in prompt_lower and "narrative" in prompt_lower
+        ):
             return """🎬 Greetings! I'm your Story Director, passionate about crafting compelling narratives through visual storytelling.
 
 I can help you with:
@@ -646,7 +693,9 @@ What story are you looking to tell? Let's create something that captivates your 
 *Note: Operating in offline mode - full story analysis available with API access.*"""
 
         # Music Composer fallback
-        elif "music composer" in prompt_lower or ("music" in prompt_lower and "composer" in prompt_lower):
+        elif "music composer" in prompt_lower or (
+            "music" in prompt_lower and "composer" in prompt_lower
+        ):
             return """🎵 Hello! I'm your Music Composer, ready to help you create the perfect soundtrack for your projects.
 
 I can assist with:
@@ -661,7 +710,9 @@ What kind of musical experience are you looking to create?
 *Note: Running in offline mode - full audio composition available with API access.*"""
 
         # Brand Strategist fallback
-        elif "brand strategist" in prompt_lower or ("brand" in prompt_lower and "marketing" in prompt_lower):
+        elif "brand strategist" in prompt_lower or (
+            "brand" in prompt_lower and "marketing" in prompt_lower
+        ):
             return """📈 Hello! I'm your Brand Strategist, here to help you create compelling brand communications through video.
 
 I can help with:
@@ -676,7 +727,9 @@ What brand story do you want to tell through video?
 *Note: Operating in offline mode - full brand analysis available with API access.*"""
 
         # Educational Tutor fallback
-        elif "educational tutor" in prompt_lower or ("educational" in prompt_lower and "content" in prompt_lower):
+        elif "educational tutor" in prompt_lower or (
+            "educational" in prompt_lower and "content" in prompt_lower
+        ):
             return """📚 Hello! I'm your Educational Tutor, specializing in creating engaging educational content.
 
 I can assist with:
@@ -703,26 +756,27 @@ While I'm currently running in offline mode, I can still provide guidance on:
 How can I help you today? Please let me know what you're working on!
 
 *To enable full AI capabilities, please check the API configuration in settings.*"""
-    
+
     async def check_gemini_cli_available(self) -> bool:
         """Check if Gemini CLI is available and working"""
         try:
             # Check for various possible CLI names
             for cli_name in ["gemini", "gemini-cli", "google-gemini"]:
                 result = await asyncio.create_subprocess_exec(
-                    cli_name, "--help",
+                    cli_name,
+                    "--help",
                     stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    stderr=asyncio.subprocess.PIPE,
                 )
                 stdout, stderr = await result.communicate()
-                
+
                 if result.returncode == 0:
                     logger.info(f"Gemini CLI is available: {cli_name}")
                     return True
-            
+
             logger.warning("Gemini CLI not found")
             return False
-                
+
         except Exception as e:
             logger.warning(f"Error checking Gemini CLI availability: {e}")
             return False
@@ -731,12 +785,16 @@ How can I help you today? Please let me know what you're working on!
         """Check if MCP media server is available"""
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(f"{self.mcp_server_url}/health", timeout=5.0)
+                response = await client.get(
+                    f"{self.mcp_server_url}/health", timeout=5.0
+                )
                 if response.status_code == 200:
                     logger.info("MCP media server is available")
                     return True
                 else:
-                    logger.warning(f"MCP media server returned status: {response.status_code}")
+                    logger.warning(
+                        f"MCP media server returned status: {response.status_code}"
+                    )
                     return False
         except Exception as e:
             logger.warning(f"MCP media server not available: {e}")
@@ -747,16 +805,21 @@ How can I help you today? Please let me know what you're working on!
         try:
             # Try to get models via MCP tools
             result = await self._call_gemini_cli_with_mcp(
-                "List available models",
-                "googleMediaV3.list_models"
+                "List available models", "googleMediaV3.list_models"
             )
-            
+
             if "models" in result:
                 return result["models"]
             else:
                 # Fallback to basic list
-                return ["gemini-3.0-flash", "gemini-3.0-pro", "veo-3.1", "gemini-3.0-pro-image", "lyria"]
-            
+                return [
+                    "gemini-3.0-flash",
+                    "gemini-3.0-pro",
+                    "veo-3.1",
+                    "gemini-3.0-pro-image",
+                    "lyria",
+                ]
+
         except Exception as e:
             logger.error(f"Error calling Gemini CLI for models: {e}")
             raise
@@ -767,7 +830,7 @@ How can I help you today? Please let me know what you're working on!
             # Re-initialize with user settings if provided
             if db_session and user_id and not self.initialized:
                 self._initialize_apis(db_session, user_id)
-            
+
             # Try Gemini CLI with MCP first, then fallback to API
             try:
                 models = await self._call_gemini_cli_models()
@@ -777,30 +840,32 @@ How can I help you today? Please let me know what you're working on!
                 # Fallback to API
                 models = genai.list_models()
                 model_names = [model.name for model in models]
-                
+
                 # Add media generation models
                 model_names.extend(["veo-3.1", "gemini-3.0-pro-image", "lyria"])
-                
+
                 return model_names
-                
+
         except Exception as e:
             logger.error(f"Error listing models: {e}")
             # Fallback to basic list
             return [
                 "gemini-3.0-flash",
-                "gemini-3.0-pro", 
+                "gemini-3.0-pro",
                 "veo-3.1",
                 "gemini-3.0-pro-image",
-                "lyria"
+                "lyria",
             ]
-    
-    async def get_model_info(self, model_name: str = "veo-3.1", db_session=None, user_id=None) -> Dict[str, Any]:
+
+    async def get_model_info(
+        self, model_name: str = "veo-3.1", db_session=None, user_id=None
+    ) -> Dict[str, Any]:
         """Get model information"""
         try:
             # Re-initialize with user settings if provided
             if db_session and user_id and not self.initialized:
                 self._initialize_apis(db_session, user_id)
-            
+
             if model_name == "veo-3.1" or model_name == "veo-3":
                 return {
                     "name": model_name,
@@ -808,7 +873,7 @@ How can I help you today? Please let me know what you're working on!
                     "capabilities": ["text-generation", "video-generation"],
                     "max_duration": 60,
                     "supported_aspect_ratios": ["16:9", "9:16", "1:1"],
-                    "supported_formats": ["mp4", "webm"]
+                    "supported_formats": ["mp4", "webm"],
                 }
             else:
                 # Get info for other models
@@ -819,18 +884,18 @@ How can I help you today? Please let me know what you're working on!
                             "name": model.name,
                             "description": model.description,
                             "capabilities": model.supported_generation_methods,
-                            "display_name": model.display_name
+                            "display_name": model.display_name,
                         }
-                
+
                 # Fallback for unknown models
                 return {
                     "name": model_name,
                     "description": "Unknown model",
                     "capabilities": ["text-generation"],
                     "max_duration": 10,
-                    "supported_aspect_ratios": ["16:9", "9:16", "1:1"]
+                    "supported_aspect_ratios": ["16:9", "9:16", "1:1"],
                 }
-                
+
         except Exception as e:
             logger.error(f"Error getting model info: {e}")
             return {
@@ -838,7 +903,7 @@ How can I help you today? Please let me know what you're working on!
                 "description": "Model information unavailable",
                 "capabilities": ["text-generation"],
                 "max_duration": 10,
-                "supported_aspect_ratios": ["16:9", "9:16", "1:1"]
+                "supported_aspect_ratios": ["16:9", "9:16", "1:1"],
             }
 
     async def generate_image(
@@ -849,66 +914,68 @@ How can I help you today? Please let me know what you're working on!
         reference_image: Optional[str] = None,
         mode: str = "generate",
         db_session=None,
-        user_id=None
+        user_id=None,
     ) -> Dict[str, Any]:
         """Generate, edit, or OCR image using Nano Banana Pro (Gemini 3 Pro Image) via Gemini CLI with MCP tools"""
         try:
             logger.info(f"Generating image with prompt: {prompt}, mode: {mode}")
-            
+
             # Re-initialize with user settings if provided
             if db_session and user_id and not self.initialized:
                 self._initialize_apis(db_session, user_id)
-            
+
             # Try Gemini CLI with MCP first, then fallback to direct MCP server
             try:
                 params = {
                     "prompt": prompt,
                     "style": style,
                     "resolution": resolution,
-                    "mode": mode
+                    "mode": mode,
                 }
-                
+
                 # Add reference image if provided (for editing or OCR)
                 if reference_image:
                     params["reference_image"] = reference_image
-                
+
                 if mode == "ocr":
                     result = await self._call_gemini_cli_with_mcp(
                         f"Extract text from image: {prompt}",
                         "googleMediaV3.ocr_image",
-                        params
+                        params,
                     )
                 elif mode == "edit":
                     result = await self._call_gemini_cli_with_mcp(
-                        f"Edit image: {prompt}",
-                        "googleMediaV3.edit_image",
-                        params
+                        f"Edit image: {prompt}", "googleMediaV3.edit_image", params
                     )
                 else:
                     result = await self._call_gemini_cli_with_mcp(
                         f"Generate an image: {prompt}",
                         "googleMediaV3.generate_image",
-                        params
+                        params,
                     )
-                
+
                 api_used = "gemini_cli_mcp"
-                
+
             except Exception as e:
-                logger.warning(f"Gemini CLI with MCP failed, trying direct MCP server: {e}")
+                logger.warning(
+                    f"Gemini CLI with MCP failed, trying direct MCP server: {e}"
+                )
                 try:
                     mcp_params = {
                         "prompt": prompt,
                         "style": style,
-                        "resolution": resolution
+                        "resolution": resolution,
                     }
                     if reference_image:
                         mcp_params["reference_image"] = reference_image
                     if mode:
                         mcp_params["mode"] = mode
-                    
-                    result = await self._call_mcp_media_server("generate/image", mcp_params)
+
+                    result = await self._call_mcp_media_server(
+                        "generate/image", mcp_params
+                    )
                     api_used = "mcp_direct"
-                    
+
                 except Exception as e2:
                     logger.warning(f"Direct MCP server failed: {e2}")
                     # Fallback: use Gemini API directly for OCR/editing with image
@@ -919,7 +986,7 @@ How can I help you today? Please let me know what you're working on!
                         api_used = "gemini_api_direct"
                     else:
                         raise
-            
+
             # Ensure we have image data
             if "image_data" not in result and "imageUrl" in result:
                 # Download image from URL
@@ -928,7 +995,7 @@ How can I help you today? Please let me know what you're working on!
                     image_response = await client.get(image_url)
                     image_response.raise_for_status()
                     result["image_data"] = image_response.content
-            
+
             return {
                 "status": "success",
                 "message": f"Image generated: {prompt}",
@@ -936,61 +1003,90 @@ How can I help you today? Please let me know what you're working on!
                 "image_size": len(result.get("image_data", b"")),
                 "resolution": resolution,
                 "style": style,
-                "api_used": api_used
+                "api_used": api_used,
             }
-                    
+
         except Exception as e:
             logger.error(f"Error in generate_image: {e}")
             raise
-    
+
     async def _call_gemini_api_with_image(
-        self, 
-        prompt: str, 
-        reference_image: str, 
-        mode: str
+        self, prompt: str, reference_image: str, mode: str
     ) -> Dict[str, Any]:
         """Use Gemini API directly for OCR or image editing with uploaded image"""
         try:
             import base64
             from PIL import Image
             import io
-            
+
             # Decode base64 image
             image_data = base64.b64decode(reference_image)
             image = Image.open(io.BytesIO(image_data))
-            
+
             # Use Gemini 3 Pro Vision for OCR/editing
             vision_model = genai.GenerativeModel("gemini-3.0-pro-vision")
-            
+
             if mode == "ocr":
                 ocr_prompt = f"Extract all text from this image. {prompt if prompt else 'Return all visible text.'}"
                 response = vision_model.generate_content([ocr_prompt, image])
-                
+
                 return {
                     "status": "success",
                     "text": response.text,
                     "mode": "ocr",
-                    "message": "Text extracted successfully"
+                    "message": "Text extracted successfully",
                 }
             elif mode == "edit":
                 edit_prompt = f"Edit this image: {prompt}"
                 # For editing, we'd use Nano Banana Pro's edit capabilities
                 # This is a placeholder - actual implementation depends on API
                 response = vision_model.generate_content([edit_prompt, image])
-                
+
                 # In a real implementation, this would return edited image data
                 # For now, return the response
                 return {
                     "status": "success",
                     "message": response.text,
                     "mode": "edit",
-                    "note": "Image editing via Nano Banana Pro - implementation pending API details"
+                    "note": "Image editing via Nano Banana Pro - implementation pending API details",
                 }
             else:
                 raise ValueError(f"Unsupported mode: {mode}")
-                
+
         except Exception as e:
             logger.error(f"Error in _call_gemini_api_with_image: {e}")
+            raise
+
+    async def generate_world(
+        self, prompt: str, duration: int = 10, db_session=None, user_id=None
+    ) -> Dict[str, Any]:
+        """Generate a simulated world using Genie 3 via Gemini CLI with MCP tools"""
+        try:
+            logger.info(f"Generating Genie 3 world with prompt: {prompt}")
+
+            # Re-initialize with user settings if provided
+            if db_session and user_id and not self.initialized:
+                self._initialize_apis(db_session, user_id)
+
+            # Use Gemini CLI with MCP tool
+            params = {"prompt": prompt, "duration": duration}
+
+            result = await self._call_gemini_cli_with_mcp(
+                f"Generate a simulated world: {prompt}",
+                "googleMediaV3.generate_world",
+                params,
+            )
+
+            return {
+                "status": "success",
+                "message": f"World generated: {prompt}",
+                "world_id": result.get("world_id"),
+                "preview_url": result.get("previewUrl"),
+                "api_used": "gemini_cli_mcp",
+            }
+
+        except Exception as e:
+            logger.error(f"Error in generate_world: {e}")
             raise
 
     async def generate_music(
@@ -999,46 +1095,41 @@ How can I help you today? Please let me know what you're working on!
         duration: int = 30,
         style: Optional[str] = None,
         db_session=None,
-        user_id=None
+        user_id=None,
     ) -> Dict[str, Any]:
         """Generate music using Lyria via Gemini CLI with MCP tools"""
         try:
             logger.info(f"Generating music with prompt: {prompt}")
-            
+
             # Re-initialize with user settings if provided
             if db_session and user_id and not self.initialized:
                 self._initialize_apis(db_session, user_id)
-            
+
             # Try Gemini CLI with MCP first, then fallback to direct MCP server
             try:
-                params = {
-                    "prompt": prompt,
-                    "duration": duration,
-                    "style": style
-                }
-                
+                params = {"prompt": prompt, "duration": duration, "style": style}
+
                 result = await self._call_gemini_cli_with_mcp(
-                    f"Generate music: {prompt}",
-                    "googleMediaV3.generate_music",
-                    params
+                    f"Generate music: {prompt}", "googleMediaV3.generate_music", params
                 )
-                
+
                 api_used = "gemini_cli_mcp"
-                
+
             except Exception as e:
-                logger.warning(f"Gemini CLI with MCP failed, trying direct MCP server: {e}")
+                logger.warning(
+                    f"Gemini CLI with MCP failed, trying direct MCP server: {e}"
+                )
                 try:
-                    result = await self._call_mcp_media_server("generate/music", {
-                        "prompt": prompt,
-                        "duration": duration,
-                        "style": style
-                    })
+                    result = await self._call_mcp_media_server(
+                        "generate/music",
+                        {"prompt": prompt, "duration": duration, "style": style},
+                    )
                     api_used = "mcp_direct"
-                    
+
                 except Exception as e2:
                     logger.warning(f"Direct MCP server failed: {e2}")
                     raise
-            
+
             # Ensure we have music data
             if "music_data" not in result and "musicUrl" in result:
                 # Download music from URL
@@ -1047,7 +1138,7 @@ How can I help you today? Please let me know what you're working on!
                     music_response = await client.get(music_url)
                     music_response.raise_for_status()
                     result["music_data"] = music_response.content
-            
+
             return {
                 "status": "success",
                 "message": f"Music generated: {prompt}",
@@ -1055,12 +1146,13 @@ How can I help you today? Please let me know what you're working on!
                 "music_size": len(result.get("music_data", b"")),
                 "duration": duration,
                 "style": style,
-                "api_used": api_used
+                "api_used": api_used,
             }
-                    
+
         except Exception as e:
             logger.error(f"Error in generate_music: {e}")
             raise
+
 
 # Global service instance
 gemini_service = GeminiCLIService()
