@@ -1,48 +1,58 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navigation from './Navigation';
 import Sidebar from './Sidebar';
 import TopBar from '../TopBar';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState('dark');
-  const [language, setLanguage] = useState('en');
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-800 ${theme}`}>
+    <div className="min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden">
+      {/* Background Orbs for Depth */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px]" />
+      </div>
+
       {/* Top Bar */}
       <TopBar 
         toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        theme={theme}
-        setTheme={setTheme}
-        language={language}
-        setLanguage={setLanguage}
       />
       
-      {/* Sidebar */}
+      {/* Sidebar - Integrated with Glass Panel */}
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       {/* Main content */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'} pt-16`}>
-        {/* Page content */}
-        <main className="p-4 lg:p-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="max-w-7xl mx-auto"
-          >
-            {children}
-          </motion.div>
+      <div className={`transition-all duration-500 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pt-20 pb-16`}>
+        <main className="px-4 lg:px-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={window.location.pathname}
+              initial={{ opacity: 0, scale: 0.98, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: -10 }}
+              transition={{ 
+                duration: 0.4,
+                ease: [0.22, 1, 0.36, 1] 
+              }}
+              className="max-w-7xl mx-auto"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
       
-      {/* Navigation for mobile */}
-      <Navigation />
+      {/* Navigation - Bottom bar for mobile, integrated glass */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 z-50">
+        <div className="glass-panel p-2 flex justify-around items-center h-16">
+          <Navigation />
+        </div>
+      </div>
     </div>
   );
 };
 
 export default Layout;
+鼓

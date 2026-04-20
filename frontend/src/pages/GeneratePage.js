@@ -1,352 +1,181 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from 'sonner';
-import {
-  SparklesIcon,
-  PhotoIcon,
+import { 
+  VideoIcon, 
+  SparklesIcon, 
   PlayIcon,
   ClockIcon,
-  CogIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
-import VideoPreview from '../components/VideoPreview';
-import ProgressModal from '../components/ProgressModal';
+  MaximizeIcon,
+  HistoryIcon
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-// Form validation schema
-const generateSchema = z.object({
-  prompt: z.string().min(10, 'Prompt must be at least 10 characters').max(2000, 'Prompt too long'),
-  style: z.string(),
-  aspectRatio: z.string(),
-  duration: z.number().min(1).max(60),
-  fps: z.number().min(12).max(60),
-  resolution: z.string(),
-  motionIntensity: z.string(),
-  cameraMovement: z.string(),
-  temperature: z.number().min(0).max(1),
-  negativePrompt: z.string().optional(),
-  seed: z.number().optional(),
-});
-
-const GeneratePage = () => {
-  const [referenceImage, setReferenceImage] = useState(null);
+const VeoStudio = () => {
+  const [prompt, setPrompt] = useState('');
+  const [duration, setDuration] = useState(5);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [currentJobId, setCurrentJobId] = useState(null);
   const [generatedVideo, setGeneratedVideo] = useState(null);
+  const [aspectRatio, setAspectRatio] = useState('16:9');
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(generateSchema),
-    defaultValues: {
-      prompt: '',
-      style: 'cinematic',
-      aspectRatio: '16:9',
-      duration: 5,
-      fps: 24,
-      resolution: '1080p',
-      motionIntensity: 'medium',
-      cameraMovement: 'static',
-      temperature: 0.7,
-      negativePrompt: '',
-      seed: undefined,
-    },
-  });
-
-  const watchedValues = watch();
-
-  const onSubmit = async (data) => {
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    setIsGenerating(true);
+    
     try {
-      setIsGenerating(true);
-      setGenerationProgress(0);
-      
-      const requestData = {
-        ...data,
-        reference_image: referenceImage,
-      };
-
-      const response = await fetch('/api/v1/video/generate', {
+      // Calling Veo 3.1 API via Fleet Backend
+      const response = await fetch('/api/video/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt, 
+          duration,
+          aspect_ratio: aspectRatio,
+          model_version: '3.1'
+        })
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to start video generation');
-      }
-
-      const result = await response.json();
-      setCurrentJobId(result.job_id);
       
-      pollProgress(result.job_id);
-      toast.success('Video generation started!');
+      const data = await response.json();
+      setGeneratedVideo(data.video_url);
+      toast.success('Veo 3.1: Video generation initiated');
     } catch (error) {
-      console.error('Generation error:', error);
-      toast.error('Failed to generate video');
+      toast.error('Video generation failed');
+    } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const pollProgress = async (jobId) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/v1/video/status/${jobId}`);
-        const status = await response.json();
-        
-        setGenerationProgress(status.progress);
-        
-        if (status.status === 'completed') {
-          clearInterval(pollInterval);
-          setIsGenerating(false);
-          setGeneratedVideo(`/api/v1/video/download/${jobId}`);
-          toast.success('Video generated successfully!');
-        } else if (status.status === 'failed') {
-          clearInterval(pollInterval);
-          setIsGenerating(false);
-          toast.error(status.error_message || 'Video generation failed');
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
-      }
-    }, 2000);
-  };
-
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/v1/video/upload-reference', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const result = await response.json();
-      setReferenceImage(result.image_base64);
-      toast.success('Reference image uploaded!');
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload image');
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center"
-      >
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          Generate Your Video
-        </h1>
-        <p className="text-gray-400 max-w-2xl mx-auto">
-          Describe your vision and watch AI bring it to life with stunning visuals
-        </p>
-      </motion.div>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold premium-gradient">Veo 3.1 Studio</h1>
+          <p className="text-slate-400 mt-2">Cinematic Industrial Video • SOTA Continuity • High Fidelity</p>
+        </div>
+        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+          <button className="px-4 py-2 rounded-lg text-sm bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-2">
+            <HistoryIcon className="w-4 h-4" />
+            Project History
+          </button>
+        </div>
+      </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="space-y-6"
-        >
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-              <label className="block text-sm font-medium text-white mb-3">
-                <SparklesIcon className="w-5 h-5 inline mr-2" />
-                Video Description
+        {/* Input Side */}
+        <div className="space-y-6">
+          <div className="glass-panel p-6 space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                <SparklesIcon className="w-4 h-4 text-purple-400" />
+                Scene Description
               </label>
               <textarea
-                {...register('prompt')}
-                rows={4}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Describe the video you want to create..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="A cinematic drone shot of a neon-lit futuristic city in the rain..."
+                className="glass-input w-full min-h-[150px] resize-none"
               />
-              {errors.prompt && (
-                <p className="text-red-400 text-sm mt-2 flex items-center">
-                  <ExclamationTriangleIcon className="w-4 h-4 mr-1" />
-                  {errors.prompt.message}
-                </p>
-              )}
             </div>
 
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-              <label className="block text-sm font-medium text-white mb-3">
-                <PhotoIcon className="w-5 h-5 inline mr-2" />
-                Reference Image (Optional)
-              </label>
-              <div className="flex items-center space-x-4">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="reference-image"
-                />
-                <label
-                  htmlFor="reference-image"
-                  className="cursor-pointer px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white hover:bg-white/20 transition-colors"
-                >
-                  Choose Image
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                  <ClockIcon className="w-4 h-4 text-indigo-400" />
+                  Duration
                 </label>
-                {referenceImage && (
-                  <div className="w-16 h-16 rounded-lg overflow-hidden">
-                    <img
-                      src={`data:image/png;base64,${referenceImage}`}
-                      alt="Reference"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                <label className="block text-sm font-medium text-white mb-3">
-                  Visual Style
-                </label>
-                <select
-                  {...register('style')}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                <select 
+                  value={duration} 
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  className="glass-input w-full"
                 >
-                  <option value="cinematic">Cinematic</option>
-                  <option value="realistic">Realistic</option>
-                  <option value="animated">Animated</option>
-                  <option value="artistic">Artistic</option>
+                  <option value={5}>5 Seconds</option>
+                  <option value={10}>10 Seconds</option>
+                  <option value={20}>20 Seconds</option>
+                  <option value={60}>60 Seconds (Full)</option>
                 </select>
               </div>
-
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-                <label className="block text-sm font-medium text-white mb-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                  <MaximizeIcon className="w-4 h-4 text-pink-400" />
                   Aspect Ratio
                 </label>
-                <select
-                  {...register('aspectRatio')}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                <select 
+                  value={aspectRatio} 
+                  onChange={(e) => setAspectRatio(e.target.value)}
+                  className="glass-input w-full"
                 >
-                  <option value="16:9">16:9 (Landscape)</option>
-                  <option value="9:16">9:16 (Portrait)</option>
-                  <option value="1:1">1:1 (Square)</option>
+                  <option value="16:9">Ultra-Wide (16:9)</option>
+                  <option value="9:16">Mobile Hub (9:16)</option>
+                  <option value="1:1">Social Hub (1:1)</option>
                 </select>
               </div>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-              <label className="block text-sm font-medium text-white mb-3">
-                <ClockIcon className="w-5 h-5 inline mr-2" />
-                Duration: {watchedValues.duration} seconds
-              </label>
-              <input
-                type="range"
-                {...register('duration', { valueAsNumber: true })}
-                min="1"
-                max="60"
-                className="w-full accent-purple-500"
-              />
-            </div>
-
-            <motion.button
-              type="submit"
-              disabled={isGenerating}
-              whileHover={{ scale: isGenerating ? 1 : 1.02 }}
-              whileTap={{ scale: isGenerating ? 1 : 0.98 }}
-              className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 ${
-                isGenerating
-                  ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/25'
-              } text-white`}
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || !prompt}
+              className="glass-button-primary w-full py-4 flex items-center justify-center gap-3 text-lg"
             >
               {isGenerating ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Generating...
-                </div>
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Generating Veo 3.1...</span>
+                </>
               ) : (
-                <div className="flex items-center justify-center">
-                  <PlayIcon className="w-5 h-5 mr-2" />
-                  Generate Video
-                </div>
+                <>
+                  <PlayIcon className="w-5 h-5 fill-current" />
+                  <span>Execute Generation</span>
+                </>
               )}
-            </motion.button>
-          </form>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="space-y-6"
-        >
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <h3 className="text-lg font-semibold text-white mb-4">Preview</h3>
-            {generatedVideo ? (
-              <VideoPreview src={generatedVideo} />
-            ) : (
-              <div className="aspect-video bg-gray-800 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <PlayIcon className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-                  <p className="text-gray-400">Your video will appear here</p>
-                </div>
-              </div>
-            )}
+            </button>
           </div>
+        </div>
 
-          {watchedValues.prompt && (
-            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-              <h3 className="text-lg font-semibold text-white mb-3">Settings Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Style:</span>
-                  <span className="text-white capitalize">{watchedValues.style}</span>
+        {/* Output Side */}
+        <div className="glass-panel min-h-[500px] flex flex-col items-center justify-center p-4 relative bg-black/40 overflow-hidden">
+          {generatedVideo ? (
+            <div className="w-full h-full">
+              <video 
+                src={generatedVideo} 
+                className="w-full h-full object-contain rounded-xl"
+                controls
+                autoPlay
+              />
+            </div>
+          ) : (
+            <div className="text-center space-y-4 opacity-30">
+              <VideoIcon className="w-16 h-16 mx-auto" />
+              <p className="text-lg">Veo 3.1 Output Preview</p>
+            </div>
+          )}
+
+          {isGenerating && (
+            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-10">
+              <div className="text-center space-y-6 max-w-sm px-4">
+                <div className="relative w-20 h-20 mx-auto">
+                    <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full" />
+                    <div className="absolute inset-0 border-4 border-t-purple-500 rounded-full animate-spin" />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Aspect Ratio:</span>
-                  <span className="text-white">{watchedValues.aspectRatio}</span>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold premium-gradient">Rendering Vision</h3>
+                  <p className="text-sm text-slate-400">Synthesizing frames with cinematic continuity tokens...</p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Duration:</span>
-                  <span className="text-white">{watchedValues.duration}s</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">FPS:</span>
-                  <span className="text-white">{watchedValues.fps}</span>
+                <div className="w-full bg-white/10 rounded-full h-1.5">
+                  <motion.div 
+                    className="bg-purple-500 h-full rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 15, repeat: Infinity }}
+                  />
                 </div>
               </div>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
-
-      {/* Progress Modal */}
-      {isGenerating && (
-        <ProgressModal
-          isOpen={isGenerating}
-          progress={generationProgress}
-          jobId={currentJobId}
-          onClose={() => setIsGenerating(false)}
-        />
-      )}
     </div>
   );
 };
 
-export default GeneratePage;
+export default VeoStudio;
+鼓

@@ -1,141 +1,154 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   HomeIcon,
-  SparklesIcon,
-  FilmIcon,
-  PhotoIcon,
-  ClockIcon,
-  Cog6ToothIcon,
-  CameraIcon,
+  ChatBubbleBottomCenterTextIcon,
+  VideoCameraIcon,
   MusicalNoteIcon,
-  QuestionMarkCircleIcon,
-  ChatBubbleLeftRightIcon,
-  MagnifyingGlassIcon,
-  DocumentTextIcon,
-  CodeBracketIcon,
-  LanguageIcon,
-  MicrophoneIcon,
-  ChartBarIcon,
-  ShieldCheckIcon,
-  PaintBrushIcon,
-  CircleStackIcon,
+  PhotoIcon,
   BeakerIcon,
-  GlobeAltIcon,
-  BookOpenIcon,
-  Squares2X2Icon,
-  SpeakerWaveIcon,
-  ClipboardDocumentCheckIcon,
-  InboxArrowDownIcon,
+  Cog6ToothIcon,
+  QueueListIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
-const navigationItems = [
+const coreItems = [
   { name: 'Home', href: '/', icon: HomeIcon },
-  { name: 'Generate', href: '/generate', icon: SparklesIcon },
-  { name: 'Movie Maker', href: '/moviemaker', icon: FilmIcon },
-  { name: 'Flow Studio', href: '/flow', icon: Squares2X2Icon },
-  { name: 'Book Maker', href: '/bookmaker', icon: BookOpenIcon },
-  { name: 'Images', href: '/images', icon: CameraIcon },
+  { name: 'Chat', href: '/chat', icon: ChatBubbleBottomCenterTextIcon },
+  { name: 'Video', href: '/generate', icon: VideoCameraIcon },
   { name: 'Music', href: '/music', icon: MusicalNoteIcon },
-  { name: 'Sound Design', href: '/sound-design', icon: SpeakerWaveIcon },
-  { name: 'Chat', href: '/chat', icon: ChatBubbleLeftRightIcon },
-  { name: 'AI Search', href: '/search', icon: MagnifyingGlassIcon },
-  { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
-  { name: 'Code Assistant', href: '/code', icon: CodeBracketIcon },
-  { name: 'Translation', href: '/translation', icon: LanguageIcon },
-  { name: 'Audio Studio', href: '/audio', icon: MicrophoneIcon },
-  { name: 'Future Predictor', href: '/predictor', icon: SparklesIcon },
-  { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
-  { name: 'Content Safety', href: '/safety', icon: ShieldCheckIcon },
-  { name: 'Compliance Center', href: '/compliance', icon: ClipboardDocumentCheckIcon },
-  { name: 'Style Transfer', href: '/style', icon: PaintBrushIcon },
-  { name: 'Data Insights', href: '/insights', icon: CircleStackIcon },
-  { name: 'Multimodal', href: '/multimodal', icon: GlobeAltIcon },
-  { name: 'Lab', href: '/lab', icon: BeakerIcon },
-  { name: 'Gallery', href: '/gallery', icon: PhotoIcon },
-  { name: 'Jobs', href: '/jobs', icon: ClockIcon },
-  { name: 'Workspace Sync', href: '/workspace', icon: InboxArrowDownIcon },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
-  { name: 'Help', href: '/help', icon: QuestionMarkCircleIcon },
+  { name: 'Images', href: '/images', icon: PhotoIcon },
+  { name: 'Gallery', href: '/gallery', icon: QueueListIcon },
+];
+
+const labItems = [
+  { name: 'Flow Studio', href: '/flow' },
+  { name: 'Book Maker', href: '/bookmaker' },
+  { name: 'Sound Design', href: '/sound-design' },
+  { name: 'AI Search', href: '/search' },
+  { name: 'Code Assistant', href: '/code' },
+  { name: 'Translation', href: '/translation' },
+  { name: 'Future Predictor', href: '/predictor' },
 ];
 
 const Sidebar = ({ open, setOpen }) => {
   const location = useLocation();
+  const [labExpanded, setLabExpanded] = React.useState(false);
 
   return (
     <>
-      {/* Overlay for mobile */}
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+            onClick={() => setOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <motion.div
         initial={false}
-        animate={{ width: open ? 256 : 64 }}
-        className="fixed left-0 top-16 z-50 h-[calc(100vh-4rem)] bg-gray-900/90 backdrop-blur-xl border-r border-white/10 hidden lg:block"
+        animate={{ width: open ? 260 : 72 }}
+        className="fixed left-0 top-0 z-50 h-screen glass-nav hidden lg:flex flex-col border-r border-white/5"
       >
-        <div className="flex flex-col h-full">
-          {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-1">
-            {navigationItems.map((item) => {
+        {/* Logo Section */}
+        <div className="h-20 flex items-center px-6 border-b border-white/5">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-500/20">
+            <span className="text-white font-bold text-xs">V3</span>
+          </div>
+          {open && (
+            <motion.span 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="ml-3 font-bold text-lg premium-gradient"
+            >
+              VeoGen
+            </motion.span>
+          )}
+        </div>
+
+        {/* Navigation Section */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 px-3 space-y-2 scrollbar-hide">
+          <div className="mb-4">
+            <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 ${!open && 'text-center'}`}>
+              {open ? 'Core Studios' : '•'}
+            </p>
+            {coreItems.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center px-3 py-3 rounded-lg transition-all duration-200 group ${
+                  className={`flex items-center h-12 rounded-xl transition-all duration-300 group ${
                     isActive
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                  }`}
+                      ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  } ${open ? 'px-4 mb-1' : 'justify-center mx-2'}`}
                 >
-                  <item.icon
-                    className={`w-6 h-6 ${open ? 'mr-3' : 'mx-auto'} ${
-                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
-                    }`}
-                  />
+                  <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive && 'text-purple-400'}`} />
                   {open && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                      className="font-medium"
-                    >
-                      {item.name}
-                    </motion.span>
+                    <span className="ml-3 text-sm font-medium">{item.name}</span>
+                  )}
+                  {isActive && open && (
+                    <motion.div layoutId="active-pill" className="ml-auto w-1 h-4 bg-purple-500 rounded-full" />
                   )}
                 </Link>
               );
             })}
-          </nav>
+          </div>
 
-          {/* Footer */}
-          <div className="px-3 py-4">
-            <div className={`flex items-center ${open ? 'justify-start' : 'justify-center'}`}>
-              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-xs font-bold text-white">AI</span>
-              </div>
+          <div>
+             <button
+              onClick={() => setLabExpanded(!labExpanded)}
+              className={`w-full flex items-center h-12 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all ${open ? 'px-4' : 'justify-center mx-2'}`}
+            >
+              <BeakerIcon className="w-5 h-5 flex-shrink-0" />
               {open && (
+                <>
+                  <span className="ml-3 text-sm font-medium">Experimental</span>
+                  <ChevronRightIcon className={`ml-auto w-3 h-3 transition-transform ${labExpanded && 'rotate-90'}`} />
+                </>
+              )}
+            </button>
+            
+            <AnimatePresence>
+              {open && labExpanded && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="ml-3"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden bg-white/5 rounded-xl mt-1 mx-2"
                 >
-                  <p className="text-sm font-medium text-white">AI Studio</p>
-                  <p className="text-xs text-gray-400">Powered by Veo</p>
+                  {labItems.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className="flex items-center h-10 px-4 text-xs text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
                 </motion.div>
               )}
-            </div>
+            </AnimatePresence>
           </div>
+        </div>
+
+        {/* Footer Settings */}
+        <div className="p-3 border-t border-white/5">
+          <Link
+            to="/settings"
+            className={`flex items-center h-12 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all ${open ? 'px-4' : 'justify-center mx-2'}`}
+          >
+            <Cog6ToothIcon className="w-5 h-5 flex-shrink-0" />
+            {open && <span className="ml-3 text-sm font-medium">Settings</span>}
+          </Link>
         </div>
       </motion.div>
     </>
@@ -143,3 +156,4 @@ const Sidebar = ({ open, setOpen }) => {
 };
 
 export default Sidebar;
+鼓

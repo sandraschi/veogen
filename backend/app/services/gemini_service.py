@@ -1,185 +1,89 @@
-import google.generativeai as genai
-from google.cloud import aiplatform
-import asyncio
+import os
+import io
+import wave
 import logging
-from typing import Dict, Any
+from typing import Optional, List
+from google import genai
+from google.genai import types
 from app.config import settings
-from app.models.video_request import VideoGenerationRequest, VideoGenerationResponse
 
 logger = logging.getLogger(__name__)
 
-class GeminiService:
-    def __init__(self):
-        self.setup_gemini()
-        self.setup_vertex_ai()
+class GeminiProvider:
+    """
+    Industrial v3.1 Gemini Provider for Chat, Reasoning, and Flash TTS.
+    """
     
-    def setup_gemini(self):
-        """Initialize Gemini AI"""
-        try:
-            if settings.GEMINI_API_KEY:
-                genai.configure(api_key=settings.GEMINI_API_KEY)
-                self.gemini_model = genai.GenerativeModel(settings.GEMINI_MODEL)
-                logger.info("Gemini AI initialized successfully")
-            else:
-                logger.warning("GEMINI_API_KEY not found in environment")
-        except Exception as e:
-            logger.error(f"Failed to initialize Gemini: {str(e)}")
-            raise
-    
-    def setup_vertex_ai(self):
-        """Initialize Vertex AI for Veo"""
-        try:
-            if settings.GOOGLE_CLOUD_PROJECT:
-                aiplatform.init(
-                    project=settings.GOOGLE_CLOUD_PROJECT,
-                    location="us-central1"
-                )
-                logger.info("Vertex AI initialized successfully")
-            else:
-                logger.warning("GOOGLE_CLOUD_PROJECT not found in environment")
-        except Exception as e:
-            logger.error(f"Failed to initialize Vertex AI: {str(e)}")
-            raise
-    
-    async def enhance_prompt(self, user_prompt: str, video_style: str = "cinematic") -> str:
-        """Use Gemini to enhance and optimize the video generation prompt"""
-        try:
-            enhancement_prompt = f"""
-            You are an expert video generation prompt engineer. Take the user's basic request and enhance it into a detailed, professional video generation prompt.
-            
-            User's request: "{user_prompt}"
-            Desired style: {video_style}
-            
-            Please enhance this into a detailed prompt that includes:
-            - Visual composition and framing
-            - Lighting and atmosphere
-            - Movement and camera work
-            - Color palette and mood
-            - Technical quality specifications
-            
-            Keep the enhanced prompt under 500 characters while being descriptive and cinematic.
-            Return only the enhanced prompt, nothing else.
-            """
-            
-            response = await asyncio.to_thread(
-                self.gemini_model.generate_content,
-                enhancement_prompt
-            )
-            
-            enhanced_prompt = response.text.strip()
-            logger.info(f"Enhanced prompt: {enhanced_prompt}")
-            return enhanced_prompt
-            
-        except Exception as e:
-            logger.error(f"Failed to enhance prompt: {str(e)}")
-            return user_prompt  # Return original if enhancement fails
-    async def generate_video_with_veo(self, request: VideoGenerationRequest) -> VideoGenerationResponse:
-        """
-        Generate video using Google's Veo 3 model
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or settings.GEMINI_API_KEY or os.getenv("GOOGLE_API_KEY")
+        if not self.api_key:
+            raise ValueError("GOOGLE_API_KEY (or GEMINI_API_KEY) must be provided.")
         
-        Args:
-            request: Video generation request parameters
-            
-        Returns:
-            VideoGenerationResponse with generated video details
+        self.client = genai.Client(api_key=self.api_key)
+        self.chat_model = settings.GEMINI_PRO_MODEL
+        self.flash_model = settings.GEMINI_FLASH_MODEL
+        self.tts_model = settings.GEMINI_TTS_MODEL
+        
+        # Audio specs for Gemini Flash TTS
+        self.sample_rate = 24000
+        self.channels = 1
+        self.sample_width = 2 # 16-bit
+
+    def generate_chat_response(self, prompt: str, history: List[dict] = None) -> str:
+        """Generates a text response using Gemini 3.1 Pro/Flash"""
+        try:
+            response = self.client.models.generate_content(
+                model=self.chat_model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction="You are VeoGen Industrial, a premium SOTA media agent.",
+                    temperature=0.7
+                )
+            )
+            return response.text
+        except Exception as e:
+            logger.error(f"Gemini Chat generation failed: {e}")
+            raise
+
+    def synthesize_speech(self, text: str, voice_name: str = "Kore") -> bytes:
+        """
+        Generates high-fidelity audio using Gemini 3.1 Flash TTS.
+        Supports prosody tags like [whispers], [happy], [excited].
         """
         try:
-            # Enhance the prompt using Gemini
-            enhanced_prompt = await self.enhance_prompt(
-                request.prompt, 
-                request.style or "cinematic"
+            response = self.client.models.generate_content(
+                model=self.tts_model,
+                contents=text,
+                config=types.GenerateContentConfig(
+                    response_modalities=["AUDIO"],
+                    speech_config=types.SpeechConfig(
+                        voice_config=types.VoiceConfig(
+                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                voice_name=voice_name
+                            )
+                        )
+                    )
+                )
             )
             
-            # Prepare Veo 3 generation parameters
-            veo_params = {
-                "prompt": enhanced_prompt,
-                "aspect_ratio": request.aspect_ratio or "16:9",
-                "duration_seconds": min(max(5, request.duration or 5), 60),  # 5-60s
-                "style": request.style or "cinematic",
-                "model": "veo-3.1"  # Explicitly use Veo 3.1
-            }
-            
-            # Add reference image if provided
-            if request.reference_image:
-                veo_params["reference_image"] = request.reference_image
-            
-            # Generate video using Vertex AI
-            video_response = await self._call_veo_api(veo_params)
-            
-            return VideoGenerationResponse(
-                video_url=video_response.get("video_url"),
-                status="completed",
-                generation_time=video_response.get("generation_time"),
-                enhanced_prompt=enhanced_prompt,
-                parameters=veo_params
-            )
+            # Extract PCM bytes and wrap in WAV
+            pcm_bytes = response.candidates[0].content.parts[0].inline_data.data
+            return self._pcm_to_wav(pcm_bytes)
             
         except Exception as e:
-            logger.error(f"Video generation failed: {str(e)}")
-            raise
-    
-    async def _call_veo_api(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Call the Veo API through Vertex AI"""
-        try:
-            # This is a placeholder for the actual Veo API call
-            # The exact implementation depends on Google's Veo API structure
-            
-            # For now, we'll simulate the API call
-            await asyncio.sleep(2)  # Simulate processing time
-            
-            # Use MCP media service for actual Veo generation
-            from .mcp_media_service import mcp_media_service
-            
-            # Generate video using MCP service
-            video_result = await mcp_media_service.generate_video(
-                prompt=params["prompt"],
-                duration=params["duration_seconds"],
-                aspect_ratio=params["aspect_ratio"],
-                style=params.get("style", "cinematic"),
-                user_id=None  # Will be set by the calling service
-            )
-            
-            if not video_result or "video_path" not in video_result:
-                raise RuntimeError("Video generation failed")
-
-            response_payload = {
-                "video_url": video_result["video_path"],
-                "generation_time": video_result.get("generation_time", 0),
-                "status": "completed",
-            }
-
-            logger.info("Veo API call completed successfully")
-            return response_payload
-            
-        except Exception as e:
-            logger.error(f"Veo API call failed: {str(e)}")
-            raise
-    
-    async def get_generation_status(self, job_id: str) -> Dict[str, Any]:
-        """Check the status of a video generation job"""
-        try:
-            # Use MCP media service to check job status
-            from .mcp_media_service import mcp_media_service
-            
-            job_status = await mcp_media_service.get_job_status(job_id)
-            if job_status:
-                return {
-                    "job_id": job_id,
-                    "status": job_status["status"],
-                    "progress": job_status["progress"],
-                    "estimated_completion": job_status.get("estimated_completion"),
-                    "message": job_status.get("message")
-                }
-            else:
-                return {
-                    "job_id": job_id,
-                    "status": "not_found",
-                    "progress": 0,
-                    "estimated_completion": None,
-                    "message": "Job not found"
-                }
-        except Exception as e:
-            logger.error(f"Failed to get job status: {str(e)}")
+            logger.error(f"Gemini TTS synthesis failed: {e}")
             raise
 
-gemini_service = GeminiService()
+    def _pcm_to_wav(self, pcm_bytes: bytes) -> bytes:
+        """Helper to wrap raw PCM in WAV container"""
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as wf:
+            wf.setnchannels(self.channels)
+            wf.setsampwidth(self.sample_width)
+            wf.setframerate(self.sample_rate)
+            wf.writeframes(pcm_bytes)
+        return buf.getvalue()
+
+# Global instance
+gemini_provider = GeminiProvider()
+鼓
