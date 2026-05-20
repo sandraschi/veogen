@@ -7,6 +7,9 @@
   <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
 </p>
 
+
+> 📖 **[Installation Guide](INSTALL.md)** — quick start, manual setup, and troubleshooting
+
 **VeoGen Industrial** is an April 2026 state-of-the-art media generation hub. It has been completely rebuilt to leverage the Gemini 3.1 series, Veo 3.1, and Lyria 3 for high-fidelity industrial video, music, and multimodal reasoning.
 
 ## 🚀 The Big Four Studios
