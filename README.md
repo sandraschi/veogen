@@ -1,9 +1,11 @@
 # VeoGen Industrial (v3.1 SOTA)
 
-[![April 2026](https://img.shields.io/badge/Release-April_2026-blueviolet?style=for-the-badge)](https://ai.google.dev)
-[![Gemini 3.1](https://img.shields.io/badge/Intell-Gemini_3.1_Pro/Flash-8b5cf6?style=for-the-badge)](https://gemini.google.com)
-[![Veo 3.1](https://img.shields.io/badge/Video-Veo_3.1-ec4899?style=for-the-badge)](https://deepmind.google/technologies/veo/)
-[![Lyria 3](https://img.shields.io/badge/Music-Lyria_3-3b82f6?style=for-the-badge)](https://deepmind.google/technologies/lyria/)
+<p align="center">
+  <a href="https://github.com/casey/just"><img src="https://img.shields.io/badge/just-ready_to_go-7c5cfc?style=flat-square&logo=just&logoColor=white" alt="Just"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
+</p>
 
 **VeoGen Industrial** is an April 2026 state-of-the-art media generation hub. It has been completely rebuilt to leverage the Gemini 3.1 series, Veo 3.1, and Lyria 3 for high-fidelity industrial video, music, and multimodal reasoning.
 
