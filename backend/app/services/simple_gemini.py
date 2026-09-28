@@ -4,6 +4,7 @@ Emergency Gemini Fix - Simple working text generation
 
 import google.generativeai as genai
 import asyncio
+import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,8 +20,8 @@ class SimpleGeminiService:
     def _initialize(self):
         """Initialize with working model"""
         try:
-            # Use a basic API key for testing (replace with real key)
-            api_key = "AIzaSyC_LBvMeiRdQ8GVhcYt1egAruaGXSYx2oY"  # This looks like a placeholder
+            # Key comes from the environment; never hard-code it.
+            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
             
             if api_key and api_key.startswith("AIza"):
                 genai.configure(api_key=api_key)
