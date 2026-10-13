@@ -11,8 +11,8 @@ import google.generativeai as genai
 from google.cloud import aiplatform
 
 from app.config import settings
+from app.services import llm_providers
 from app.services.ffmpeg import ffmpeg_service
-from app.services.gemini_cli import gemini_service
 
 logger = logging.getLogger(__name__)
 
@@ -232,55 +232,12 @@ PRODUCTION NOTES:
 Please ensure each scene builds upon the previous one and creates a cohesive story."""
 
     async def _generate_script_with_gemini(self, prompt: str) -> str:
-        """Generate script using Gemini API"""
-        try:
-            # Use Gemini CLI to generate the script
-            response = await gemini_service.generate_text(prompt=prompt, temperature=0.8, max_tokens=2000)
+        """Generate the script with the LLM selected in Settings (default Gemini Flash).
 
-            return response
-
-        except Exception as e:
-            logger.error(f"Error generating script with Gemini: {e}")
-            # Fallback to basic script structure
-            return self._generate_basic_script(prompt)
-
-    def _generate_basic_script(self, prompt: str) -> str:
-        """Generate a basic script structure when AI generation fails"""
-        return f"""TITLE: Generated Movie
-
-SYNOPSIS:
-A movie based on the prompt: {prompt}
-
-STYLE NOTES:
-Cinematic style with professional lighting and camera work.
-
-SCENES:
-Scene 1: Opening
-Duration: 8 seconds
-Description: Opening scene based on the prompt
-Visual Prompt: {prompt}
-Continuity: Opening establishing shot
-
-Scene 2: Development
-Duration: 8 seconds
-Description: Development of the story
-Visual Prompt: Continuation of {prompt}
-Continuity: Continues from opening scene
-
-Scene 3: Climax
-Duration: 8 seconds
-Description: Climactic moment
-Visual Prompt: Dramatic version of {prompt}
-Continuity: Builds from previous scenes
-
-Scene 4: Conclusion
-Duration: 8 seconds
-Description: Concluding scene
-Visual Prompt: Resolution of {prompt}
-Continuity: Wraps up the story
-
-PRODUCTION NOTES:
-Maintain consistent style throughout. Ensure smooth transitions between scenes."""
+        Errors propagate: generate_script() marks the project script_failed. The old
+        fallback returned a canned template script as if it had been generated.
+        """
+        return await llm_providers.complete_text(prompt, temperature=0.8, max_tokens=4000)
 
     def _parse_script_response(self, script_response: str, project: Dict[str, Any]) -> Dict[str, Any]:
         """Parse the script response to extract scenes and metadata"""

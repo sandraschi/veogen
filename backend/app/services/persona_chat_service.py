@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from app.database import get_user_setting, set_user_setting
-from app.services.gemini_cli import gemini_service
+from app.services import llm_providers
 
 logger = logging.getLogger(__name__)
 
@@ -261,35 +261,31 @@ class PersonaChatService:
             persona = conversation["persona"]
             messages = conversation["messages"]
 
-            # Prepare conversation context for Gemini
-            context_messages = []
-            for msg in messages[-10:]:  # Last 10 messages for context
-                if msg["role"] != "system":
-                    context_messages.append(f"{msg['role']}: {msg['content']}")
-
-            conversation_context = "\n".join(context_messages)
-
-            # Create enhanced prompt for persona
-            enhanced_prompt = f"""
+            # Persona definition goes in the system message; the last 10 turns are
+            # sent as real chat history (any provider selected in Settings -> LLM).
+            system_prompt = f"""
             {persona["system_prompt"]}
-            
-            CONVERSATION CONTEXT:
-            {conversation_context}
-            
+
             PERSONA TRAITS:
             - Personality: {persona["personality"]}
             - Expertise: {", ".join(persona["expertise"])}
             - Available tools: {", ".join(persona.get("tools", []))}
-            
+
             INSTRUCTIONS:
             - Respond as the {persona["name"]} with the specified personality
             - Use your expertise to provide helpful, relevant advice
             - If the user asks about video creation, suggest specific VeoGen features
             - Keep responses engaging and true to your persona
             - If appropriate, suggest using available tools like Veo for video generation
-            
-            Please respond to the user's latest message, staying in character as {persona["name"]}.
             """.strip()
+            turns = [
+                {"role": m["role"], "content": m["content"]}
+                for m in messages[-10:]
+                if m["role"] in ("user", "assistant")
+            ]
+            history, latest = (
+                (turns[:-1], turns[-1]["content"]) if turns and turns[-1]["role"] == "user" else (turns, "")
+            )
 
             response_text: Optional[str] = None
             assistant_error: Optional[str] = None
@@ -297,12 +293,12 @@ class PersonaChatService:
             temperature = float(persona.get("temperature", 0.7))
 
             try:
-                response_text = await gemini_service.generate_text(
-                    enhanced_prompt,
+                response_text = await llm_providers.complete_text(
+                    latest or "Continue the conversation.",
+                    system=system_prompt,
                     temperature=temperature,
                     max_tokens=1024,
-                    db_session=db_session,
-                    user_id=user_id,
+                    history=history,
                 )
             except Exception as gen_error:
                 assistant_error = str(gen_error)

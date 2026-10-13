@@ -119,11 +119,22 @@ class GeminiServiceFacade:
         self.provider = None  # lazily initialized via get_provider()
 
     # --- Chat / text (real) ---
-    def generate_content(self, prompt: str, **kwargs) -> str:
-        return get_provider().generate_chat_response(prompt)
+    # Text goes through the local + cloud provider layer (Settings -> LLM picks
+    # Ollama / LM Studio / Gemini / OpenAI / ...); the default is Gemini Flash.
+    # generate_content was sync while book.py and code.py awaited it (TypeError
+    # on every call); both are async now.
+    async def generate_content(self, prompt: str, **kwargs) -> str:
+        return await self.generate_text(prompt, **kwargs)
 
     async def generate_text(self, prompt: str, **kwargs) -> str:
-        return get_provider().generate_chat_response(prompt)
+        from app.services import llm_providers
+
+        return await llm_providers.complete_text(
+            prompt,
+            system=kwargs.get("system"),
+            temperature=kwargs.get("temperature"),
+            max_tokens=kwargs.get("max_tokens"),
+        )
 
     def initialize(self, db_session=None, user_id=None, **kwargs):
         return True

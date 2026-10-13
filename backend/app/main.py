@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.llm_routes import router as llm_router
 from app.api.router import api_router
 from app.config import settings
 from app.mcp_server import mcp_http_app
@@ -54,6 +55,7 @@ app.add_middleware(
 
 # The full v1 API surface (auth, chat, image, music, video, settings, ...)
 app.include_router(api_router)
+app.include_router(llm_router)
 
 # MCP streamable HTTP surface (Phase 4 fleet integration)
 app.mount("/mcp", mcp_web_app)
