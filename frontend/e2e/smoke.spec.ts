@@ -99,4 +99,30 @@ test.describe('Fleet Audit - veogen', () => {
             await page.waitForTimeout(800);
         }
     });
+
+    test('settings: local + cloud LLM provider panel (authenticated)', async ({ page, request }) => {
+        const email = `e2e-llm-${Date.now()}@example.com`;
+        await request.post(`${BACKEND}/api/v1/enhanced-auth/register`, {
+            data: { email, password: 'TestPass123!', username: `e2ellm${Date.now()}` },
+        });
+        const login = await request.post(`${BACKEND}/api/v1/enhanced-auth/login`, {
+            data: { email, password: 'TestPass123!' },
+        });
+        const { access_token } = await login.json();
+
+        // writes require login; reads never contain key material
+        const anon = await request.post(`${BACKEND}/api/settings/llm`, { data: { provider: 'openai', model: 'x' } });
+        expect([401, 403]).toContain(anon.status());
+
+        await page.goto('/');
+        await page.evaluate((t) => localStorage.setItem('token', t), access_token);
+        await page.goto('/settings');
+        await expect(page.getByTestId('llm-providers-panel')).toBeVisible({ timeout: 15000 });
+        for (const id of ['ollama', 'lmstudio', 'google', 'openai', 'anthropic']) {
+            await expect(page.getByTestId(`llm-provider-card-${id}`)).toBeVisible();
+        }
+        await expect(page.getByTestId('llm-provider-select')).toBeVisible();
+        await expect(page.getByTestId('llm-model-select')).toBeVisible();
+        await expect(page.getByTestId('llm-key-google')).toHaveValue('');
+    });
 });

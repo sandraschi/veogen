@@ -10,6 +10,7 @@ import {
   ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import { settingsService } from '../services/settingsService';
+import LlmProvidersPanel from '../components/settings/LlmProvidersPanel';
 
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
@@ -134,6 +135,8 @@ const SettingsPage = () => {
           Configure your VeoGen experience and API connections
         </p>
       </motion.div>
+
+      <LlmProvidersPanel />
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* API Configuration */}
