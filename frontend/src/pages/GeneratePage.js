@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  VideoIcon, 
-  SparklesIcon, 
-  PlayIcon,
-  ClockIcon,
-  MaximizeIcon,
-  HistoryIcon
+  Video, 
+  Sparkles, 
+  Play,
+  Clock,
+  Maximize,
+  History
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -54,7 +54,7 @@ const VeoStudio = () => {
         </div>
         <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
           <button className="px-4 py-2 rounded-lg text-sm bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-2">
-            <HistoryIcon className="w-4 h-4" />
+            <History className="w-4 h-4" />
             Project History
           </button>
         </div>
@@ -66,7 +66,7 @@ const VeoStudio = () => {
           <div className="glass-panel p-6 space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-                <SparklesIcon className="w-4 h-4 text-purple-400" />
+                <Sparkles className="w-4 h-4 text-purple-400" />
                 Scene Description
               </label>
               <textarea
@@ -80,7 +80,7 @@ const VeoStudio = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-                  <ClockIcon className="w-4 h-4 text-indigo-400" />
+                  <Clock className="w-4 h-4 text-indigo-400" />
                   Duration
                 </label>
                 <select 
@@ -96,7 +96,7 @@ const VeoStudio = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-                  <MaximizeIcon className="w-4 h-4 text-pink-400" />
+                  <Maximize className="w-4 h-4 text-pink-400" />
                   Aspect Ratio
                 </label>
                 <select 
@@ -123,7 +123,7 @@ const VeoStudio = () => {
                 </>
               ) : (
                 <>
-                  <PlayIcon className="w-5 h-5 fill-current" />
+                  <Play className="w-5 h-5 fill-current" />
                   <span>Execute Generation</span>
                 </>
               )}
@@ -144,7 +144,7 @@ const VeoStudio = () => {
             </div>
           ) : (
             <div className="text-center space-y-4 opacity-30">
-              <VideoIcon className="w-16 h-16 mx-auto" />
+              <Video className="w-16 h-16 mx-auto" />
               <p className="text-lg">Veo 3.1 Output Preview</p>
             </div>
           )}
@@ -178,4 +178,4 @@ const VeoStudio = () => {
 };
 
 export default VeoStudio;
-鼓
+

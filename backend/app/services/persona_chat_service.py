@@ -6,7 +6,8 @@ Uses June 2025 Gemini CLI with MCP for enhanced chat experiences
 import logging
 import uuid
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy.orm import Session
 
 from app.database import get_user_setting, set_user_setting
@@ -171,9 +172,7 @@ class PersonaChatService:
             conversation["messages"].append(user_message)
 
             # Generate initial response
-            response = await self._generate_persona_response(
-                conversation, db_session, user_id
-            )
+            response = await self._generate_persona_response(conversation, db_session, user_id)
 
             self._ensure_assistant_message(conversation, response)
 
@@ -183,9 +182,7 @@ class PersonaChatService:
             # Save to user settings for persistence
             await self._save_conversation_to_db(conversation, db_session, user_id)
 
-            logger.info(
-                f"Started conversation {conversation_id} with persona {persona_id} for user {user_id}"
-            )
+            logger.info(f"Started conversation {conversation_id} with persona {persona_id} for user {user_id}")
 
             return {
                 "conversation_id": conversation_id,
@@ -217,9 +214,7 @@ class PersonaChatService:
             conversation = self.active_conversations.get(conversation_id)
             if not conversation:
                 # Try to load from database
-                conversation = await self._load_conversation_from_db(
-                    conversation_id, db_session, user_id
-                )
+                conversation = await self._load_conversation_from_db(conversation_id, db_session, user_id)
                 if not conversation:
                     raise ValueError("Conversation not found")
                 self.active_conversations[conversation_id] = conversation
@@ -239,9 +234,7 @@ class PersonaChatService:
             conversation["last_activity"] = datetime.utcnow()
 
             # Generate response
-            response = await self._generate_persona_response(
-                conversation, db_session, user_id
-            )
+            response = await self._generate_persona_response(conversation, db_session, user_id)
 
             self._ensure_assistant_message(conversation, response)
 
@@ -356,9 +349,7 @@ class PersonaChatService:
                 "error": str(e),
             }
 
-    def _ensure_assistant_message(
-        self, conversation: Dict[str, Any], response: Optional[Dict[str, Any]]
-    ) -> None:
+    def _ensure_assistant_message(self, conversation: Dict[str, Any], response: Optional[Dict[str, Any]]) -> None:
         """Ensure the latest assistant reply is captured in conversation history."""
         if not response or "message" not in response:
             return
@@ -368,11 +359,7 @@ class PersonaChatService:
             return
 
         last_message = conversation["messages"][-1] if conversation["messages"] else None
-        if (
-            last_message
-            and last_message.get("role") == "assistant"
-            and last_message.get("content") == message_text
-        ):
+        if last_message and last_message.get("role") == "assistant" and last_message.get("content") == message_text:
             return
 
         conversation["messages"].append(
@@ -392,9 +379,7 @@ class PersonaChatService:
         try:
             conversation = self.active_conversations.get(conversation_id)
             if not conversation:
-                conversation = await self._load_conversation_from_db(
-                    conversation_id, db_session, user_id
-                )
+                conversation = await self._load_conversation_from_db(conversation_id, db_session, user_id)
                 if not conversation:
                     raise ValueError("Conversation not found")
 
@@ -403,9 +388,7 @@ class PersonaChatService:
                 raise ValueError("Unauthorized access to conversation")
 
             # Get recent messages (excluding system message)
-            messages = [
-                msg for msg in conversation["messages"] if msg["role"] != "system"
-            ][-limit:]
+            messages = [msg for msg in conversation["messages"] if msg["role"] != "system"][-limit:]
 
             return {
                 "conversation_id": conversation_id,
@@ -424,15 +407,11 @@ class PersonaChatService:
             logger.error(f"Error getting conversation history: {e}")
             raise
 
-    async def list_user_conversations(
-        self, user_id: str, db_session: Session
-    ) -> List[Dict[str, Any]]:
+    async def list_user_conversations(self, user_id: str, db_session: Session) -> List[Dict[str, Any]]:
         """List all conversations for a user"""
         try:
             # Get from settings (this is a simple implementation - in production you'd use a proper table)
-            conversations_data = get_user_setting(
-                db_session, user_id, "chat_conversations", {}
-            )
+            conversations_data = get_user_setting(db_session, user_id, "chat_conversations", {})
 
             conversations = []
             for conv_id, conv_data in conversations_data.items():
@@ -473,15 +452,11 @@ class PersonaChatService:
             for persona_id, persona in self.personas.items()
         ]
 
-    async def _save_conversation_to_db(
-        self, conversation: Dict[str, Any], db_session: Session, user_id: str
-    ):
+    async def _save_conversation_to_db(self, conversation: Dict[str, Any], db_session: Session, user_id: str):
         """Save conversation to database (simplified implementation)"""
         try:
             # Get existing conversations
-            conversations_data = get_user_setting(
-                db_session, user_id, "chat_conversations", {}
-            )
+            conversations_data = get_user_setting(db_session, user_id, "chat_conversations", {})
 
             # Update conversation summary
             conversation_summary = {
@@ -490,26 +465,18 @@ class PersonaChatService:
                 "persona_description": conversation["persona"]["description"],
                 "created_at": conversation["created_at"].isoformat(),
                 "last_activity": conversation["last_activity"].isoformat(),
-                "message_count": len(
-                    [m for m in conversation["messages"] if m["role"] != "system"]
-                ),
-                "last_message": conversation["messages"][-1]["content"]
-                if conversation["messages"]
-                else "",
+                "message_count": len([m for m in conversation["messages"] if m["role"] != "system"]),
+                "last_message": conversation["messages"][-1]["content"] if conversation["messages"] else "",
             }
 
             conversations_data[conversation["id"]] = conversation_summary
 
             # Save to settings
-            set_user_setting(
-                db_session, user_id, "chat_conversations", conversations_data, "json"
-            )
+            set_user_setting(db_session, user_id, "chat_conversations", conversations_data, "json")
 
             # Save full conversation separately (for message history)
             conversation_key = f"chat_conversation_{conversation['id']}"
-            set_user_setting(
-                db_session, user_id, conversation_key, conversation, "json"
-            )
+            set_user_setting(db_session, user_id, conversation_key, conversation, "json")
 
         except Exception as e:
             logger.error(f"Error saving conversation: {e}")
@@ -524,12 +491,8 @@ class PersonaChatService:
 
             if conversation_data:
                 # Convert datetime strings back to datetime objects
-                conversation_data["created_at"] = datetime.fromisoformat(
-                    conversation_data["created_at"]
-                )
-                conversation_data["last_activity"] = datetime.fromisoformat(
-                    conversation_data["last_activity"]
-                )
+                conversation_data["created_at"] = datetime.fromisoformat(conversation_data["created_at"])
+                conversation_data["last_activity"] = datetime.fromisoformat(conversation_data["last_activity"])
                 return conversation_data
 
             return None

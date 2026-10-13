@@ -1,15 +1,15 @@
 # Models package initialization
 
-from .user import User, UserSettings, UserSession, Project, PasswordResetToken
-from .music import MusicGenerationDB
 from .image import ImageGeneration
+from .music import MusicGenerationDB
+from .user import PasswordResetToken, Project, User, UserSession, UserSettings
 
 __all__ = [
-    'User',
-    'UserSettings', 
-    'UserSession',
-    'Project',
-    'PasswordResetToken',
-    'MusicGenerationDB',
-    'ImageGeneration'
-] 
+    "User",
+    "UserSettings",
+    "UserSession",
+    "Project",
+    "PasswordResetToken",
+    "MusicGenerationDB",
+    "ImageGeneration",
+]

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  MusicIcon, 
-  SparklesIcon, 
-  PlayIcon,
-  PauseIcon,
-  DownloadIcon,
-  WavesIcon
+  Music, 
+  Sparkles, 
+  Play,
+  Pause,
+  Download,
+  Waves
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -56,7 +56,7 @@ const LyriaStudio = () => {
           <div className="glass-panel p-6 space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-                <SparklesIcon className="w-4 h-4 text-purple-400" />
+                <Sparkles className="w-4 h-4 text-purple-400" />
                 Musical Concept
               </label>
               <textarea
@@ -69,7 +69,7 @@ const LyriaStudio = () => {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-                <MusicIcon className="w-4 h-4 text-indigo-400" />
+                <Music className="w-4 h-4 text-indigo-400" />
                 Genre Preset
               </label>
               <select 
@@ -97,7 +97,7 @@ const LyriaStudio = () => {
                 </>
               ) : (
                 <>
-                  <WavesIcon className="w-5 h-5" />
+                  <Waves className="w-5 h-5" />
                   <span>Generate Full Track</span>
                 </>
               )}
@@ -133,7 +133,7 @@ const LyriaStudio = () => {
                   onClick={() => setIsPlaying(!isPlaying)}
                   className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all active:scale-95"
                 >
-                  {isPlaying ? <PauseIcon className="w-8 h-8" /> : <PlayIcon className="w-8 h-8 ml-1" />}
+                  {isPlaying ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
                 </button>
                 
                 <div className="w-full space-y-2">
@@ -151,14 +151,14 @@ const LyriaStudio = () => {
                 </div>
 
                 <button className="glass-button-secondary flex items-center gap-2">
-                  <DownloadIcon className="w-4 h-4" />
+                  <Download className="w-4 h-4" />
                   Download WAV
                 </button>
               </div>
             </div>
           ) : (
             <div className="text-center space-y-4 opacity-30">
-              <MusicIcon className="w-16 h-16 mx-auto" />
+              <Music className="w-16 h-16 mx-auto" />
               <p className="text-lg">Lyria 3 Composition Preview</p>
             </div>
           )}
@@ -178,4 +178,4 @@ const LyriaStudio = () => {
 };
 
 export default LyriaStudio;
-鼓
+

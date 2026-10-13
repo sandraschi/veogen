@@ -235,5 +235,18 @@ monitoring/rules/
 # Private documentation (internal dev notes, not for public)
 docs-private/
 
-# Never commit credentials
+# --- Phase 0 purge: secrets, runtime data, vendored clones ---
 credentials/
+accounts/
+sandra_token.txt
+latest_email.eml
+*.eml
+dev_emails/
+backend/dev_emails/
+*.db
+.env.email
+.env.backup
+_archive/
+
+*.db-journal
+

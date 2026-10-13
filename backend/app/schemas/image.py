@@ -1,10 +1,12 @@
 # Image Generation Schemas
 
-from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import datetime
-from uuid import UUID
 from enum import Enum
+from typing import Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
 
 class ImageStyle(str, Enum):
     PHOTOREALISTIC = "photorealistic"
@@ -16,10 +18,12 @@ class ImageStyle(str, Enum):
     CARTOON = "cartoon"
     ABSTRACT = "abstract"
 
+
 class ImageQuality(str, Enum):
     STANDARD = "standard"
     HIGH = "high"
     ULTRA = "ultra"
+
 
 class AspectRatio(str, Enum):
     SQUARE = "1:1"
@@ -27,12 +31,13 @@ class AspectRatio(str, Enum):
     PORTRAIT = "9:16"
     CLASSIC = "4:3"
 
+
 class ImageGenerationCreate(BaseModel):
     prompt: str = Field(..., min_length=5, max_length=500, description="Image description")
     style: ImageStyle = Field(default=ImageStyle.PHOTOREALISTIC, description="Image style")
     aspect_ratio: AspectRatio = Field(default=AspectRatio.SQUARE, description="Image dimensions")
     quality: ImageQuality = Field(default=ImageQuality.STANDARD, description="Image quality")
-    
+
     class Config:
         json_encoders = {
             ImageStyle: lambda v: v.value,
@@ -40,11 +45,13 @@ class ImageGenerationCreate(BaseModel):
             AspectRatio: lambda v: v.value,
         }
 
+
 class ImageGenerationResponse(BaseModel):
     job_id: UUID
     status: str
     message: str
     estimated_completion_time: Optional[datetime] = None
+
 
 class ImageGeneration(BaseModel):
     id: UUID
@@ -61,7 +68,7 @@ class ImageGeneration(BaseModel):
     thumbnail_url: Optional[str] = None
     error_message: Optional[str] = None
     generation_time: Optional[float] = None
-    
+
     class Config:
         from_attributes = True
         json_encoders = {
@@ -70,16 +77,18 @@ class ImageGeneration(BaseModel):
             AspectRatio: lambda v: v.value,
         }
 
+
 class ImageVariationCreate(BaseModel):
     original_image_id: UUID
     variation_count: int = Field(default=4, ge=1, le=8)
-    
+
+
 class ImageGenerationRequest(BaseModel):
     prompt: str = Field(..., min_length=5, max_length=500, description="Image description")
     style: ImageStyle = Field(default=ImageStyle.PHOTOREALISTIC, description="Image style")
     aspect_ratio: AspectRatio = Field(default=AspectRatio.SQUARE, description="Image dimensions")
     quality: ImageQuality = Field(default=ImageQuality.STANDARD, description="Image quality")
-    
+
     class Config:
         json_encoders = {
             ImageStyle: lambda v: v.value,
@@ -87,10 +96,12 @@ class ImageGenerationRequest(BaseModel):
             AspectRatio: lambda v: v.value,
         }
 
+
 class ImageProcessingRequest(BaseModel):
     image_url: str = Field(..., description="URL of image to process")
     operation: str = Field(..., description="Processing operation")
     parameters: Optional[dict] = Field(default={}, description="Operation parameters")
+
 
 class ImageProcessingResponse(BaseModel):
     job_id: UUID

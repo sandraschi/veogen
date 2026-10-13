@@ -1,0 +1,23 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "name": "veogen",
+  "version": "3.1.0",
+  "description": "AI media generation hub - chat personas, movie scripts, and media generation tooling on Google's Gemini family. FastMCP streamable HTTP at /mcp.",
+  "author": "Sandra Schipal",
+  "license": "MIT",
+  "categories": ["media", "video", "audio", "images"],
+  "transport": "streamable-http",
+  "endpoints": {
+    "mcp": "http://127.0.0.1:11150/mcp",
+    "health": "http://127.0.0.1:11150/health",
+    "docs": "http://127.0.0.1:11150/docs"
+  },
+  "tools": [
+    "veogen_status",
+    "list_personas",
+    "movie_script",
+    "generate_video",
+    "generate_image",
+    "generate_music"
+  ]
+}

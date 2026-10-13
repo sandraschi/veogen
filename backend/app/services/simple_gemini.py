@@ -2,77 +2,76 @@
 Emergency Gemini Fix - Simple working text generation
 """
 
-import google.generativeai as genai
 import asyncio
-import os
 import logging
+import os
+
+import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
+
 class SimpleGeminiService:
     """Simple, working Gemini service with proper fallbacks"""
-    
+
     def __init__(self):
         self.model = None
         self.initialized = False
         self._initialize()
-    
+
     def _initialize(self):
         """Initialize with working model"""
         try:
-            # Key comes from the environment; never hard-code it.
-            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-            
+            # API key comes from environment (.env) - never hardcode keys in source.
+            api_key = os.getenv("GOOGLE_API_KEY", "")
+
             if api_key and api_key.startswith("AIza"):
                 genai.configure(api_key=api_key)
-                
+
                 # Try the most basic, reliable model first
                 try:
-                    self.model = genai.GenerativeModel('gemini-1.5-flash')
-                    logger.info("Initialized with gemini-1.5-flash")
+                    self.model = genai.GenerativeModel("gemini-3.8-flash")
+                    logger.info("Initialized with gemini-3.8-flash")
                 except Exception as e:
-                    logger.warning(f"gemini-1.5-flash failed: {e}")
+                    logger.warning(f"gemini-3.8-flash failed: {e}")
                     try:
-                        self.model = genai.GenerativeModel('gemini-pro')
-                        logger.info("Initialized with gemini-pro")
+                        self.model = genai.GenerativeModel("gemini-3.7-flash")
+                        logger.info("Initialized with gemini-3.7-flash")
                     except Exception as e2:
-                        logger.warning(f"gemini-pro failed: {e2}")
-                        # Try the newest available
-                        self.model = genai.GenerativeModel('gemini-1.5-pro')
-                        logger.info("Initialized with gemini-1.5-pro")
-                
+                        logger.warning(f"gemini-3.7-flash failed: {e2}")
+                        # Fallback for heavy reasoning
+                        self.model = genai.GenerativeModel("gemini-3.1-pro-preview")
+                        logger.info("Initialized with gemini-3.1-pro-preview")
+
                 self.initialized = True
             else:
                 logger.error("No valid API key found")
-                
+
         except Exception as e:
             logger.error(f"Failed to initialize Gemini: {e}")
             self.initialized = False
-    
+
     async def generate_text(self, prompt: str, temperature: float = 0.7) -> str:
         """Generate text with working fallbacks"""
         if not self.initialized or not self.model:
             return self._fallback_response(prompt)
-        
+
         try:
-            response = await asyncio.to_thread(
-                self.model.generate_content,
-                prompt
-            )
-            
+            response = await asyncio.to_thread(self.model.generate_content, prompt)
+
             if response and response.text:
                 return response.text.strip()
             else:
                 return self._fallback_response(prompt)
-                
+
         except Exception as e:
             logger.error(f"Gemini generation failed: {e}")
             return self._fallback_response(prompt)
-    
+
     def _fallback_response(self, prompt: str) -> str:
         """Provide intelligent fallback responses"""
         prompt_lower = prompt.lower()
-        
+
         # Creative Assistant fallback
         if "creative" in prompt_lower or "video" in prompt_lower or "story" in prompt_lower:
             return """✨ Hello! I'm your Creative Assistant, ready to spark your imagination! 
@@ -95,7 +94,7 @@ What type of video project are you most excited about? I'm here to help brainsto
 
 *Note: I'm currently running in offline mode, but I'm still here to help with creative guidance!*"""
 
-        # Technical Guide fallback  
+        # Technical Guide fallback
         elif "technical" in prompt_lower or "help" in prompt_lower:
             return """🔧 Hello! I'm your Technical Guide, here to help with the technical aspects of your projects.
 
@@ -123,6 +122,7 @@ While I'm currently running in offline mode, I can still provide guidance on:
 How can I help you today? Please let me know what you're working on!
 
 *To enable full AI capabilities, please check the API configuration in settings.*"""
+
 
 # Create global instance
 simple_gemini_service = SimpleGeminiService()

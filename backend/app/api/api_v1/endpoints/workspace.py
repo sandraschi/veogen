@@ -29,4 +29,3 @@ async def import_workspace_brief(
         raise HTTPException(status_code=503, detail="Workspace automations disabled")
     project = workspace_automation_service.import_brief(db, payload.title, payload.outline)
     return {"project_id": project.id}
-

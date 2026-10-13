@@ -58,7 +58,7 @@ if ($hasUv) {
     Write-Host "   Using uv to run backend..." -ForegroundColor Gray
     if ($Background) {
         Start-Process -FilePath "uv" -ArgumentList "run", "python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", $BackendPort, "--reload" -WindowStyle Minimized
-        Write-Host "   ✓ Backend started in background" -ForegroundColor Green
+        Write-Host "   OK Backend started in background" -ForegroundColor Green
     } else {
         Start-Process -FilePath "uv" -ArgumentList "run", "python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", $BackendPort, "--reload" -NoNewWindow
     }
@@ -67,7 +67,7 @@ if ($hasUv) {
     Write-Host "   Using python to run backend..." -ForegroundColor Gray
     if ($Background) {
         Start-Process -FilePath "python" -ArgumentList "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", $BackendPort, "--reload" -WindowStyle Minimized
-        Write-Host "   ✓ Backend started in background" -ForegroundColor Green
+        Write-Host "   OK Backend started in background" -ForegroundColor Green
     } else {
         Start-Process -FilePath "python" -ArgumentList "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", $BackendPort, "--reload" -NoNewWindow
     }
@@ -92,8 +92,8 @@ if (-not (Test-Path "node_modules")) {
 if ($Background) {
     $env:HOST = "127.0.0.1"
     $env:DANGEROUSLY_DISABLE_HOST_CHECK = "true"
-    Start-Process -FilePath "npm" -ArgumentList "start" -WindowStyle Minimized
-    Write-Host "   ✓ Frontend started in background" -ForegroundColor Green
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c","npm start" -WindowStyle Minimized
+    Write-Host "   OK Frontend started in background" -ForegroundColor Green
 } else {
     $env:HOST = "127.0.0.1"
     $env:DANGEROUSLY_DISABLE_HOST_CHECK = "true"

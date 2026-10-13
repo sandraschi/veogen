@@ -2,11 +2,12 @@
 Enhanced email templates for VeoGen
 """
 
+
 def get_verification_email_template(user_name: str, verify_url: str) -> tuple:
     """Generate verification email template"""
-    
+
     subject = "Welcome to VeoGen! Please verify your email"
-    
+
     # Plain text version
     text_body = f"""
 Hello {user_name},
@@ -94,15 +95,15 @@ https://veogen.com
 </body>
 </html>
 """
-    
+
     return subject, text_body, html_body
 
 
 def get_password_reset_template(user_name: str, reset_url: str) -> tuple:
     """Generate password reset email template"""
-    
+
     subject = "VeoGen Password Reset Request"
-    
+
     # Plain text version
     text_body = f"""
 Hello {user_name},
@@ -125,7 +126,7 @@ VeoGen - Create Amazing Videos with AI
 https://veogen.com
 """
 
-    # HTML version  
+    # HTML version
     html_body = f"""
 <!DOCTYPE html>
 <html>
@@ -192,5 +193,5 @@ https://veogen.com
 </body>
 </html>
 """
-    
+
     return subject, text_body, html_body

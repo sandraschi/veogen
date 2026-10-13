@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
@@ -91,4 +91,3 @@ class SceneDescriberService:
 
 
 scene_describer_service = SceneDescriberService()
-

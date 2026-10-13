@@ -1,10 +1,12 @@
 # Music Generation Schemas
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
-from uuid import UUID
 from enum import Enum
+from typing import List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
 
 class MusicStyle(str, Enum):
     POP = "pop"
@@ -20,6 +22,7 @@ class MusicStyle(str, Enum):
     HIP_HOP = "hip_hop"
     REGGAE = "reggae"
 
+
 class MusicMood(str, Enum):
     HAPPY = "happy"
     SAD = "sad"
@@ -30,12 +33,14 @@ class MusicMood(str, Enum):
     EPIC = "epic"
     NOSTALGIC = "nostalgic"
 
+
 class VocalStyle(str, Enum):
     NONE = "none"
     MALE = "male"
     FEMALE = "female"
     CHOIR = "choir"
     HUMMING = "humming"
+
 
 class MusicGenerationCreate(BaseModel):
     prompt: str = Field(..., min_length=5, max_length=500, description="Music description")
@@ -45,7 +50,7 @@ class MusicGenerationCreate(BaseModel):
     tempo: Optional[int] = Field(default=120, ge=60, le=200, description="Tempo in BPM")
     musical_key: Optional[str] = Field(default="C major", description="Musical key")
     vocal_style: VocalStyle = Field(default=VocalStyle.NONE, description="Vocal style")
-    
+
     class Config:
         json_encoders = {
             MusicStyle: lambda v: v.value,
@@ -53,11 +58,13 @@ class MusicGenerationCreate(BaseModel):
             VocalStyle: lambda v: v.value,
         }
 
+
 class MusicGenerationResponse(BaseModel):
     job_id: UUID
     status: str
     message: str
     estimated_completion_time: Optional[datetime] = None
+
 
 class MusicGeneration(BaseModel):
     id: UUID
@@ -80,7 +87,7 @@ class MusicGeneration(BaseModel):
     chord_progression: Optional[List[str]] = None
     error_message: Optional[str] = None
     generation_time: Optional[float] = None
-    
+
     class Config:
         from_attributes = True
         json_encoders = {
@@ -89,11 +96,13 @@ class MusicGeneration(BaseModel):
             VocalStyle: lambda v: v.value,
         }
 
+
 class MusicRemixCreate(BaseModel):
     original_music_id: UUID
     new_style: MusicStyle
     new_mood: Optional[MusicMood] = None
-    
+
+
 class MusicGenerationRequest(BaseModel):
     prompt: str = Field(..., min_length=5, max_length=500, description="Music description")
     style: MusicStyle = Field(default=MusicStyle.POP, description="Music style")
@@ -102,7 +111,7 @@ class MusicGenerationRequest(BaseModel):
     tempo: Optional[int] = Field(default=120, ge=60, le=200, description="Tempo in BPM")
     musical_key: Optional[str] = Field(default="C major", description="Musical key")
     vocal_style: VocalStyle = Field(default=VocalStyle.NONE, description="Vocal style")
-    
+
     class Config:
         json_encoders = {
             MusicStyle: lambda v: v.value,
@@ -110,11 +119,13 @@ class MusicGenerationRequest(BaseModel):
             VocalStyle: lambda v: v.value,
         }
 
+
 class PlaylistRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="Playlist name")
     description: Optional[str] = Field(default="", max_length=500, description="Playlist description")
     music_ids: List[UUID] = Field(default=[], description="List of music IDs")
     is_public: bool = Field(default=False, description="Is playlist public")
+
 
 class PlaylistResponse(BaseModel):
     id: UUID

@@ -3,11 +3,10 @@ import { motion } from 'framer-motion';
 import {
   PhotoIcon,
   PlayIcon,
-  DownloadIcon,
+  ArrowDownTrayIcon,
   HeartIcon,
   ShareIcon,
   FunnelIcon,
-  ArrowDownTrayIcon,
   MusicalNoteIcon,
   FilmIcon,
   CameraIcon,

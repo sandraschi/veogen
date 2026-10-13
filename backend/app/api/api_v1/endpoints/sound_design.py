@@ -37,4 +37,3 @@ async def generate_sound_effect(
         intensity=payload.intensity,
     )
     return result
-

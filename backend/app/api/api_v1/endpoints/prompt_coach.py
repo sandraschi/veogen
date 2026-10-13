@@ -41,4 +41,3 @@ async def critique_prompt(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return result
-

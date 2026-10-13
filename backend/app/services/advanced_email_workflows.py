@@ -4,31 +4,33 @@ VeoGen Advanced Email Workflow System
 
 Enhanced email workflows for professional user experience:
 - Multi-step registration with welcome series
-- Challenge-response authentication 
+- Challenge-response authentication
 - Advanced password reset with security features
 - User engagement and notification emails
 """
 
-import os
-import uuid
-import smtplib
 import asyncio
-from datetime import datetime, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from typing import Dict, Any
-from enum import Enum
-import secrets
 import logging
+import os
+import secrets
+import smtplib
+import uuid
+from datetime import datetime, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from enum import Enum
+from typing import Any, Dict
+
 
 # Email workflow types
 class EmailWorkflowType(Enum):
     WELCOME_SERIES = "welcome_series"
-    CHALLENGE_RESPONSE = "challenge_response" 
+    CHALLENGE_RESPONSE = "challenge_response"
     PASSWORD_RESET_ADVANCED = "password_reset_advanced"
     ENGAGEMENT = "engagement"
     NOTIFICATION = "notification"
     SECURITY_ALERT = "security_alert"
+
 
 class EmailWorkflowStatus(Enum):
     PENDING = "pending"
@@ -37,6 +39,7 @@ class EmailWorkflowStatus(Enum):
     CLICKED = "clicked"
     COMPLETED = "completed"
     FAILED = "failed"
+
 
 # Enhanced Email Service
 class AdvancedEmailService:
@@ -48,26 +51,32 @@ class AdvancedEmailService:
         self.email_pass = os.getenv("EMAIL_PASS", "vlkaragatumrxsgt")
         self.dev_outbox = os.getenv("EMAIL_DEV_OUTBOX", "dev_emails/")
         self.base_url = os.getenv("BASE_URL", "http://localhost:4710")
-        
+
         # Setup logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        
+
         # Ensure dev directory exists
         os.makedirs(self.dev_outbox, exist_ok=True)
         os.makedirs(f"{self.dev_outbox}/workflows", exist_ok=True)
 
-    async def send_email_with_tracking(self, to: str, subject: str, body: str, 
-                                     html: str = None, workflow_id: str = None,
-                                     workflow_type: EmailWorkflowType = None) -> bool:
+    async def send_email_with_tracking(
+        self,
+        to: str,
+        subject: str,
+        body: str,
+        html: str = None,
+        workflow_id: str = None,
+        workflow_type: EmailWorkflowType = None,
+    ) -> bool:
         """Send email with enhanced tracking and logging"""
-        
+
         # Generate tracking ID
         tracking_id = str(uuid.uuid4())
         # Add tracking pixel to HTML if provided
         if html and workflow_id:
             tracking_pixel = f'<img src="{self.base_url}/api/email/track/open/{tracking_id}" width="1" height="1" style="display:none;">'
-            html = html.replace('</body>', f'{tracking_pixel}</body>')
+            html = html.replace("</body>", f"{tracking_pixel}</body>")
 
         # Create message
         msg = MIMEMultipart("alternative")
@@ -77,7 +86,7 @@ class AdvancedEmailService:
         msg["Message-ID"] = f"<{tracking_id}@veogen.com>"
         msg["X-VeoGen-Workflow-ID"] = workflow_id or "none"
         msg["X-VeoGen-Tracking-ID"] = tracking_id
-        
+
         # Attach text and HTML parts
         msg.attach(MIMEText(body, "plain"))
         if html:
@@ -85,7 +94,7 @@ class AdvancedEmailService:
 
         # Save to file system (for backup and dev)
         await self._save_email_to_file(msg, tracking_id, workflow_type)
-        
+
         # Log email workflow
         await self._log_email_workflow(tracking_id, to, subject, workflow_id, workflow_type)
 
@@ -96,23 +105,22 @@ class AdvancedEmailService:
                     server.starttls()
                     server.login(self.email_user, self.email_pass)
                     server.sendmail(self.email_from, to, msg.as_string())
-                
+
                 self.logger.info(f"Email sent successfully: {tracking_id}")
                 return True
             else:
                 self.logger.info(f"Dev mode - email saved to file: {tracking_id}")
                 return True
-                
+
         except Exception as e:
             self.logger.error(f"SMTP error for {tracking_id}: {e}")
             return False
 
-    async def _save_email_to_file(self, msg: MIMEMultipart, tracking_id: str, 
-                                workflow_type: EmailWorkflowType = None):
+    async def _save_email_to_file(self, msg: MIMEMultipart, tracking_id: str, workflow_type: EmailWorkflowType = None):
         """Save email to file system for backup and development"""
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        safe_to = msg["To"].replace('@', '_at_').replace('.', '_')
-        
+        safe_to = msg["To"].replace("@", "_at_").replace(".", "_")
+
         # Save raw email
         filename = f"{self.dev_outbox}/email_{timestamp}_{tracking_id}_{safe_to}.eml"
         with open(filename, "w", encoding="utf-8") as f:
@@ -134,19 +142,21 @@ class AdvancedEmailService:
         if workflow_type:
             workflow_file = f"{self.dev_outbox}/workflows/workflow_{timestamp}_{tracking_id}.json"
             import json
+
             metadata = {
                 "tracking_id": tracking_id,
                 "workflow_type": workflow_type.value,
                 "to": msg["To"],
                 "subject": msg["Subject"],
                 "timestamp": timestamp,
-                "status": "sent"
+                "status": "sent",
             }
             with open(workflow_file, "w") as f:
                 json.dump(metadata, f, indent=2)
 
-    async def _log_email_workflow(self, tracking_id: str, to: str, subject: str,
-                                workflow_id: str, workflow_type: EmailWorkflowType):
+    async def _log_email_workflow(
+        self, tracking_id: str, to: str, subject: str, workflow_id: str, workflow_type: EmailWorkflowType
+    ):
         """Log email workflow for analytics and debugging"""
         log_entry = {
             "timestamp": datetime.utcnow().isoformat(),
@@ -155,11 +165,12 @@ class AdvancedEmailService:
             "workflow_type": workflow_type.value if workflow_type else None,
             "to": to,
             "subject": subject,
-            "action": "sent"
+            "action": "sent",
         }
-        
+
         # In production, this would go to database/analytics service
         self.logger.info(f"Email workflow logged: {log_entry}")
+
 
 # MAIN EMAIL WORKFLOW ORCHESTRATOR
 class VeoGenEmailOrchestrator:
@@ -167,202 +178,205 @@ class VeoGenEmailOrchestrator:
     Main orchestrator for all VeoGen email workflows
     Coordinates between different email systems and manages workflow state
     """
-    
+
     def __init__(self):
         self.email_service = AdvancedEmailService()
         # Workflow state tracking (in production, use Redis/Database)
         self.active_workflows = {}
-        
+
     async def send_enhanced_verification_email(self, user_id: str, email: str, name: str) -> str:
         """Send enhanced verification email with onboarding preview"""
         workflow_id = f"welcome_{user_id}_{int(datetime.utcnow().timestamp())}"
         verify_token = secrets.token_urlsafe(32)
         verify_url = f"{self.email_service.base_url}/verify-email?token={verify_token}&user={user_id}"
-        
+
         subject = "🎬 Welcome to VeoGen! Verify your email to start creating"
-        
+
         html_template = self._get_verification_email_html(name, verify_url)
         text_body = self._get_verification_email_text(name, verify_url)
-        
+
         await self.email_service.send_email_with_tracking(
             to=email,
             subject=subject,
             body=text_body,
             html=html_template,
             workflow_id=workflow_id,
-            workflow_type=EmailWorkflowType.WELCOME_SERIES
+            workflow_type=EmailWorkflowType.WELCOME_SERIES,
         )
-        
+
         self.active_workflows[workflow_id] = {
             "type": "registration",
             "user_id": user_id,
             "verify_token": verify_token,
             "status": "active",
-            "started": datetime.utcnow()
+            "started": datetime.utcnow(),
         }
-        
+
         return workflow_id
-    
-    async def send_security_challenge(self, user_id: str, email: str, action: str, 
-                                   ip_address: str = None, user_agent: str = None) -> tuple:
+
+    async def send_security_challenge(
+        self, user_id: str, email: str, action: str, ip_address: str = None, user_agent: str = None
+    ) -> tuple:
         """Send security challenge for sensitive actions"""
         challenge_id = f"challenge_{user_id}_{int(datetime.utcnow().timestamp())}"
         challenge_code = self._generate_challenge_code()
-        
+
         subject = f"🔐 VeoGen Security Challenge: {action}"
-        
+
         html_template = self._get_challenge_email_html(action, challenge_code, ip_address, user_agent)
         text_body = self._get_challenge_email_text(action, challenge_code, ip_address, user_agent)
-        
+
         await self.email_service.send_email_with_tracking(
             to=email,
             subject=subject,
             body=text_body,
             html=html_template,
             workflow_id=challenge_id,
-            workflow_type=EmailWorkflowType.CHALLENGE_RESPONSE
+            workflow_type=EmailWorkflowType.CHALLENGE_RESPONSE,
         )
-        
+
         self.active_workflows[challenge_id] = {
             "type": "challenge",
             "user_id": user_id,
             "challenge_code": challenge_code,
             "status": "pending",
-            "expires": datetime.utcnow() + timedelta(minutes=10)
+            "expires": datetime.utcnow() + timedelta(minutes=10),
         }
-        
+
         return challenge_id, challenge_code
-    
-    async def send_advanced_password_reset(self, user_id: str, email: str, name: str,
-                                         ip_address: str = None, user_agent: str = None) -> tuple:
+
+    async def send_advanced_password_reset(
+        self, user_id: str, email: str, name: str, ip_address: str = None, user_agent: str = None
+    ) -> tuple:
         """Send advanced password reset with security features"""
         reset_id = f"reset_{user_id}_{int(datetime.utcnow().timestamp())}"
         reset_token = secrets.token_urlsafe(32)
         reset_url = f"{self.email_service.base_url}/reset-password?token={reset_token}&user={user_id}"
-        
+
         subject = "🔒 VeoGen Password Reset Request - Secure Link Inside"
-        
+
         html_template = self._get_password_reset_html(name, reset_url, ip_address, user_agent)
         text_body = self._get_password_reset_text(name, reset_url, ip_address, user_agent)
-        
+
         await self.email_service.send_email_with_tracking(
             to=email,
             subject=subject,
             body=text_body,
             html=html_template,
             workflow_id=reset_id,
-            workflow_type=EmailWorkflowType.PASSWORD_RESET_ADVANCED
+            workflow_type=EmailWorkflowType.PASSWORD_RESET_ADVANCED,
         )
-        
+
         self.active_workflows[reset_id] = {
             "type": "password_reset",
             "user_id": user_id,
             "reset_token": reset_token,
             "status": "pending",
-            "expires": datetime.utcnow() + timedelta(hours=2)
+            "expires": datetime.utcnow() + timedelta(hours=2),
         }
-        
+
         return reset_id, reset_token
-    
-    async def send_project_completion_notification(self, user_id: str, email: str, name: str,
-                                                 project_name: str, video_url: str) -> str:
+
+    async def send_project_completion_notification(
+        self, user_id: str, email: str, name: str, project_name: str, video_url: str
+    ) -> str:
         """Send notification when video generation is complete"""
         notification_id = f"completion_{user_id}_{int(datetime.utcnow().timestamp())}"
-        
+
         subject = f"🎉 Your VeoGen video '{project_name}' is ready!"
-        
+
         html_template = self._get_project_completion_html(name, project_name, video_url)
         text_body = self._get_project_completion_text(name, project_name, video_url)
-        
+
         await self.email_service.send_email_with_tracking(
             to=email,
             subject=subject,
             body=text_body,
             html=html_template,
             workflow_id=notification_id,
-            workflow_type=EmailWorkflowType.NOTIFICATION
+            workflow_type=EmailWorkflowType.NOTIFICATION,
         )
-        
+
         return notification_id
-    
+
     async def send_weekly_digest(self, user_id: str, email: str, name: str, stats: Dict[str, Any]) -> str:
         """Send weekly engagement digest"""
         digest_id = f"digest_{user_id}_{int(datetime.utcnow().timestamp())}"
-        
+
         subject = f"📊 Your VeoGen Weekly Summary - {stats.get('videos_created', 0)} videos created!"
-        
+
         html_template = self._get_weekly_digest_html(name, stats)
         text_body = self._get_weekly_digest_text(name, stats)
-        
+
         await self.email_service.send_email_with_tracking(
             to=email,
             subject=subject,
             body=text_body,
             html=html_template,
             workflow_id=digest_id,
-            workflow_type=EmailWorkflowType.ENGAGEMENT
+            workflow_type=EmailWorkflowType.ENGAGEMENT,
         )
-        
+
         return digest_id
-    
-    async def send_security_alert(self, user_id: str, email: str, name: str,
-                                activity: str, ip_address: str, user_agent: str,
-                                location: str = None) -> str:
+
+    async def send_security_alert(
+        self, user_id: str, email: str, name: str, activity: str, ip_address: str, user_agent: str, location: str = None
+    ) -> str:
         """Send security alert for suspicious activity"""
         alert_id = f"security_{user_id}_{int(datetime.utcnow().timestamp())}"
-        
+
         subject = "🚨 VeoGen Security Alert: Unusual Account Activity Detected"
-        
+
         html_template = self._get_security_alert_html(name, activity, ip_address, user_agent, location, alert_id)
         text_body = self._get_security_alert_text(name, activity, ip_address, user_agent, location, alert_id)
-        
+
         await self.email_service.send_email_with_tracking(
             to=email,
             subject=subject,
             body=text_body,
             html=html_template,
             workflow_id=alert_id,
-            workflow_type=EmailWorkflowType.SECURITY_ALERT
+            workflow_type=EmailWorkflowType.SECURITY_ALERT,
         )
-        
+
         return alert_id
-    
+
     def verify_challenge_code(self, challenge_id: str, provided_code: str) -> bool:
         """Verify challenge response code"""
         workflow = self.active_workflows.get(challenge_id)
         if not workflow or workflow["type"] != "challenge":
             return False
-        
+
         if datetime.utcnow() > workflow["expires"]:
             self.active_workflows[challenge_id]["status"] = "expired"
             return False
-        
+
         if workflow["challenge_code"] == provided_code:
             self.active_workflows[challenge_id]["status"] = "verified"
             return True
-        
+
         return False
-    
+
     def verify_reset_token(self, reset_id: str, provided_token: str) -> bool:
         """Verify password reset token"""
         workflow = self.active_workflows.get(reset_id)
         if not workflow or workflow["type"] != "password_reset":
             return False
-        
+
         if datetime.utcnow() > workflow["expires"]:
             self.active_workflows[reset_id]["status"] = "expired"
             return False
-        
+
         if workflow["reset_token"] == provided_token:
             self.active_workflows[reset_id]["status"] = "verified"
             return True
-        
+
         return False
-    
+
     def _generate_challenge_code(self) -> str:
         """Generate a secure 6-digit challenge code"""
-        return ''.join(secrets.choice('0123456789') for _ in range(6))
-    
+        return "".join(secrets.choice("0123456789") for _ in range(6))
+
     def _get_verification_email_html(self, name: str, verify_url: str) -> str:
         return f"""
 <!DOCTYPE html>
@@ -449,7 +463,7 @@ class VeoGenEmailOrchestrator:
 </body>
 </html>
         """
-    
+
     def _get_verification_email_text(self, name: str, verify_url: str) -> str:
         return f"""
 Welcome to VeoGen, {name}!
@@ -472,7 +486,7 @@ Questions? Reply to this email or visit our help center.
 The VeoGen Team
         """
 
-# Add other template methods...
+    # Add other template methods...
     def _get_challenge_email_html(self, action: str, challenge_code: str, ip_address: str, user_agent: str) -> str:
         return f"""
 <!DOCTYPE html>
@@ -532,29 +546,24 @@ The VeoGen Team
 </html>
         """
 
+
 # Demo function
 async def demo_email_workflows():
     """Demo the advanced email workflow system"""
     orchestrator = VeoGenEmailOrchestrator()
-    
-    demo_user = {
-        "id": "demo_user_123",
-        "email": "sandraschipal@hotmail.com",
-        "name": "Sandra"
-    }
-    
+
+    demo_user = {"id": "demo_user_123", "email": "sandraschipal@hotmail.com", "name": "Sandra"}
+
     print("🚀 VeoGen Advanced Email Workflow Demo")
     print("=" * 50)
-    
+
     # 1. Enhanced verification email
     print("\n📧 1. Sending Enhanced Verification Email...")
     workflow_id = await orchestrator.send_enhanced_verification_email(
-        user_id=demo_user["id"],
-        email=demo_user["email"],
-        name=demo_user["name"]
+        user_id=demo_user["id"], email=demo_user["email"], name=demo_user["name"]
     )
     print(f"   ✅ Verification email sent: {workflow_id}")
-    
+
     # 2. Security challenge
     print("\n🔐 2. Sending Security Challenge...")
     challenge_id, challenge_code = await orchestrator.send_security_challenge(
@@ -562,11 +571,11 @@ async def demo_email_workflows():
         email=demo_user["email"],
         action="Delete Account",
         ip_address="192.168.1.100",
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     )
     print(f"   ✅ Security challenge sent: {challenge_id}")
     print(f"   🔑 Challenge code: {challenge_code}")
-    
+
     # 3. Advanced password reset
     print("\n🔒 3. Sending Advanced Password Reset...")
     reset_id, reset_token = await orchestrator.send_advanced_password_reset(
@@ -574,10 +583,10 @@ async def demo_email_workflows():
         email=demo_user["email"],
         name=demo_user["name"],
         ip_address="192.168.1.100",
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     )
     print(f"   ✅ Password reset sent: {reset_id}")
-    
+
     # 4. Project completion notification
     print("\n🎬 4. Sending Project Completion Notification...")
     notification_id = await orchestrator.send_project_completion_notification(
@@ -585,21 +594,23 @@ async def demo_email_workflows():
         email=demo_user["email"],
         name=demo_user["name"],
         project_name="Epic Prague Sunset Video",
-        video_url="https://veogen.com/videos/epic-prague-sunset.mp4"
+        video_url="https://veogen.com/videos/epic-prague-sunset.mp4",
     )
     print(f"   ✅ Project notification sent: {notification_id}")
-    
+
     print("\n" + "=" * 50)
     print("🎉 Advanced email workflows demonstrated!")
     print("📁 Check email files in: dev_emails/")
-    
+
     return {
         "workflow_id": workflow_id,
         "challenge_id": challenge_id,
         "reset_id": reset_id,
-        "notification_id": notification_id
+        "notification_id": notification_id,
     }
+
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(demo_email_workflows())

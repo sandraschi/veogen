@@ -17,7 +17,7 @@ const ToolFormWrapper = ({ toolType, ...props }) => {
     const loadComponent = async () => {
       try {
         // Try to import the component
-        const module = await import(`./tool-forms/${toolType}Form`);
+        const module = await import(`./tool-forms/${toolType}Form.jsx`);
         setFormComponent(() => module.default);
         setError(null);
       } catch (err) {

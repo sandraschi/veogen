@@ -38,11 +38,11 @@ import {
   Settings,
   CloudDone
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4700';
+const API_BASE_URL = 'http://localhost:11150';
 
 // Password strength indicator
 const PasswordStrengthIndicator = ({ password }) => {
@@ -276,7 +276,13 @@ const ConnectionTestDialog = ({ open, onClose, onComplete }) => {
 // Main Enhanced Auth Component
 const EnhancedAuth = () => {
   const navigate = useNavigate();
-  const { login: authLogin, register: authRegister } = useAuth();
+  const { login: authLogin, register: authRegister, isAuthenticated } = useAuth();
+
+  // Already signed in? Bounce to the app - never strand an authenticated
+  // user on the login form (e.g. after a redirect to /auth).
+  if (isAuthenticated()) {
+    return <Navigate to="/" replace />;
+  }
   const [mode, setMode] = useState('login'); // 'login', 'register', 'forgot'
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);

@@ -5,13 +5,11 @@ Nightly SynthID audit helper.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from typing import Dict, List
 
 from sqlalchemy.orm import Session
 
-from app.config import settings
-from app.database import SessionLocal, GenerationHistory
+from app.database import GenerationHistory, SessionLocal
 from app.models.flow import FlowScene
 
 logger = logging.getLogger(__name__)
@@ -35,11 +33,7 @@ class SynthIDAuditService:
             db.close()
 
     def _scan_generations(self, db: Session) -> List[Dict]:
-        rows = (
-            db.query(GenerationHistory)
-            .filter(GenerationHistory.generation_metadata.isnot(None))
-            .all()
-        )
+        rows = db.query(GenerationHistory).filter(GenerationHistory.generation_metadata.isnot(None)).all()
         issues = []
         for row in rows:
             metadata = row.generation_metadata or {}
@@ -72,4 +66,3 @@ class SynthIDAuditService:
 
 
 synthid_audit_service = SynthIDAuditService()
-

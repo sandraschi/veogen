@@ -1,6 +1,6 @@
 // Chat Service for AI Personas
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4700';
+const API_BASE_URL = 'http://localhost:11150';
 
 const buildHeaders = (token, extraHeaders = {}) => {
   const headers = {

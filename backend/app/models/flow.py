@@ -3,15 +3,16 @@ Database models for Google Flow orchestration sync.
 """
 
 from datetime import datetime
+
 from sqlalchemy import (
-    Column,
-    String,
-    DateTime,
-    Text,
-    Integer,
-    Boolean,
-    ForeignKey,
     JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
@@ -100,9 +101,7 @@ class FlowIngredient(Base):
 
     project = relationship("FlowProject", back_populates="ingredients")
 
-    __table_args__ = (
-        UniqueConstraint("project_id", "name", "ingredient_type", name="unique_flow_ingredient"),
-    )
+    __table_args__ = (UniqueConstraint("project_id", "name", "ingredient_type", name="unique_flow_ingredient"),)
 
 
 class SceneCaption(Base):
@@ -120,4 +119,3 @@ class SceneCaption(Base):
     is_active = Column(Boolean, default=True)
 
     scene = relationship("FlowScene", back_populates="captions")
-

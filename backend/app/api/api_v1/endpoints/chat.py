@@ -2,16 +2,17 @@
 Persona Chat API endpoints for real-time chat with AI personas
 """
 
-from typing import List, Optional, Dict, Any
+import logging
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-import logging
 
+from app.api.deps import get_current_user
 from app.database import get_db, get_user_setting, set_user_setting
 from app.models.user import User
 from app.services.persona_chat_service import persona_chat_service
-from app.api.deps import get_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -100,9 +101,7 @@ async def start_chat(
 ):
     """Start a new chat conversation with a persona"""
     try:
-        logger.info(
-            f"Starting chat with persona {request.persona_id} for user {current_user.email}"
-        )
+        logger.info(f"Starting chat with persona {request.persona_id} for user {current_user.email}")
 
         result = await persona_chat_service.start_conversation(
             user_id=str(current_user.id),
@@ -139,9 +138,7 @@ async def send_message(
 ):
     """Send a message in an existing conversation"""
     try:
-        logger.info(
-            f"Sending message in conversation {conversation_id} for user {current_user.email}"
-        )
+        logger.info(f"Sending message in conversation {conversation_id} for user {current_user.email}")
 
         result = await persona_chat_service.send_message(
             conversation_id=conversation_id,
@@ -177,9 +174,7 @@ async def get_conversation_history(
 ):
     """Get conversation history"""
     try:
-        logger.info(
-            f"Getting history for conversation {conversation_id} for user {current_user.email}"
-        )
+        logger.info(f"Getting history for conversation {conversation_id} for user {current_user.email}")
 
         result = await persona_chat_service.get_conversation_history(
             conversation_id=conversation_id,
@@ -209,16 +204,12 @@ async def get_conversation_history(
 
 
 @router.get("/conversations", response_model=List[ConversationSummary])
-async def list_conversations(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
-):
+async def list_conversations(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """List all conversations for the current user"""
     try:
         logger.info(f"Listing conversations for user {current_user.email}")
 
-        conversations = await persona_chat_service.list_user_conversations(
-            user_id=str(current_user.id), db_session=db
-        )
+        conversations = await persona_chat_service.list_user_conversations(user_id=str(current_user.id), db_session=db)
 
         return [
             ConversationSummary(
@@ -247,9 +238,7 @@ async def delete_conversation(
 ):
     """Delete a conversation"""
     try:
-        logger.info(
-            f"Deleting conversation {conversation_id} for user {current_user.email}"
-        )
+        logger.info(f"Deleting conversation {conversation_id} for user {current_user.email}")
 
         # Remove from active conversations
         if conversation_id in persona_chat_service.active_conversations:
@@ -258,9 +247,7 @@ async def delete_conversation(
                 del persona_chat_service.active_conversations[conversation_id]
 
         # Remove from database
-        conversations_data = get_user_setting(
-            db, str(current_user.id), "chat_conversations", {}
-        )
+        conversations_data = get_user_setting(db, str(current_user.id), "chat_conversations", {})
         if conversation_id in conversations_data:
             del conversations_data[conversation_id]
             set_user_setting(
@@ -286,20 +273,14 @@ async def delete_conversation(
 
 
 @router.get("/stats")
-async def get_chat_stats(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
-):
+async def get_chat_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get user's chat statistics"""
     try:
-        conversations_data = get_user_setting(
-            db, str(current_user.id), "chat_conversations", {}
-        )
+        conversations_data = get_user_setting(db, str(current_user.id), "chat_conversations", {})
 
         # Calculate stats
         total_conversations = len(conversations_data)
-        total_messages = sum(
-            conv.get("message_count", 0) for conv in conversations_data.values()
-        )
+        total_messages = sum(conv.get("message_count", 0) for conv in conversations_data.values())
 
         # Most used persona
         persona_counts = {}
@@ -308,9 +289,7 @@ async def get_chat_stats(
             if persona_id:
                 persona_counts[persona_id] = persona_counts.get(persona_id, 0) + 1
 
-        most_used_persona = (
-            max(persona_counts.items(), key=lambda x: x[1]) if persona_counts else None
-        )
+        most_used_persona = max(persona_counts.items(), key=lambda x: x[1]) if persona_counts else None
 
         return {
             "total_conversations": total_conversations,

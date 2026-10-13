@@ -16,6 +16,7 @@
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",
     "framer-motion": "^11.0.24",
+    "livekit-client": "^2.21.0",
     "lucide-react": "^0.364.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -26,10 +27,13 @@
     "react-router-dom": "^6.22.3",
     "sonner": "^1.4.3",
     "tailwind-merge": "^2.2.2",
+    "zod": "^4.4.3",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@biomejs/biome": "1.6.4",
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/forms": "^0.5.11",
     "@types/react": "^18.2.73",
     "@types/react-dom": "^18.2.23",
     "@vitejs/plugin-react": "^4.2.1",
@@ -40,9 +44,9 @@
     "vite": "^5.2.2"
   },
   "scripts": {
-    "dev": "vite --port 10731 --host",
+    "dev": "vite --port 11151 --host",
     "build": "tsc && vite build",
-    "preview": "vite preview --port 10731",
+    "preview": "vite preview --port 11151",
     "lint": "biome check src",
     "lint:fix": "biome check --apply src",
     "format": "biome format --write src"

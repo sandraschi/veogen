@@ -1,11 +1,14 @@
+import logging
+from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
-import logging
+
 from app.services.gemini_service import gemini_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
 
 class TranslationRequest(BaseModel):
     text: str
@@ -14,19 +17,23 @@ class TranslationRequest(BaseModel):
     preserve_formatting: bool = True
     context: Optional[str] = None
 
+
 class TranslationResponse(BaseModel):
     translated_text: str
     detected_language: Optional[str] = None
     confidence: float
     alternatives: List[str] = []
 
+
 class LanguageDetectionRequest(BaseModel):
     text: str
+
 
 class LanguageDetectionResponse(BaseModel):
     detected_language: str
     confidence: float
     alternatives: List[dict]
+
 
 @router.post("/translate", response_model=TranslationResponse)
 async def translate_text(request: TranslationRequest):
@@ -35,7 +42,7 @@ async def translate_text(request: TranslationRequest):
     """
     try:
         logger.info(f"Translating text from {request.source_language} to {request.target_language}")
-        
+
         # Create translation prompt
         if request.source_language == "auto":
             prompt = f"""
@@ -69,17 +76,17 @@ async def translate_text(request: TranslationRequest):
             
             Maintain the original formatting and tone of the text.
             """
-        
+
         # Get AI translation
         response = await gemini_service.generate_content(prompt)
         translated_content = response.get("content", "")
-        
+
         # Parse the response (simplified - in production you'd want more sophisticated parsing)
-        lines = translated_content.split('\n')
+        lines = translated_content.split("\n")
         translated_text = ""
         detected_language = None
         alternatives = []
-        
+
         for line in lines:
             if "translated:" in line.lower() or "translation:" in line.lower():
                 translated_text = line.split(":", 1)[1].strip()
@@ -87,21 +94,22 @@ async def translate_text(request: TranslationRequest):
                 detected_language = line.split(":", 1)[1].strip()
             elif "alternative" in line.lower():
                 alternatives.append(line.strip())
-        
+
         # If parsing failed, use the full response as translated text
         if not translated_text:
             translated_text = translated_content.strip()
-        
+
         return TranslationResponse(
             translated_text=translated_text,
             detected_language=detected_language or request.source_language,
             confidence=0.95,  # Mock confidence score
-            alternatives=alternatives[:3]  # Limit to 3 alternatives
+            alternatives=alternatives[:3],  # Limit to 3 alternatives
         )
-        
+
     except Exception as e:
         logger.error(f"Error translating text: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to translate text: {str(e)}")
+
 
 @router.post("/detect-language", response_model=LanguageDetectionResponse)
 async def detect_language(request: LanguageDetectionRequest):
@@ -110,7 +118,7 @@ async def detect_language(request: LanguageDetectionRequest):
     """
     try:
         logger.info("Detecting language of text")
-        
+
         prompt = f"""
         Detect the language of the following text and provide confidence scores for the top 3 most likely languages:
         
@@ -121,20 +129,17 @@ async def detect_language(request: LanguageDetectionRequest):
         2. Confidence score (0-1)
         3. Alternative languages with their confidence scores
         """
-        
+
         response = await gemini_service.generate_content(prompt)
         content = response.get("content", "")
-        
+
         # Parse response (simplified)
         detected_language = "English"  # Default
         confidence = 0.9
-        alternatives = [
-            {"language": "Spanish", "confidence": 0.8},
-            {"language": "French", "confidence": 0.7}
-        ]
-        
+        alternatives = [{"language": "Spanish", "confidence": 0.8}, {"language": "French", "confidence": 0.7}]
+
         # Try to extract from AI response
-        lines = content.split('\n')
+        lines = content.split("\n")
         for line in lines:
             if "language:" in line.lower():
                 detected_language = line.split(":", 1)[1].strip()
@@ -143,16 +148,15 @@ async def detect_language(request: LanguageDetectionRequest):
                     confidence = float(line.split(":", 1)[1].strip())
                 except ValueError:
                     pass
-        
+
         return LanguageDetectionResponse(
-            detected_language=detected_language,
-            confidence=confidence,
-            alternatives=alternatives
+            detected_language=detected_language, confidence=confidence, alternatives=alternatives
         )
-        
+
     except Exception as e:
         logger.error(f"Error detecting language: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to detect language: {str(e)}")
+
 
 @router.get("/languages")
 async def get_supported_languages():
@@ -180,9 +184,10 @@ async def get_supported_languages():
             {"code": "da", "name": "Danish", "flag": "🇩🇰", "native_name": "Dansk"},
             {"code": "fi", "name": "Finnish", "flag": "🇫🇮", "native_name": "Suomi"},
             {"code": "pl", "name": "Polish", "flag": "🇵🇱", "native_name": "Polski"},
-            {"code": "tr", "name": "Turkish", "flag": "🇹🇷", "native_name": "Türkçe"}
+            {"code": "tr", "name": "Turkish", "flag": "🇹🇷", "native_name": "Türkçe"},
         ]
     }
+
 
 @router.post("/batch-translate")
 async def batch_translate(request: List[TranslationRequest]):
@@ -191,32 +196,21 @@ async def batch_translate(request: List[TranslationRequest]):
     """
     try:
         logger.info(f"Batch translating {len(request)} texts")
-        
+
         results = []
         for i, translation_request in enumerate(request):
             try:
                 result = await translate_text(translation_request)
-                results.append({
-                    "index": i,
-                    "success": True,
-                    "result": result
-                })
+                results.append({"index": i, "success": True, "result": result})
             except Exception as e:
-                results.append({
-                    "index": i,
-                    "success": False,
-                    "error": str(e)
-                })
-        
-        return {
-            "results": results,
-            "total": len(request),
-            "successful": len([r for r in results if r["success"]])
-        }
-        
+                results.append({"index": i, "success": False, "error": str(e)})
+
+        return {"results": results, "total": len(request), "successful": len([r for r in results if r["success"]])}
+
     except Exception as e:
         logger.error(f"Error in batch translation: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to batch translate: {str(e)}")
+
 
 @router.post("/translate-with-context")
 async def translate_with_context(request: TranslationRequest):
@@ -225,7 +219,7 @@ async def translate_with_context(request: TranslationRequest):
     """
     try:
         logger.info(f"Translating with context: {request.source_language} to {request.target_language}")
-        
+
         prompt = f"""
         Translate the following text from {request.source_language} to {request.target_language}.
         
@@ -243,15 +237,15 @@ async def translate_with_context(request: TranslationRequest):
         
         Provide the translation and explain any context-specific choices made.
         """
-        
+
         response = await gemini_service.generate_content(prompt)
-        
+
         return {
             "translated_text": response.get("content", ""),
             "context_notes": "Translation adapted for the provided context",
-            "confidence": 0.92
+            "confidence": 0.92,
         }
-        
+
     except Exception as e:
         logger.error(f"Error translating with context: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to translate with context: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Failed to translate with context: {str(e)}")

@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any, List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class VideoStyle(str, Enum):
     CINEMATIC = "cinematic"
@@ -14,11 +16,13 @@ class VideoStyle(str, Enum):
     VINTAGE = "vintage"
     MODERN = "modern"
 
+
 class AspectRatio(str, Enum):
     SQUARE = "1:1"
     PORTRAIT = "9:16"
     LANDSCAPE = "16:9"
     WIDESCREEN = "21:9"
+
 
 class Resolution(str, Enum):
     HD = "720p"
@@ -26,10 +30,12 @@ class Resolution(str, Enum):
     QHD = "1440p"
     UHD = "4K"
 
+
 class MotionIntensity(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
+
 
 class CameraMovement(str, Enum):
     STATIC = "static"
@@ -40,6 +46,7 @@ class CameraMovement(str, Enum):
     HANDHELD = "handheld"
     DRONE = "drone"
     CRANE = "crane"
+
 
 class VideoGenerationRequest(BaseModel):
     prompt: str = Field(..., description="Text description of the video to generate", min_length=10, max_length=2000)
@@ -55,9 +62,10 @@ class VideoGenerationRequest(BaseModel):
     temperature: Optional[float] = Field(0.7, ge=0.0, le=1.0, description="Creativity level")
     negative_prompt: Optional[str] = Field(None, description="What to avoid in the video")
     tags: Optional[List[str]] = Field(None, description="Additional tags for the video")
-    
+
     class Config:
         use_enum_values = True
+
 
 class VideoGenerationResponse(BaseModel):
     video_url: Optional[str] = Field(None, description="URL of the generated video")
@@ -71,7 +79,8 @@ class VideoGenerationResponse(BaseModel):
     progress: Optional[int] = Field(0, description="Generation progress percentage")
     thumbnail_url: Optional[str] = Field(None, description="Thumbnail image URL")
     api_used: Optional[str] = Field(None, description="Generation pipeline identifier")
-    
+
+
 class VideoGenerationStatus(BaseModel):
     job_id: str
     status: str
@@ -82,6 +91,7 @@ class VideoGenerationStatus(BaseModel):
     video_url: Optional[str] = None
     thumbnail_url: Optional[str] = None
 
+
 class VideoJobInfo(BaseModel):
     job_id: str
     status: str
@@ -91,6 +101,7 @@ class VideoJobInfo(BaseModel):
     request_data: Optional[dict] = None
     result_data: Optional[dict] = None
 
+
 class ModelInfo(BaseModel):
     name: str
     description: str
@@ -98,7 +109,8 @@ class ModelInfo(BaseModel):
     supported_formats: List[str]
     supported_ratios: List[str]
     features: Optional[List[str]] = None
-    
+
+
 class APIResponse(BaseModel):
     success: bool
     message: str

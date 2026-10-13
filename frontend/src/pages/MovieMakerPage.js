@@ -13,8 +13,9 @@ import {
   ClockIcon,
   CurrencyDollarIcon,
   PencilIcon,
-  CheckIcon,
 } from '@heroicons/react/24/outline';
+
+const API_BASE_URL = 'http://localhost:11150';
 
 // Form validation schema
 const movieSchema = z.object({
@@ -32,8 +33,6 @@ const MovieMakerPage = () => {
   const [generatedScript, setGeneratedScript] = useState('');
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [scenes, setScenes] = useState([]);
-  const [isProducing, setIsProducing] = useState(false);
-  const [productionProgress, setProductionProgress] = useState(0);
 
   const {
     register,
@@ -102,65 +101,36 @@ const MovieMakerPage = () => {
 
   const generateScript = async (project) => {
     try {
-      const mockScript = generateMockScript(project);
-      setGeneratedScript(mockScript.script);
-      setScenes(mockScript.scenes);
+      const response = await fetch(`${API_BASE_URL}/api/v1/movie/generate-script`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: project.title,
+          concept: project.concept,
+          style: project.style,
+          preset: project.preset,
+          max_clips: project.maxClips,
+          budget: project.budget,
+        }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || `Script generation failed (HTTP ${response.status})`);
+      }
+      const data = await response.json();
+      setGeneratedScript(data.script);
+      setScenes(data.scenes || []);
+    } catch (error) {
+      console.error('Script generation error:', error);
+      toast.error(error.message || 'Failed to generate script');
     } finally {
       setIsGeneratingScript(false);
     }
   };
 
-  const generateMockScript = (project) => {
-    const sceneCount = Math.floor(Math.random() * (project.maxClips - 3)) + 3;
-    const mockScenes = Array.from({ length: sceneCount }, (_, i) => ({
-      id: i + 1,
-      title: `Scene ${i + 1}`,
-      description: `A compelling scene showing ${project.concept.slice(0, 50)}...`,
-      duration: 8,
-      prompt: `${selectedStyle?.description || 'Cinematic style'} scene showing ${project.concept}`,
-      continuityFrame: i > 0 ? `frame_${i}.jpg` : null,
-    }));
-
-    const script = `# ${project.title}
-
-## Synopsis
-${project.concept}
-
-## Style: ${selectedStyle?.name || 'Cinematic'}
-${selectedStyle?.description || 'Professional cinematography'}
-
-## Scenes
-
-${mockScenes.map(scene => `
-### ${scene.title}
-**Duration**: ${scene.duration} seconds
-**Description**: ${scene.description}
-**Visual Prompt**: ${scene.prompt}
-${scene.continuityFrame ? `**Continuity**: Starts from ${scene.continuityFrame}` : ''}
-`).join('\n')}
-
-## Production Notes
-- Total scenes: ${sceneCount}
-- Estimated duration: ${sceneCount * 8} seconds
-- Style: ${project.style}
-- Budget: $${project.budget}
-`;
-
-    return { script, scenes: mockScenes };
-  };
-
   const startProduction = async () => {
-    setIsProducing(true);
     setCurrentStep('production');
-    
-    // Simulate production process
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setProductionProgress(i);
-    }
-    
-    setIsProducing(false);
-    toast.success('Movie production completed!');
+    toast.info('Video rendering is not wired in this build yet - the script is real (Gemini), rendering ships with media provider wiring.');
   };
 
   const renderSetupStep = () => (
@@ -533,44 +503,22 @@ ${scene.continuityFrame ? `**Continuity**: Starts from ${scene.continuityFrame}`
         transition={{ delay: 0.2 }}
         className="bg-white/5 backdrop-blur-sm rounded-xl p-8 border border-white/10"
       >
-        <div className="mb-6">
-          <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-            <span>Progress</span>
-            <span>{productionProgress}%</span>
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${productionProgress}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full relative"
-            >
-              <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
-            </motion.div>
-          </div>
+        <div className="mb-6 p-4 rounded-lg border border-amber-500/30 bg-amber-500/10">
+          <p className="text-amber-300 font-medium mb-1">Rendering not wired in this build</p>
+          <p className="text-gray-400 text-sm">
+            The script above is generated live by Gemini. Video rendering ships with media provider wiring - no fake progress here.
+          </p>
         </div>
 
         <div className="space-y-4">
           {scenes.map((scene, index) => (
             <div
               key={scene.id}
-              className={`flex items-center justify-between p-4 rounded-lg transition-all duration-300 ${
-                index < (productionProgress / 100) * scenes.length
-                  ? 'bg-green-500/10 border border-green-500/20'
-                  : 'bg-white/5 border border-white/10'
-              }`}
+              className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10"
             >
               <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  index < (productionProgress / 100) * scenes.length
-                    ? 'bg-green-500'
-                    : 'bg-gray-600'
-                }`}>
-                  {index < (productionProgress / 100) * scenes.length ? (
-                    <CheckIcon className="w-5 h-5 text-white" />
-                  ) : (
-                    <span className="text-white text-sm">{index + 1}</span>
-                  )}
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-600">
+                  <span className="text-white text-sm">{index + 1}</span>
                 </div>
                 <span className="text-white font-medium">{scene.title}</span>
               </div>
@@ -578,21 +526,6 @@ ${scene.continuityFrame ? `**Continuity**: Starts from ${scene.continuityFrame}`
             </div>
           ))}
         </div>
-
-        {productionProgress === 100 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8"
-          >
-            <div className="text-green-400 text-lg font-semibold mb-4">
-              🎉 Movie Production Complete!
-            </div>
-            <button className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300">
-              Download Movie
-            </button>
-          </motion.div>
-        )}
       </motion.div>
     </div>
   );

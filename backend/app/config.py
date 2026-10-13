@@ -1,6 +1,7 @@
 from pathlib import Path
+from typing import List, Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional, List
 
 
 class Settings(BaseSettings):
@@ -12,9 +13,10 @@ class Settings(BaseSettings):
     - Lyria 3 (Music)
     - Nano Banana 2 (Imagen 3 / Flash Image)
     """
+
     model_config = SettingsConfigDict(
         extra="allow",
-        env_file=".env",
+        env_file=(".env", "../.env"),  # backend/.env first, repo-root .env fallback
         case_sensitive=True,
     )
 
@@ -22,12 +24,16 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "VeoGen Industrial"
     VERSION: str = "3.1.0"
-    DESCRIPTION: str = "SOTA 2026 AI Video & Media Generation Platform.\n\nFeaturing Gemini 3.1, Veo 3.1, Lyria 3, and Nano Banana 2."
+    DESCRIPTION: str = (
+        "SOTA 2026 AI Video & Media Generation Platform.\n\nFeaturing Gemini 3.1, Veo 3.1, Lyria 3, and Nano Banana 2."
+    )
 
     # Server Configuration (Fleet Standard)
+    # Phase 2 salvage: moved off 10730/10731 (10730 belongs to moltbot-mcp).
+    # Registered pair 11150/11151 + metrics 11152 in WEBAPP_PORTS.md.
     HOST: str = "0.0.0.0"
-    PORT: int = 10730
-    FRONTEND_PORT: int = 10731
+    PORT: int = 11150
+    FRONTEND_PORT: int = 11151
     DEBUG: bool = False
     WORKERS: int = 1
 
@@ -42,14 +48,14 @@ class Settings(BaseSettings):
     GEMINI_PRO_MODEL: str = "gemini-3.1-pro"
     GEMINI_FLASH_MODEL: str = "gemini-3.1-flash"
     GEMINI_TTS_MODEL: str = "gemini-3.1-flash-tts-preview"
-    
+
     # Veo 3.1 Configuration (Video)
     VEO_MODEL: str = "veo-3.1"
     VEO_MAX_DURATION: int = 60
-    
+
     # Lyria 3 Configuration (Music)
     LYRIA_MODEL: str = "lyria-3-pro-preview"
-    
+
     # Imagen 3 Configuration (Nano Banana 2 / Flash Image)
     IMAGEN_MODEL: str = "gemini-3.1-flash-image-preview"
 
@@ -59,25 +65,20 @@ class Settings(BaseSettings):
     TEMP_DIR: str = "temp"
     MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
 
-    # Database Configuration
-    DATABASE_URL: Optional[str] = (
-        "postgresql+asyncpg://veogen:veogen123@localhost:4715/veogen"
-    )
+    # Database Configuration - local SQLite by default (single-user fleet
+    # deployment). Override DATABASE_URL for Postgres.
+    DATABASE_URL: Optional[str] = "sqlite:///./veogen.db"
 
-    # Redis Configuration
-    REDIS_URL: str = "redis://localhost:6379"
-    REDIS_ENABLED: bool = False
-
-    # Security
-    SECRET_KEY: str = "your-secret-key-change-this-in-production"
+    # Security - MUST be overridden via .env in any shared deployment.
+    SECRET_KEY: str = "change-me-in-env"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 1 week
 
     # CORS (Standardized for Fleet)
     ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:10731",
-        "http://127.0.0.1:10731",
-        "http://localhost:10730",
-        "http://127.0.0.1:10730",
+        "http://localhost:11151",
+        "http://127.0.0.1:11151",
+        "http://localhost:11150",
+        "http://127.0.0.1:11150",
     ]
 
     # Logging
@@ -86,12 +87,28 @@ class Settings(BaseSettings):
 
     # Monitoring
     ENABLE_METRICS: bool = True
-    METRICS_PORT: int = 10732
+    METRICS_PORT: int = 11152
 
     # Email Configuration (Legacy support)
     EMAIL_FROM: str = "noreply@veogen.local"
     EMAIL_SMTP: str = "dev"
     EMAIL_DEV_OUTBOX: str = "dev_emails/"
+
+    # Feature flags consumed by services (Phase 2 salvage: fields the
+    # endpoint layer reads but the v3.1 rewrite forgot to declare)
+    FLOW_ENABLED: bool = False
+    FLOW_API_BASE_URL: str = "http://localhost:3000"
+    FLOW_DEFAULT_REGION: str = "eu-central-1"
+    FLOW_WEBHOOK_SECRET: str = "change-me"
+    AUDIOFX_ENABLED: bool = False
+    AUDIOFX_API_BASE_URL: str = "http://localhost:8000"
+    AUDIOFX_MODEL: str = "audiofx-default"
+    PROMPT_COACH_ENABLED: bool = False
+    PROMPT_COACH_MODEL: str = "gemini-2.5-flash"
+    SCENE_DESCRIBER_ENABLED: bool = False
+    SCENE_DESCRIBER_MODEL: str = "gemini-2.5-flash"
+    SYNTHID_DASHBOARD_ENABLED: bool = False
+    WORKSPACE_AUTOMATION_ENABLED: bool = False
 
 
 settings = Settings()

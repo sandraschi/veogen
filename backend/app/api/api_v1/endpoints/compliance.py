@@ -17,4 +17,3 @@ async def run_synthid_audit(current_user=Depends(get_current_user)):
         raise HTTPException(status_code=503, detail="SynthID analytics disabled")
     result = synthid_audit_service.run()
     return result
-

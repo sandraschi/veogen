@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -85,8 +85,62 @@ const HomePage = () => {
     { name: 'Styles Available', value: '9+' },
   ];
 
+  // System status KPIs from the fleet diagnostics endpoint
+  const [diag, setDiag] = useState(null);
+  const [backendOk, setBackendOk] = useState(null);
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const r = await fetch('http://localhost:11150/api/v1/diagnostics');
+        if (r.ok) {
+          setDiag(await r.json());
+          setBackendOk(true);
+        } else {
+          setBackendOk(false);
+        }
+      } catch {
+        setBackendOk(false);
+      }
+    };
+    check();
+    const t = setInterval(check, 15000);
+    return () => clearInterval(t);
+  }, []);
+
   return (
     <div className="space-y-16">
+      {/* System Status - fleet diagnostics KPIs */}
+      <div data-testid="dashboard" className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div data-testid="kpi-server" className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+            <div className="text-xs text-gray-400 mb-1">Server</div>
+            <div className="text-white font-semibold truncate">{diag?.server || 'VeoGen Industrial'}</div>
+            <div className="text-sm text-gray-400">v{diag?.version || '3.1.0'}</div>
+          </div>
+          <div data-testid="kpi-tools" className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+            <div className="text-xs text-gray-400 mb-1">API Tools</div>
+            <div className="text-white font-semibold">{diag ? diag.tool_count : '...'}</div>
+            <div className="text-sm text-gray-400">routes under /api/v1</div>
+          </div>
+          <div data-testid="kpi-uptime" className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+            <div className="text-xs text-gray-400 mb-1">Uptime</div>
+            <div className="text-white font-semibold">
+              {diag ? `${Math.floor(diag.uptime_seconds / 60)}m` : '...'}
+            </div>
+            <div className="text-sm text-gray-400">since boot</div>
+          </div>
+          <div data-testid="kpi-backend" className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+            <div className="text-xs text-gray-400 mb-1">Backend</div>
+            <div className="flex items-center space-x-2">
+              <span data-testid="backend-dot" className={`w-2.5 h-2.5 rounded-full ${backendOk === null ? 'bg-gray-500' : backendOk ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <span className="text-white font-semibold">
+                {backendOk === null ? 'Connecting...' : backendOk ? 'Connected' : 'Offline'}
+              </span>
+            </div>
+            <div className="text-sm text-gray-400">MCP at /mcp</div>
+          </div>
+        </div>
+      </div>
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}

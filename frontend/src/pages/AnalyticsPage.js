@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChartBarIcon, TrendingUpIcon, CalendarIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, ArrowTrendingUpIcon, CalendarIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 
 const AnalyticsPage = () => {
   return (

@@ -38,7 +38,7 @@ class WorkspaceAutomationService:
             scene = FlowScene(
                 id=beat.get("id") or f"{project_id}-scene-{idx}",
                 project_id=project_id,
-                title=beat.get("title", f"Scene {idx+1}"),
+                title=beat.get("title", f"Scene {idx + 1}"),
                 order_index=idx,
                 prompt=beat.get("prompt"),
                 duration_seconds=beat.get("duration", 10),

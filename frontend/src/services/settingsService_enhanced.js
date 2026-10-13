@@ -1,6 +1,6 @@
 // Enhanced Settings Service with Better Authentication Handling
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4700';
+const API_BASE_URL = 'http://localhost:11150';
 
 class SettingsService {
   constructor() {
@@ -247,7 +247,7 @@ class SettingsService {
     } catch (error) {
       return { 
         success: false, 
-        error: `Network error: ${error.message}. Is the VeoGen backend running on port 4700?` 
+        error: `Network error: ${error.message}. Is the VeoGen backend running on port 11150?` 
       };
     }
   }

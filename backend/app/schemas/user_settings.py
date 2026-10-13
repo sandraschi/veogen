@@ -1,6 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
+
 
 class UserSettingsBase(BaseModel):
     google_api_key: Optional[str] = None
@@ -13,11 +15,14 @@ class UserSettingsBase(BaseModel):
     notifications: Optional[bool] = True
     theme: Optional[str] = "dark"
 
+
 class UserSettingsCreate(UserSettingsBase):
     pass
 
+
 class UserSettingsUpdate(UserSettingsBase):
     pass
+
 
 class UserSettingsRequest(BaseModel):
     google_api_key: Optional[str] = None
@@ -29,6 +34,7 @@ class UserSettingsRequest(BaseModel):
     auto_save: Optional[bool] = True
     notifications: Optional[bool] = True
     theme: Optional[str] = "dark"
+
 
 class UserSettingsResponse(BaseModel):
     google_api_key: Optional[str] = None
@@ -43,4 +49,4 @@ class UserSettingsResponse(BaseModel):
     updated_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True 
+        from_attributes = True

@@ -4,7 +4,6 @@ AudioFX sound design helper.
 
 from __future__ import annotations
 
-import asyncio
 import base64
 import logging
 import uuid
@@ -76,4 +75,3 @@ class AudioFXService:
 
 
 audiofx_service = AudioFXService()
-

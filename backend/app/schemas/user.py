@@ -1,12 +1,14 @@
 # User Pydantic Schemas for VeoGen API
 
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from pydantic import BaseModel, EmailStr, Field
 
 
 class UserBase(BaseModel):
     """Base user schema with common fields"""
+
     email: EmailStr
     username: Optional[str] = None
     full_name: Optional[str] = None
@@ -15,12 +17,14 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """Schema for user creation"""
+
     password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
     email_verification_token: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
     """Schema for user updates"""
+
     email: Optional[EmailStr] = None
     username: Optional[str] = None
     full_name: Optional[str] = None
@@ -31,6 +35,7 @@ class UserUpdate(BaseModel):
 
 class UserResponse(UserBase):
     """Schema for user responses"""
+
     id: str
     is_verified: bool = False
     plan: str = "free"
@@ -46,6 +51,7 @@ class UserResponse(UserBase):
 
 class UserProfile(BaseModel):
     """Extended user profile schema"""
+
     id: str
     email: EmailStr
     username: Optional[str]
@@ -64,12 +70,14 @@ class UserProfile(BaseModel):
 
 class UserLoginRequest(BaseModel):
     """Schema for user login"""
+
     email: EmailStr
     password: str
 
 
 class UserLoginResponse(BaseModel):
     """Schema for login response"""
+
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
@@ -77,17 +85,20 @@ class UserLoginResponse(BaseModel):
 
 class PasswordResetRequest(BaseModel):
     """Schema for password reset request"""
+
     email: EmailStr
 
 
 class PasswordResetConfirm(BaseModel):
     """Schema for password reset confirmation"""
+
     token: str
     new_password: str = Field(..., min_length=8)
 
 
 class UserSettingsUpdate(BaseModel):
     """Schema for user settings updates"""
+
     setting_key: str
     setting_value: Any
     setting_type: str = "string"
@@ -95,6 +106,7 @@ class UserSettingsUpdate(BaseModel):
 
 class UserSessionInfo(BaseModel):
     """Schema for user session information"""
+
     id: str
     user_id: str
     expires_at: datetime

@@ -1,50 +1,60 @@
-﻿Param([switch]$Headless)
+param([switch]$Headless, [switch]$BackendOnly)
+$ErrorActionPreference = "Stop"
 
-# --- SOTA Headless Standard ---
-if ($Headless -and ($Host.UI.RawUI.WindowTitle -notmatch 'Hidden')) {
-    Start-Process pwsh -ArgumentList '-NoProfile', '-File', $PSCommandPath, '-Headless' -WindowStyle Hidden
-    exit
+$Root = Split-Path -Parent $PSCommandPath
+$BackendPort = 11150
+$FrontendPort = 11151
+
+Write-Host "=== VeoGen Industrial launcher (Phase 2 salvage) ===" -ForegroundColor Cyan
+
+# Clear zombie processes on both ports
+Get-NetTCPConnection -LocalPort $BackendPort -ErrorAction SilentlyContinue |
+    ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+Get-NetTCPConnection -LocalPort $FrontendPort -ErrorAction SilentlyContinue |
+    ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+
+# Backend: uv venv + uvicorn in a background job
+$BackendJob = Start-Job -Name "veogen-backend" -ScriptBlock {
+    param($Root)
+    Set-Location (Join-Path $Root "backend")
+    if (-not (Test-Path ".venv\Scripts\python.exe")) { uv venv }
+    uv sync --quiet
+    uv run uvicorn app.main:app --host 127.0.0.1 --port 11150
+} -ArgumentList $Root
+
+# Wait for backend health
+$healthy = $false
+for ($i = 0; $i -lt 90; $i++) {
+    Start-Sleep 1
+    try {
+        $r = Invoke-WebRequest -Uri "http://127.0.0.1:$BackendPort/health" -TimeoutSec 2 -UseBasicParsing
+        if ($r.StatusCode -eq 200) { $healthy = $true; break }
+    } catch {}
 }
-$WindowStyle = if ($Headless) { 'Hidden' } else { 'Normal' }
-# ------------------------------
-
-# VeoGen Industrial v3.1 - Fleet Startup Script
-# Standard SOTA 2026 Launcher
-
-$BackendPort = 10730
-$FrontendPort = 10731
-
-Write-Host "ðŸš€ Initializing VeoGen Industrial v3.1..." -ForegroundColor Cyan
-
-# 1. Backend Setup
-Write-Host "`n[1/3] Verifying Backend Environment..." -ForegroundColor Yellow
-cd backend
-if (!(Test-Path ".venv")) {
-    Write-Host "Creating virtual environment..."
-    python -m venv .venv
+if (-not $healthy) {
+    Write-Host "Backend failed to become healthy on port $BackendPort" -ForegroundColor Red
+    Receive-Job $BackendJob
+    exit 1
 }
-. .venv\Scripts\Activate.ps1
-Write-Host "Installing industrial dependencies..."
-python -m pip install -q -r requirements.txt
-cd ..
+Write-Host "Backend healthy on http://127.0.0.1:$BackendPort" -ForegroundColor Green
 
-# 2. Frontend Setup
-Write-Host "`n[2/3] Verifying Frontend Environment..." -ForegroundColor Yellow
-cd frontend
-if (!(Test-Path "node_modules")) {
-    Write-Host "Installing NPM packages..."
-    npm install --quiet
+if (-not $BackendOnly) {
+    Start-Process npm -ArgumentList "run", "dev" -WorkingDirectory (Join-Path $Root "frontend") -WindowStyle Hidden
+    Start-Sleep 3
+    Start-Process "http://127.0.0.1:$FrontendPort"
+    Write-Host "Frontend on http://127.0.0.1:$FrontendPort" -ForegroundColor Green
 }
-cd ..
 
-# 3. Launch
-Write-Host "`n[3/3] Launching Fleet Hub..." -ForegroundColor Yellow
-Write-Host "Backend: http://localhost:$BackendPort" -ForegroundColor Green
-Write-Host "Frontend: http://localhost:$FrontendPort" -ForegroundColor Green
-
-# Use Start-Process to run both in background/new windows if needed, 
-# or just provide instructions.
-# For this session, we'll just verify they CAN start.
-
-Write-Host "`nâœ… Environment Ready. Use 'npm run dev' in /frontend and 'uvicorn app.main:app' in /backend." -ForegroundColor Cyan
-
+# Keep console alive
+try {
+    while ($true) {
+        if ($BackendJob.State -in @("Completed", "Failed")) {
+            Receive-Job $BackendJob
+            break
+        }
+        Start-Sleep 2
+    }
+} finally {
+    Stop-Job $BackendJob -ErrorAction SilentlyContinue
+    Remove-Job $BackendJob -Force -ErrorAction SilentlyContinue
+}

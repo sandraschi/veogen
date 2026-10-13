@@ -13,21 +13,21 @@ const getApiBaseUrl = () => {
   
   // Tailscale hostname access
   if (hostname === 'goliath') {
-    return `${protocol}//goliath:4700`;
+    return `${protocol}//goliath:11150`;
   }
   
   // Tailscale IP access
   if (hostname === '100.118.171.110') {
-    return `${protocol}//100.118.171.110:4700`;
+    return `${protocol}//100.118.171.110:11150`;
   }
   
   // Public IP access
   if (hostname === '213.47.34.131') {
-    return `${protocol}//213.47.34.131:4700`;
+    return `${protocol}//213.47.34.131:11150`;
   }
   
   // Default to localhost for local development
-  return process.env.REACT_APP_API_URL || 'http://localhost:4700';
+  return process.env.REACT_APP_API_URL || 'http://localhost:11150';
 };
 
 const API_BASE_URL = getApiBaseUrl();

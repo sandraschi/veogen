@@ -1,11 +1,14 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from pydantic import BaseModel
-from typing import List, Optional
 import logging
+from typing import List, Optional
+
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+from pydantic import BaseModel
+
 from app.services.gemini_service import gemini_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
 
 class BookRequest(BaseModel):
     title: str
@@ -19,12 +22,14 @@ class BookRequest(BaseModel):
     setting: Optional[str] = None
     time_period: Optional[str] = None
 
+
 class BookResponse(BaseModel):
     outline: str
     first_chapter: str
     characters: dict
     plot_summary: str
     chapter_breakdown: List[dict]
+
 
 @router.post("/generate", response_model=BookResponse)
 async def generate_book(request: BookRequest, background_tasks: BackgroundTasks):
@@ -33,7 +38,7 @@ async def generate_book(request: BookRequest, background_tasks: BackgroundTasks)
     """
     try:
         logger.info(f"Generating book: {request.title} ({request.genre})")
-        
+
         # Create detailed prompt for book generation
         prompt = f"""
         Create a complete book outline and first chapter for a {request.genre} novel titled "{request.title}".
@@ -48,7 +53,7 @@ async def generate_book(request: BookRequest, background_tasks: BackgroundTasks)
         - Setting: {request.setting or "Modern day"}
         - Time Period: {request.time_period or "Contemporary"}
         - Content Ideas: {request.content_ideas or "None"}
-        - Selected Tropes: {', '.join(request.selected_tropes) if request.selected_tropes else "None"}
+        - Selected Tropes: {", ".join(request.selected_tropes) if request.selected_tropes else "None"}
         
         Please provide:
         1. A detailed book outline with chapter breakdown
@@ -59,23 +64,23 @@ async def generate_book(request: BookRequest, background_tasks: BackgroundTasks)
         
         Format the response as structured sections with clear headings.
         """
-        
+
         # Generate content using Gemini
         response = await gemini_service.generate_content(prompt)
-        
+
         # Parse the response into structured sections
         # This is a simplified parser - in production you'd want more sophisticated parsing
         content = response.get("content", "")
-        
+
         # Split content into sections (this is a basic implementation)
         sections = content.split("\n\n")
-        
+
         outline = ""
         first_chapter = ""
         characters = {}
         plot_summary = ""
         chapter_breakdown = []
-        
+
         for section in sections:
             if "outline" in section.lower() or "chapter" in section.lower():
                 outline += section + "\n\n"
@@ -91,28 +96,29 @@ async def generate_book(request: BookRequest, background_tasks: BackgroundTasks)
                 plot_summary = section
             else:
                 outline += section + "\n\n"
-        
+
         # Create chapter breakdown
         chapter_breakdown = [
             {
                 "chapter": 1,
                 "title": f"Chapter 1: {request.title}",
                 "summary": "Opening chapter introducing the main character and setting",
-                "word_count": len(first_chapter.split()) if first_chapter else 0
+                "word_count": len(first_chapter.split()) if first_chapter else 0,
             }
         ]
-        
+
         return BookResponse(
             outline=outline.strip(),
             first_chapter=first_chapter.strip(),
             characters=characters,
             plot_summary=plot_summary.strip(),
-            chapter_breakdown=chapter_breakdown
+            chapter_breakdown=chapter_breakdown,
         )
-        
+
     except Exception as e:
         logger.error(f"Error generating book: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate book: {str(e)}")
+
 
 @router.get("/genres")
 async def get_genres():
@@ -121,11 +127,24 @@ async def get_genres():
     """
     return {
         "genres": [
-            "Fantasy", "Science Fiction", "Romance", "Mystery", "Thriller", "Horror",
-            "Historical Fiction", "Contemporary Fiction", "Young Adult", "Literary Fiction",
-            "Adventure", "Dystopian", "Paranormal", "Contemporary Romance", "Historical Romance"
+            "Fantasy",
+            "Science Fiction",
+            "Romance",
+            "Mystery",
+            "Thriller",
+            "Horror",
+            "Historical Fiction",
+            "Contemporary Fiction",
+            "Young Adult",
+            "Literary Fiction",
+            "Adventure",
+            "Dystopian",
+            "Paranormal",
+            "Contemporary Romance",
+            "Historical Romance",
         ]
     }
+
 
 @router.get("/tropes")
 async def get_tropes():
@@ -134,13 +153,29 @@ async def get_tropes():
     """
     return {
         "tropes": [
-            "Enemies to Lovers", "Chosen One", "Found Family", "Redemption Arc",
-            "Love Triangle", "Fish Out of Water", "Coming of Age", "Forbidden Love",
-            "Second Chance", "Fake Relationship", "Marriage of Convenience", "Slow Burn",
-            "Friends to Lovers", "Opposites Attract", "Forced Proximity", "Grumpy Sunshine",
-            "Only One Bed", "Miscommunication", "Secret Identity", "Hidden Powers"
+            "Enemies to Lovers",
+            "Chosen One",
+            "Found Family",
+            "Redemption Arc",
+            "Love Triangle",
+            "Fish Out of Water",
+            "Coming of Age",
+            "Forbidden Love",
+            "Second Chance",
+            "Fake Relationship",
+            "Marriage of Convenience",
+            "Slow Burn",
+            "Friends to Lovers",
+            "Opposites Attract",
+            "Forced Proximity",
+            "Grumpy Sunshine",
+            "Only One Bed",
+            "Miscommunication",
+            "Secret Identity",
+            "Hidden Powers",
         ]
     }
+
 
 @router.get("/lengths")
 async def get_lengths():
@@ -153,6 +188,6 @@ async def get_lengths():
             {"id": "novelette", "name": "Novelette", "word_count": "7,500-17,500"},
             {"id": "novella", "name": "Novella", "word_count": "17,500-40,000"},
             {"id": "novel", "name": "Novel", "word_count": "40,000-100,000"},
-            {"id": "epic", "name": "Epic Novel", "word_count": "100,000+"}
+            {"id": "epic", "name": "Epic Novel", "word_count": "100,000+"},
         ]
-    } 
+    }

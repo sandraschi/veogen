@@ -4,20 +4,19 @@ Integration helper for Google Flow workspace sync.
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import hmac
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import httpx
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import SessionLocal
-from app.models.flow import FlowProject, FlowScene, FlowIngredient, SceneCaption
+from app.models.flow import FlowIngredient, FlowProject, FlowScene
 from app.services.video_service import video_service
 
 logger = logging.getLogger(__name__)
@@ -42,17 +41,13 @@ class FlowService:
             return True
         if not signature_header:
             return False
-        digest = hmac.new(
-            secret.encode("utf-8"), payload, hashlib.sha256
-        ).hexdigest()
+        digest = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
         return hmac.compare_digest(digest, signature_header)
 
     # ------------------------------------------------------------------ #
     # Upsert helpers
     # ------------------------------------------------------------------ #
-    def _upsert_project(
-        self, db: Session, project_payload: Dict
-    ) -> FlowProject:
+    def _upsert_project(self, db: Session, project_payload: Dict) -> FlowProject:
         project_id = project_payload.get("id") or project_payload.get("projectId")
         if not project_id:
             raise ValueError("Flow project payload missing id")
@@ -74,9 +69,7 @@ class FlowService:
 
         return project
 
-    def _upsert_scene(
-        self, db: Session, project_id: str, scene_payload: Dict
-    ) -> FlowScene:
+    def _upsert_scene(self, db: Session, project_id: str, scene_payload: Dict) -> FlowScene:
         scene_id = scene_payload.get("id") or scene_payload.get("sceneId")
         if not scene_id:
             raise ValueError("Flow scene payload missing id")
@@ -104,20 +97,12 @@ class FlowService:
 
         return scene
 
-    def _sync_ingredients(
-        self, db: Session, project_id: str, ingredients_payload: List[Dict]
-    ) -> None:
+    def _sync_ingredients(self, db: Session, project_id: str, ingredients_payload: List[Dict]) -> None:
         if not ingredients_payload:
             return
 
-        existing = (
-            db.query(FlowIngredient)
-            .filter(FlowIngredient.project_id == project_id)
-            .all()
-        )
-        existing_key = {
-            (i.name, i.ingredient_type): i for i in existing
-        }
+        existing = db.query(FlowIngredient).filter(FlowIngredient.project_id == project_id).all()
+        existing_key = {(i.name, i.ingredient_type): i for i in existing}
 
         for item in ingredients_payload:
             name = item.get("name")
@@ -172,22 +157,12 @@ class FlowService:
 
     def list_projects(self, db: Session) -> List[FlowProject]:
         """Return stored Flow projects."""
-        return (
-            db.query(FlowProject)
-            .order_by(FlowProject.updated_at.desc())
-            .all()
-        )
+        return db.query(FlowProject).order_by(FlowProject.updated_at.desc()).all()
 
     def get_project(self, db: Session, project_id: str) -> Optional[FlowProject]:
-        return (
-            db.query(FlowProject)
-            .filter(FlowProject.id == project_id)
-            .first()
-        )
+        return db.query(FlowProject).filter(FlowProject.id == project_id).first()
 
-    async def trigger_scene_render(
-        self, db: Session, scene: FlowScene, user_id: str
-    ) -> Dict[str, str]:
+    async def trigger_scene_render(self, db: Session, scene: FlowScene, user_id: str) -> Dict[str, str]:
         """Kick off Veo render for a scene using stored metadata."""
         prompt = scene.prompt or scene.flow_metadata.get("prompt") if scene.flow_metadata else None
         if not prompt:
@@ -236,4 +211,3 @@ class FlowService:
 
 
 flow_service = FlowService()
-

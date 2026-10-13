@@ -206,4 +206,3 @@ async def sync_flow_project(
         raise HTTPException(status_code=503, detail="Flow integration disabled")
     result = await flow_service.sync_project_with_flow(payload.project_id)
     return result
-

@@ -1,7 +1,7 @@
 # Development dependencies
 
 # Linting and formatting (modern, replaces flake8, black, isort)
-ruff>=0.13.0
+ruff>=0.16.0,<0.17
 
 # Type checking
 mypy>=1.0.0

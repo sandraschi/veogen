@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  PhotoIcon, 
-  SparklesIcon, 
-  ArrowDownTrayIcon,
-  MagnifyingGlassIcon,
-  TypeIcon
+  Image, 
+  Sparkles, 
+  Download,
+  Search,
+  CaseSensitive
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -72,7 +72,7 @@ const ImageStudio = () => {
           <div className="glass-panel p-6 space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-                <SparklesIcon className="w-4 h-4 text-purple-400" />
+                <Sparkles className="w-4 h-4 text-purple-400" />
                 Visual Prompt
               </label>
               <textarea
@@ -85,7 +85,7 @@ const ImageStudio = () => {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
-                <TypeIcon className="w-4 h-4 text-pink-400" />
+                <Type className="w-4 h-4 text-pink-400" />
                 Text Rendering (Precise)
               </label>
               <input
@@ -110,7 +110,7 @@ const ImageStudio = () => {
                   </>
                 ) : (
                   <>
-                    <PhotoIcon className="w-5 h-5" />
+                    <Image className="w-5 h-5" />
                     <span>Generate Masterpiece</span>
                   </>
                 )}
@@ -122,13 +122,13 @@ const ImageStudio = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="glass-card p-4 flex items-center gap-3">
               <div className="p-2 bg-blue-500/20 rounded-lg">
-                <MagnifyingGlassIcon className="w-5 h-5 text-blue-400" />
+                <Search className="w-5 h-5 text-blue-400" />
               </div>
               <span className="text-xs text-slate-300">Search Grounded</span>
             </div>
             <div className="glass-card p-4 flex items-center gap-3">
               <div className="p-2 bg-green-500/20 rounded-lg">
-                <SparklesIcon className="w-5 h-5 text-green-400" />
+                <Sparkles className="w-5 h-5 text-green-400" />
               </div>
               <span className="text-xs text-slate-300">4K Upscaling</span>
             </div>
@@ -150,13 +150,13 @@ const ImageStudio = () => {
               />
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button className="glass-button-secondary !p-2">
-                  <ArrowDownTrayIcon className="w-5 h-5" />
+                  <Download className="w-5 h-5" />
                 </button>
               </div>
             </motion.div>
           ) : (
             <div className="text-center space-y-4 opacity-30">
-              <PhotoIcon className="w-16 h-16 mx-auto" />
+              <Image className="w-16 h-16 mx-auto" />
               <p>Your creation will appear here</p>
             </div>
           )}
@@ -176,4 +176,4 @@ const ImageStudio = () => {
 };
 
 export default ImageStudio;
-鼓
+

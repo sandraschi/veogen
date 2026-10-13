@@ -32,16 +32,14 @@ class MusicGenerationRequest(BaseModel):
     genre: str = Field("electronic", description="High-level genre label")
     mood: Optional[str] = Field(None, description="Desired mood (e.g. uplifting, calm)")
     tempo: Optional[int] = Field(None, ge=40, le=200, description="Target tempo in BPM")
-    creativity: Optional[float] = Field(
-        None, ge=0.0, le=1.0, description="Creativity hint relayed in prompt"
-    )
-    instruments: Optional[str] = Field(
-        None, description="Comma separated instruments to highlight"
-    )
+    creativity: Optional[float] = Field(None, ge=0.0, le=1.0, description="Creativity hint relayed in prompt")
+    instruments: Optional[str] = Field(None, description="Comma separated instruments to highlight")
+
 
 class SpeechGenerationRequest(BaseModel):
     text: str
     voice: str = "en-US-Neural2-F"
+
 
 class GeneratedTrack(BaseModel):
     url: str
@@ -54,6 +52,7 @@ class MusicGenerateResponse(BaseModel):
     message: Optional[str] = None
     api_used: Optional[str] = None
 
+
 class SpeechGenerationResponse(BaseModel):
     status: str
     speech_id: str
@@ -61,6 +60,7 @@ class SpeechGenerationResponse(BaseModel):
     voice: Optional[str] = None
     text: Optional[str] = None
     error: Optional[str] = None
+
 
 class MusicStatusResponse(BaseModel):
     music_id: str
@@ -73,11 +73,9 @@ class MusicStatusResponse(BaseModel):
     created_at: Optional[str] = None
     completed_at: Optional[str] = None
 
+
 @router.post("/generate", response_model=MusicGenerateResponse)
-async def generate_music(
-    request: MusicGenerationRequest,
-    current_user: User = Depends(get_current_user)
-):
+async def generate_music(request: MusicGenerationRequest, current_user: User = Depends(get_current_user)):
     """Generate music using Gemini CLI Lyria support."""
     prompt_parts = [request.prompt]
 
@@ -90,9 +88,7 @@ async def generate_music(
     if request.instruments:
         prompt_parts.append(f"Instruments: {request.instruments}")
     if request.creativity is not None:
-        prompt_parts.append(
-            f"Creativity level target: {request.creativity:.2f} (0 structured, 1 experimental)"
-        )
+        prompt_parts.append(f"Creativity level target: {request.creativity:.2f} (0 structured, 1 experimental)")
 
     enriched_prompt = ". ".join(prompt_parts)
 
@@ -143,55 +139,46 @@ async def generate_music(
         api_used=result.get("api_used"),
     )
 
+
 @router.post("/speech", response_model=SpeechGenerationResponse)
-async def generate_speech(
-    request: SpeechGenerationRequest,
-    current_user: User = Depends(get_current_user)
-):
+async def generate_speech(request: SpeechGenerationRequest, current_user: User = Depends(get_current_user)):
     """Generate speech using Chirp 3 HD via MCP"""
     try:
-        result = await music_service.generate_speech(
-            text=request.text,
-            user_id=current_user.id,
-            voice=request.voice
-        )
-        
+        result = await music_service.generate_speech(text=request.text, user_id=current_user.id, voice=request.voice)
+
         return SpeechGenerationResponse(**result)
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Speech generation failed: {str(e)}")
 
+
 @router.get("/status/{music_id}", response_model=MusicStatusResponse)
-async def get_music_status(
-    music_id: str,
-    current_user: User = Depends(get_current_user)
-):
+async def get_music_status(music_id: str, current_user: User = Depends(get_current_user)):
     """Get the status of a music generation"""
     try:
         result = await music_service.get_music_status(music_id)
-        
+
         if not result:
             raise HTTPException(status_code=404, detail="Music not found")
-            
+
         return MusicStatusResponse(**result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get music status: {str(e)}")
 
+
 @router.get("/list", response_model=List[MusicStatusResponse])
-async def list_user_music(
-    limit: int = 50,
-    current_user: User = Depends(get_current_user)
-):
+async def list_user_music(limit: int = 50, current_user: User = Depends(get_current_user)):
     """Get all music for the current user"""
     try:
         music_list = await music_service.get_user_music(current_user.id, limit)
         return [MusicStatusResponse(**music) for music in music_list]
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get user music: {str(e)}")
+
 
 @router.get("/voices")
 async def get_available_voices(current_user: User = Depends(get_current_user)):
@@ -202,62 +189,56 @@ async def get_available_voices(current_user: User = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get voices: {str(e)}")
 
+
 @router.delete("/{music_id}")
-async def delete_music(
-    music_id: str,
-    current_user: User = Depends(get_current_user)
-):
+async def delete_music(music_id: str, current_user: User = Depends(get_current_user)):
     """Delete a music generation"""
     try:
         success = await music_service.delete_music(music_id, current_user.id)
-        
+
         if not success:
             raise HTTPException(status_code=404, detail="Music not found")
-            
+
         return {"message": "Music deleted successfully"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete music: {str(e)}")
+
 
 @router.get("/styles/", response_model=List[str])
 async def get_music_styles():
     """Get available music styles"""
     return [style.value for style in MusicStyle]
 
+
 @router.get("/moods/", response_model=List[str])
 async def get_music_moods():
     """Get available music moods"""
     return [mood.value for mood in MusicMood]
 
+
 @router.get("/{music_id}/download")
 async def download_music(
     music_id: UUID,
-    format: str = Query("mp3", regex="^(mp3|wav|flac)$"),
+    format: str = Query("mp3", pattern="^(mp3|wav|flac)$"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Download generated music in specified format"""
-    music_gen = await music_service.get_music_generation(
-        db, music_id, current_user
-    )
-    
+    music_gen = await music_service.get_music_generation(db, music_id, current_user)
+
     if not music_gen:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Music generation not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Music generation not found")
+
     if music_gen.status != "completed":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Music generation not completed"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Music generation not completed")
+
     download_url = await music_service.get_download_url(music_gen, format)
-    
+
     return {"download_url": download_url}
+
 
 @router.post("/{music_id}/remix", response_model=MusicGenerationResponse)
 async def remix_music(
@@ -265,31 +246,19 @@ async def remix_music(
     remix_style: MusicStyle,
     remix_mood: Optional[MusicMood] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Create a remix of existing music with different style/mood"""
-    original_music = await music_service.get_music_generation(
-        db, music_id, current_user
-    )
-    
+    original_music = await music_service.get_music_generation(db, music_id, current_user)
+
     if not original_music:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Original music not found"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Original music not found")
+
     if original_music.status != "completed":
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Original music must be completed before remixing"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Original music must be completed before remixing"
         )
-    
-    remix = await music_service.create_remix(
-        db, original_music, remix_style, remix_mood, current_user
-    )
-    
-    return MusicGenerationResponse(
-        job_id=remix.id,
-        status=remix.status,
-        message="Music remix started successfully"
-    )
+
+    remix = await music_service.create_remix(db, original_music, remix_style, remix_mood, current_user)
+
+    return MusicGenerationResponse(job_id=remix.id, status=remix.status, message="Music remix started successfully")
