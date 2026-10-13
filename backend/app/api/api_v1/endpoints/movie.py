@@ -7,13 +7,16 @@ pending); the script step is fully functional.
 """
 
 import re
-from typing import List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from app.api.deps import get_current_user_optional
+from app.api.deps import get_current_user, get_current_user_optional
 from app.database import User
+from app.services import movie_pipeline
 from app.services.gemini_service import gemini_service
 
 router = APIRouter()
@@ -105,3 +108,110 @@ async def generate_script(
 
     scenes = _parse_scenes(text, request.max_clips)
     return MovieScriptResponse(status="success", script=text, scenes=scenes)
+
+
+# --- Production workflow: plan (script + estimate) -> produce (Veo, TTS, Lyria, ffmpeg) ---
+
+
+class ProductionRequest(BaseModel):
+    title: str = Field(..., min_length=3, max_length=100)
+    concept: str = Field(..., min_length=20, max_length=2000)
+    style: str = Field("cinematic", max_length=60)
+    scene_count: int = Field(4, ge=1, le=12)
+    clip_seconds: Literal[4, 6, 8] = 8
+    tier: Literal["lite", "standard"] = Field("lite", description="Veo 3.1 Lite ($0.05/s) or Standard ($0.40/s)")
+    resolution: Literal["720p", "1080p"] = "720p"
+    aspect_ratio: Literal["16:9", "9:16"] = "16:9"
+    narration: bool = True
+    voice: str = Field("Kore", max_length=40)
+    music: bool = True
+    produce: bool = Field(False, description="False: plan only (script + estimate). True: also generate media.")
+    confirm_cost: bool = Field(False, description="Required with produce=True: acknowledges the estimate.")
+
+
+class ProduceRequest(BaseModel):
+    confirm_cost: bool = False
+
+
+def _get_production(production_id: str) -> Dict[str, Any]:
+    try:
+        return movie_pipeline.load(production_id)
+    except (KeyError, ValueError):
+        raise HTTPException(status_code=404, detail="Production not found")
+
+
+def _cost_gate(confirm: bool, est: Dict[str, Any]) -> None:
+    if not confirm:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "confirm_cost required",
+                "message": f"Producing this film costs about ${est['total']} (Google list prices). "
+                "Resend with confirm_cost=true to proceed.",
+                "estimate": est,
+            },
+        )
+
+
+@router.post("/productions/estimate")
+async def estimate_production(request: ProductionRequest) -> Dict[str, Any]:
+    """Price a production without any API call."""
+    return movie_pipeline.estimate(
+        request.scene_count, request.clip_seconds, request.tier, request.resolution, request.narration, request.music
+    )
+
+
+@router.post("/productions")
+async def create_production(request: ProductionRequest, current_user: User = Depends(get_current_user)):
+    """Create a production and start planning (and producing, when produce + confirm_cost)."""
+    est = movie_pipeline.estimate(
+        request.scene_count, request.clip_seconds, request.tier, request.resolution, request.narration, request.music
+    )
+    if request.produce:
+        _cost_gate(request.confirm_cost, est)
+    prod = movie_pipeline.create(request.model_dump())
+    movie_pipeline.start(prod["id"], produce=request.produce)
+    return movie_pipeline.load(prod["id"])
+
+
+@router.post("/productions/{production_id}/produce")
+async def produce_production(
+    production_id: str, request: ProduceRequest, current_user: User = Depends(get_current_user)
+):
+    """Generate media for a planned production (resumes failed / interrupted / cancelled ones)."""
+    prod = _get_production(production_id)
+    if prod["status"] == "completed":
+        raise HTTPException(status_code=409, detail="Production already completed")
+    _cost_gate(request.confirm_cost, prod["estimate"])
+    try:
+        movie_pipeline.start(production_id, produce=True)
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    return movie_pipeline.load(production_id)
+
+
+@router.post("/productions/{production_id}/cancel")
+async def cancel_production(production_id: str, current_user: User = Depends(get_current_user)):
+    _get_production(production_id)
+    return movie_pipeline.cancel(production_id)
+
+
+@router.get("/productions")
+async def list_productions(current_user: User = Depends(get_current_user_optional)) -> List[Dict[str, Any]]:
+    return movie_pipeline.list_productions()
+
+
+@router.get("/productions/{production_id}")
+async def get_production(production_id: str, current_user: User = Depends(get_current_user_optional)):
+    prod = _get_production(production_id)
+    prod.pop("script_raw", None)
+    return prod
+
+
+@router.get("/productions/{production_id}/video")
+async def production_video(production_id: str):
+    prod = _get_production(production_id)
+    path = prod.get("video_path")
+    if prod["status"] != "completed" or not path or not Path(path).is_file():
+        raise HTTPException(status_code=404, detail="No finished video for this production")
+    return FileResponse(path, media_type="video/mp4", filename=f"{production_id}.mp4")
