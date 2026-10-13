@@ -25,7 +25,7 @@ class WorkingGeminiService:
                     genai.configure(api_key=settings.GEMINI_API_KEY)
 
                     # Try working models in order
-                    models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"]
+                    models = [settings.GEMINI_FLASH_MODEL, settings.GEMINI_PRO_MODEL]
                     for model_name in models:
                         try:
                             self.model = genai.GenerativeModel(model_name)

@@ -10,6 +10,8 @@ from typing import Any, Dict, Optional
 
 import google.generativeai as genai
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +23,7 @@ class SimplePersonaChatService:
         if api_key:
             try:
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel("gemini-1.5-flash")
+                self.model = genai.GenerativeModel(settings.GEMINI_FLASH_MODEL)
             except Exception as e:
                 logger.warning(f"Failed to initialize Gemini model: {str(e)}")
 

@@ -26,6 +26,16 @@ from app.database import get_user_setting
 logger = logging.getLogger(__name__)
 
 
+def _text_models() -> List[str]:
+    """Text models from the config registry, preferred first."""
+    return [settings.GEMINI_FLASH_MODEL, settings.GEMINI_PRO_MODEL, settings.GEMINI_FLASH_LITE_MODEL]
+
+
+def _media_models() -> List[str]:
+    """Media models from the config registry."""
+    return [settings.VEO_MODEL, settings.IMAGEN_MODEL, settings.LYRIA_MODEL]
+
+
 class GeminiCLIService:
     """Service for interacting with Google Gemini via CLI and MCP tools"""
 
@@ -360,7 +370,7 @@ class GeminiCLIService:
                 "prompt": prompt,
                 "duration_seconds": min(max(5, duration), 60),  # Clamp to 5-60s
                 "aspect_ratio": aspect_ratio if aspect_ratio in ["16:9", "9:16"] else "16:9",
-                "model": "veo-3.1",
+                "model": settings.VEO_MODEL,
             }
 
             if style:
@@ -566,13 +576,7 @@ class GeminiCLIService:
                 # Fallback to API with current model names
                 try:
                     # Try the most reliable models in order
-                    models_to_try = [
-                        "gemini-3-flash",
-                        "gemini-3-pro",
-                        "gemini-3-flash-exp",
-                        "gemini-2.0-flash",
-                        "gemini-pro",
-                    ]
+                    models_to_try = _text_models()
 
                     for model_name in models_to_try:
                         try:
@@ -759,14 +763,8 @@ How can I help you today? Please let me know what you're working on!
             if "models" in result:
                 return result["models"]
             else:
-                # Fallback to basic list
-                return [
-                    "gemini-3.0-flash",
-                    "gemini-3.0-pro",
-                    "veo-3.1",
-                    "gemini-3.0-pro-image",
-                    "lyria",
-                ]
+                # Fallback to the configured registry
+                return _text_models() + _media_models()
 
         except Exception as e:
             logger.error(f"Error calling Gemini CLI for models: {e}")
@@ -790,29 +788,24 @@ How can I help you today? Please let me know what you're working on!
                 model_names = [model.name for model in models]
 
                 # Add media generation models
-                model_names.extend(["veo-3.1", "gemini-3.0-pro-image", "lyria"])
+                model_names.extend(_media_models())
 
                 return model_names
 
         except Exception as e:
             logger.error(f"Error listing models: {e}")
-            # Fallback to basic list
-            return [
-                "gemini-3.0-flash",
-                "gemini-3.0-pro",
-                "veo-3.1",
-                "gemini-3.0-pro-image",
-                "lyria",
-            ]
+            # Fallback to the configured registry
+            return _text_models() + _media_models()
 
-    async def get_model_info(self, model_name: str = "veo-3.1", db_session=None, user_id=None) -> Dict[str, Any]:
+    async def get_model_info(self, model_name: str | None = None, db_session=None, user_id=None) -> Dict[str, Any]:
         """Get model information"""
         try:
             # Re-initialize with user settings if provided
             if db_session and user_id and not self.initialized:
                 self._initialize_apis(db_session, user_id)
 
-            if model_name == "veo-3.1" or model_name == "veo-3":
+            model_name = model_name or settings.VEO_MODEL
+            if model_name.startswith("veo-"):
                 return {
                     "name": model_name,
                     "description": "Google's Veo 3.1 video generation model",
@@ -962,8 +955,8 @@ How can I help you today? Please let me know what you're working on!
             image_data = base64.b64decode(reference_image)
             image = Image.open(io.BytesIO(image_data))
 
-            # Use Gemini 3 Pro Vision for OCR/editing
-            vision_model = genai.GenerativeModel("gemini-3.0-pro-vision")
+            # Gemini Pro is natively multimodal (there is no separate "-vision" model)
+            vision_model = genai.GenerativeModel(settings.GEMINI_PRO_MODEL)
 
             if mode == "ocr":
                 ocr_prompt = f"Extract all text from this image. {prompt if prompt else 'Return all visible text.'}"

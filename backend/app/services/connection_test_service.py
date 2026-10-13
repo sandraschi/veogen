@@ -224,7 +224,7 @@ class ConnectionTestService:
 
             # Test 2: Simple text generation
             try:
-                model = genai.GenerativeModel("gemini-2.0-flash-exp")
+                model = genai.GenerativeModel(settings.GEMINI_FLASH_MODEL)
                 response = model.generate_content("Hello, test message")
 
                 result["details"]["text_generation"] = {

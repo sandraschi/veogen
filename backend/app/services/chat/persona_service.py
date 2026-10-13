@@ -230,7 +230,7 @@ class PersonaService:
             import google.generativeai as genai
 
             genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel(settings.GEMINI_FLASH_MODEL)
             background_response = model.generate_content(background_prompt).text
 
             # Parse the response

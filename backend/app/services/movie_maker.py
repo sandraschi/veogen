@@ -501,7 +501,7 @@ Maintain consistent style throughout. Ensure smooth transitions between scenes."
         """Generate video using Gemini API as fallback"""
         try:
             # Use Gemini for video generation (this would be more complex in reality)
-            model = genai.GenerativeModel("gemini-1.5-pro")
+            model = genai.GenerativeModel(settings.GEMINI_PRO_MODEL)
 
             # Create video generation prompt
             video_prompt = f"""

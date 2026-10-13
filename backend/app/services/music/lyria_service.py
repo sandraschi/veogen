@@ -315,7 +315,7 @@ class LyriaService:
         """Generate audio using Gemini API as fallback"""
         try:
             # Use Gemini for music generation (this would be more complex in reality)
-            model = genai.GenerativeModel("gemini-1.5-pro")
+            model = genai.GenerativeModel(settings.GEMINI_PRO_MODEL)
 
             # Create music generation prompt
             music_prompt = f"""
@@ -436,7 +436,7 @@ class LyriaService:
     ) -> Dict[str, Any]:
         """Generate musical composition using AI"""
         try:
-            model = genai.GenerativeModel("gemini-1.5-pro")
+            model = genai.GenerativeModel(settings.GEMINI_PRO_MODEL)
 
             composition_prompt = f"""
             Create a detailed musical composition for this prompt: {prompt}
@@ -475,7 +475,7 @@ class LyriaService:
             return None
 
         try:
-            model = genai.GenerativeModel("gemini-1.5-pro")
+            model = genai.GenerativeModel(settings.GEMINI_PRO_MODEL)
 
             lyrics_prompt = f"""
             Write song lyrics for a {request.style} song with a {request.mood} mood.

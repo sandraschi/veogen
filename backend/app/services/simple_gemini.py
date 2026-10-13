@@ -8,6 +8,8 @@ import os
 
 import google.generativeai as genai
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,20 +30,10 @@ class SimpleGeminiService:
             if api_key and api_key.startswith("AIza"):
                 genai.configure(api_key=api_key)
 
-                # Try the most basic, reliable model first
-                try:
-                    self.model = genai.GenerativeModel("gemini-3.8-flash")
-                    logger.info("Initialized with gemini-3.8-flash")
-                except Exception as e:
-                    logger.warning(f"gemini-3.8-flash failed: {e}")
-                    try:
-                        self.model = genai.GenerativeModel("gemini-3.7-flash")
-                        logger.info("Initialized with gemini-3.7-flash")
-                    except Exception as e2:
-                        logger.warning(f"gemini-3.7-flash failed: {e2}")
-                        # Fallback for heavy reasoning
-                        self.model = genai.GenerativeModel("gemini-3.1-pro-preview")
-                        logger.info("Initialized with gemini-3.1-pro-preview")
+                # GenerativeModel() makes no API call, so a try/except fallback chain
+                # here never fired; the model comes from the config registry instead.
+                self.model = genai.GenerativeModel(settings.GEMINI_FLASH_MODEL)
+                logger.info("Initialized with %s", settings.GEMINI_FLASH_MODEL)
 
                 self.initialized = True
             else:
