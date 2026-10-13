@@ -26,9 +26,8 @@ const LyriaStudio = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          prompt, 
-          genre,
-          model: 'lyria-3'
+          prompt,
+          genre
         })
       });
       

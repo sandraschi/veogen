@@ -43,21 +43,27 @@ class Settings(BaseSettings):
     GOOGLE_CLOUD_LOCATION: str = "us-central1"
     GOOGLE_API_KEY: Optional[str] = None
 
-    # Gemini 3.1 Configuration
+    # Model registry - single source of truth for every Google model ID in the app.
+    # Verified against https://ai.google.dev/gemini-api/docs/models on 2026-10-13.
+    # Shut down there (do not use): gemini-1.5-*, gemini-2.0-flash*, gemini-3-pro-preview,
+    # imagen-4.0-generate. Gemini 2.5 is restricted to existing users.
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_PRO_MODEL: str = "gemini-3.1-pro"
-    GEMINI_FLASH_MODEL: str = "gemini-3.1-flash"
-    GEMINI_TTS_MODEL: str = "gemini-3.1-flash-tts-preview"
+    GEMINI_PRO_MODEL: str = "gemini-3.1-pro-preview"  # complex reasoning
+    GEMINI_FLASH_MODEL: str = "gemini-3.8-flash"  # default text/chat model (stable)
+    GEMINI_FLASH_LITE_MODEL: str = "gemini-3.5-flash-lite"  # cheap, high-volume
+    GEMINI_TTS_MODEL: str = "gemini-3.8-flash-tts"
 
-    # Veo 3.1 Configuration (Video)
-    VEO_MODEL: str = "veo-3.1"
+    # Veo 3.1 (video with synchronized audio)
+    VEO_MODEL: str = "veo-3.1-generate-preview"
+    VEO_LITE_MODEL: str = "veo-3.1-lite-generate-preview"
     VEO_MAX_DURATION: int = 60
 
-    # Lyria 3 Configuration (Music)
-    LYRIA_MODEL: str = "lyria-3-pro-preview"
+    # Lyria (music)
+    LYRIA_MODEL: str = "lyria-3.5"  # full-length tracks
+    LYRIA_CLIP_MODEL: str = "lyria-3-clip-preview"  # clips/loops up to 30 s
 
-    # Imagen 3 Configuration (Nano Banana 2 / Flash Image)
-    IMAGEN_MODEL: str = "gemini-3.1-flash-image-preview"
+    # Image generation/editing (Nano Banana 2; Imagen 4 is shut down)
+    IMAGEN_MODEL: str = "gemini-3.1-flash-image"
 
     # File Storage
     UPLOAD_DIR: str = "uploads"
@@ -104,9 +110,9 @@ class Settings(BaseSettings):
     AUDIOFX_API_BASE_URL: str = "http://localhost:8000"
     AUDIOFX_MODEL: str = "audiofx-default"
     PROMPT_COACH_ENABLED: bool = False
-    PROMPT_COACH_MODEL: str = "gemini-2.5-flash"
+    PROMPT_COACH_MODEL: str = "gemini-3.8-flash"
     SCENE_DESCRIBER_ENABLED: bool = False
-    SCENE_DESCRIBER_MODEL: str = "gemini-2.5-flash"
+    SCENE_DESCRIBER_MODEL: str = "gemini-3.8-flash"
     SYNTHID_DASHBOARD_ENABLED: bool = False
     WORKSPACE_AUTOMATION_ENABLED: bool = False
 
