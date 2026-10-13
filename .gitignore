@@ -1,252 +1,134 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# ---------------------------------------------------------------------------
+# Fleet .gitignore template (mcp-central-docs/standards/GITIGNORE_STANDARDS.md 1b)
+# ---------------------------------------------------------------------------
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage/
-
-# nyc test coverage
-.nyc_output
-
-# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
-.grunt
-
-# Bower dependency directory (https://bower.io/)
-bower_components
-
-# node-waf configuration
-.lock-wscript
-
-# Compiled binary addons (https://nodejs.org/api/addons.html)
-build/Release
-
-# Dependency directories
-jspm_packages/
-
-# TypeScript v1 declaration files
-typings/
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
-.env
-.env.test
-.env.production
-.env.local
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
-# Serverless directories
-.serverless
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# TernJS port file
-.tern-port
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Build output
-dist/
-build/
-*.tsbuildinfo
-
-# Log files
-*.log
-logs/
-
-# Temporary files
-*.tmp
-*.temp
+# Go (not in fleet yet, but when it arrives)
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+go.work
+go.work.sum
 
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
+.venv/
 venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
+env/
 .mypy_cache/
-.dmypy.json
-dmypy.json
+.pytest_cache/
+.ruff_cache/
+
+# Node / webapp
+node_modules/
+**/node_modules/
+.next/
+*.tsbuildinfo
+
+# Rust / Tauri (FLEET: commonly forgotten!)
+target/
+native/target/
+web_sota/src-tauri/target/
+gen/
+
+# Build output
+dist/
+build/
+*.spec
+*.exe
+!run_server.py
+*.mcpb
+
+# MCPB pack staging (exact copy of src/ for packing - never commit)
+mcpb/src/
+mcpb/
+
+# Tauri resources (PyInstaller binaries - gitignored, bundled at build)
+native/resources/*.exe
+native/binaries/*.exe
+
+# Data / DB
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Fleet backup artifacts
+*.bak
+*.bak.*
 
 # Docker
-.dockerignore
+.docker/
 
-# Docker volumes
-postgres_data/
-redis_data/
+# ---------------------------------------------------------------------------
+# veogen-specific
+# ---------------------------------------------------------------------------
 
-# Monitoring data (Loki, Prometheus, etc.)
-monitoring/loki-data/
-monitoring/grafana/dashboards/
-monitoring/prometheus/data/
-monitoring/alertmanager/data/
-monitoring/loki-rules/
-monitoring/rules/
-
-# Private documentation (internal dev notes, not for public)
-docs-private/
-
-# --- Phase 0 purge: secrets, runtime data, vendored clones ---
+# Phase 0 purge (2026-08) + BUG-054: secrets, accounts, mail dumps, runtime data
 credentials/
 accounts/
 sandra_token.txt
 latest_email.eml
 *.eml
 dev_emails/
-backend/dev_emails/
-*.db
-.env.email
-.env.backup
-_archive/
-
 *.db-journal
+/_archive/
 
+# Generated media and scratch
+/outputs/
+/backend/outputs/
+/uploads/
+/backend/uploads/
+/temp/
+/backend/temp/
+*.tmp
+*.temp
+
+# Tests / coverage / Playwright
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+.nyc_output/
+test-results/
+playwright-report/
+.cache/
+.parcel-cache/
+
+# Node / editor leftovers
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+*.swp
+*.swo
+
+# Docker volumes and monitoring data
+.dockerignore
+postgres_data/
+redis_data/
+/monitoring/
+
+# Private documentation (internal dev notes, not for public)
+/docs-private/
