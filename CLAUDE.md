@@ -21,7 +21,7 @@ IDs + a key are configured.
   - `app/mcp_server.py` - FastMCP streamable HTTP surface
 - **Frontend** (`frontend/`): React 18 + Vite + Tailwind + bun on port **11151**.
   - `src/App.js` - routes (29 pages); `src/services/` - API clients
-  - `e2e/smoke.spec.ts` - Playwright suite (6 tests)
+  - `e2e/smoke.spec.ts` - Playwright suite (10 tests)
 - **Ports**: 11150 backend / 11151 frontend (fleet registry).
 - **Tooling**: `uv` (backend deps + lockfile), `bun` (frontend), `just`
   recipes (`serve`, `dev`, `test`, `lint`, `e2e`), `ruff` (correctness
@@ -50,8 +50,15 @@ just e2e            # Playwright smoke (backend+frontend auto-started)
 
 ## Known limits
 
-- `google.generativeai` (legacy SDK) powers the chat engine and is EOL -
-  migration to `google.genai` is future work.
-- Media generation (video/image/music) needs current model IDs + a valid
-  key; see `backend/.env.example`.
+- Model IDs: single registry in `backend/app/config.py` (verified 2026-10-13).
+  Never hardcode a model ID in a service; reference `settings.*_MODEL`.
+- Text generation goes through `app/services/llm_providers.py` (local + cloud,
+  selection in Settings). Media (Veo, TTS, Lyria) uses `google-genai` directly.
+- Films: `app/services/movie_pipeline.py` (plan -> produce, confirm_cost gate).
+  Single-clip `generate_video` / `generate_image` / `generate_music` MCP tools
+  and the old per-feature media endpoints are still honest stubs.
+- Some legacy services still import `google.generativeai` (EOL); new code uses
+  `google.genai` or the provider layer.
+- `frontend/src/components/movie/MovieMaker.jsx` is unused legacy (calls
+  endpoints that never existed); the route renders `pages/MovieMakerPage.js`.
 - `llms-full.txt` is a generated corpus - regenerate after API changes.

@@ -1,5 +1,38 @@
 # Changelog
 
+## [3.2.0] - 2026-10-13
+
+### Models
+- One model registry in `backend/app/config.py`, verified against
+  ai.google.dev/gemini-api/docs/models: `gemini-3.8-flash` (default text),
+  `gemini-3.1-pro-preview`, `gemini-3.5-flash-lite`, `gemini-3.8-flash-tts`,
+  `veo-3.1-generate-preview` / `veo-3.1-lite-generate-preview`, `lyria-3.5` /
+  `lyria-3-clip-preview`, `gemini-3.1-flash-image`. Shut-down IDs (1.5, 2.0,
+  3.0, Imagen 4) removed from all services.
+- `google-genai` >= 2.25 (2.30.1 locked) for the Interactions API.
+
+### Local + cloud LLM
+- Provider layer (fleet contract, ported from arxiv-mcp): Ollama, LM Studio,
+  vLLM, Google, OpenAI, Anthropic, DeepSeek, OpenRouter, Meta, Groq, Mistral.
+  Routes `/api/llm/*` + `/api/settings/llm`; keys write-only.
+- Chat, movie scripts, book, code, translation and the MCP script tool use the
+  provider selected in Settings (default Gemini Flash).
+- Settings: "Text AI (local + cloud)" panel with provider cards.
+
+### Movie production workflow
+- Plan (LLM shot list + priced estimate) -> produce (Veo clips, TTS narration,
+  Lyria score, ffmpeg stitch) as a background job with progress, cancel and
+  resume; produce requires `confirm_cost`. REST `/api/v1/movie/productions*`,
+  MCP `movie_production`, rewritten Movie Maker page.
+
+### Fixes
+- Lyria provider returned a fixed sample URL as success; movie script fallback
+  returned a canned template; legacy Veo/Gemini video path wrote placeholder
+  bytes as `.mp4`. All removed - failures are reported.
+- `book` / `code` endpoints awaited a sync method (TypeError on every call).
+- `.gitignore` to fleet standard; `frontend/biome.json` key fixed so the lint
+  gate runs (reports 389 pre-existing findings).
+
 ## [3.1.1-salvage] - 2026-08-04
 
 ### Salvage (Phases 0-4)

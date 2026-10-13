@@ -125,4 +125,33 @@ test.describe('Fleet Audit - veogen', () => {
         await expect(page.getByTestId('llm-model-select')).toBeVisible();
         await expect(page.getByTestId('llm-key-google')).toHaveValue('');
     });
+
+    test('movie maker: form + live priced estimate; produce is gated server-side', async ({ page, request }) => {
+        const est = await request.post(`${BACKEND}/api/v1/movie/productions/estimate`, {
+            data: { title: 'E2E', concept: 'A fox greets the first morning of spring.', scene_count: 4, narration: false },
+        });
+        expect((await est.json()).total).toBe(1.68);
+        const anon = await request.post(`${BACKEND}/api/v1/movie/productions`, {
+            data: { title: 'E2E', concept: 'A fox greets the first morning of spring.', produce: true, confirm_cost: true },
+        });
+        expect([401, 403]).toContain(anon.status());
+
+        const email = `e2e-movie-${Date.now()}@example.com`;
+        await request.post(`${BACKEND}/api/v1/enhanced-auth/register`, {
+            data: { email, password: 'TestPass123!', username: `e2emovie${Date.now()}` },
+        });
+        const login = await request.post(`${BACKEND}/api/v1/enhanced-auth/login`, {
+            data: { email, password: 'TestPass123!' },
+        });
+        const { access_token } = await login.json();
+        await page.goto('/');
+        await page.evaluate((t) => localStorage.setItem('token', t), access_token);
+        await page.goto('/moviemaker');
+        await expect(page.getByTestId('movie-form')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByTestId('movie-estimate')).toContainText('$', { timeout: 10000 });
+        const before = await page.getByTestId('movie-estimate').textContent();
+        await page.getByRole('combobox').filter({ hasText: 'Lite' }).selectOption('standard');
+        await expect(page.getByTestId('movie-estimate')).not.toHaveText(before ?? '', { timeout: 10000 });
+        await expect(page.getByTestId('movie-plan')).toBeEnabled();
+    });
 });
