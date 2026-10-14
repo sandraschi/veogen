@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { ChartBarIcon, CircleStackIcon, CpuChipIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import { CircleStackIcon, ChartBarIcon, CpuChipIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
 
 const DataInsightsPage = () => {
   return (

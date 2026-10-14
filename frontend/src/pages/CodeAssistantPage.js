@@ -1,21 +1,23 @@
-import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  CodeBracketIcon,
-  PlayIcon,
-  DocumentDuplicateIcon,
+import {
   BugAntIcon,
-  LightBulbIcon,
-  SparklesIcon,
+  CodeBracketIcon,
   CpuChipIcon,
+  DocumentDuplicateIcon,
+  LightBulbIcon,
+  PlayIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import React, { useState, useRef } from 'react';
 
 const CodeAssistantPage = () => {
-  const [code, setCode] = useState('// Welcome to AI Code Assistant\n// Type your code here or ask for help\n\nfunction fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}\n\nconsole.log(fibonacci(10));');
+  const [code, setCode] = useState(
+    '// Welcome to AI Code Assistant\n// Type your code here or ask for help\n\nfunction fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}\n\nconsole.log(fibonacci(10));',
+  );
   const [language, setLanguage] = useState('javascript');
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
-  const [activeTab, setActiveTab] = useState('editor');
+  const [_activeTab, _setActiveTab] = useState('editor');
 
   const languages = [
     { id: 'javascript', name: 'JavaScript', icon: '🟨' },
@@ -24,26 +26,28 @@ const CodeAssistantPage = () => {
     { id: 'java', name: 'Java', icon: '☕' },
     { id: 'cpp', name: 'C++', icon: '⚡' },
     { id: 'html', name: 'HTML', icon: '🌐' },
-    { id: 'css', name: 'CSS', icon: '🎨' }
+    { id: 'css', name: 'CSS', icon: '🎨' },
   ];
 
   const runCode = async () => {
     setIsRunning(true);
     setOutput('Running code...\n');
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     if (language === 'javascript' && code.includes('fibonacci')) {
       setOutput('Running code...\n55\nExecution completed successfully!');
     } else {
       setOutput('Running code...\nCode executed successfully!');
     }
-    
+
     setIsRunning(false);
   };
 
   const analyzeCode = async () => {
-    alert('AI Code Analysis:\n\n• Complexity: Medium\n• Performance: Good\n• Security: Secure\n• Maintainability: High\n\nSuggestions:\n• Consider adding input validation\n• Add comments for complex logic\n• Extract magic numbers to constants');
+    alert(
+      'AI Code Analysis:\n\n• Complexity: Medium\n• Performance: Good\n• Security: Secure\n• Maintainability: High\n\nSuggestions:\n• Consider adding input validation\n• Add comments for complex logic\n• Extract magic numbers to constants',
+    );
   };
 
   return (
@@ -60,7 +64,11 @@ const CodeAssistantPage = () => {
         </motion.div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:col-span-2 space-y-6">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-2 space-y-6"
+          >
             <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-4 border border-white/10">
               <div className="flex items-center justify-between mb-4">
                 <select
@@ -76,6 +84,7 @@ const CodeAssistantPage = () => {
                 </select>
                 <div className="flex items-center space-x-2">
                   <button
+                    type="button"
                     onClick={analyzeCode}
                     className="px-3 py-2 bg-purple-600 hover:bg-purple-700 rounded transition-colors text-sm"
                   >
@@ -83,12 +92,11 @@ const CodeAssistantPage = () => {
                     Analyze
                   </button>
                   <button
+                    type="button"
                     onClick={runCode}
                     disabled={isRunning}
                     className={`px-4 py-2 rounded transition-colors text-sm ${
-                      isRunning
-                        ? 'bg-gray-600 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-700'
+                      isRunning ? 'bg-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
                     }`}
                   >
                     <PlayIcon className="w-4 h-4 inline mr-1" />
@@ -100,11 +108,13 @@ const CodeAssistantPage = () => {
               <div className="bg-gray-900/80 rounded-lg border border-gray-700">
                 <div className="flex items-center justify-between p-3 border-b border-gray-700">
                   <div className="flex space-x-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-red-500 rounded-full" />
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+                    <div className="w-3 h-3 bg-green-500 rounded-full" />
                   </div>
-                  <span className="text-xs text-gray-400">{language}.{language === 'python' ? 'py' : 'js'}</span>
+                  <span className="text-xs text-gray-400">
+                    {language}.{language === 'python' ? 'py' : 'js'}
+                  </span>
                 </div>
                 <textarea
                   value={code}
@@ -149,15 +159,24 @@ const CodeAssistantPage = () => {
             <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-white/10">
               <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
               <div className="space-y-2">
-                <button className="w-full p-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all text-sm">
+                <button
+                  type="button"
+                  className="w-full p-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all text-sm"
+                >
                   <CpuChipIcon className="w-4 h-4 inline mr-2" />
                   Optimize Code
                 </button>
-                <button className="w-full p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all text-sm">
+                <button
+                  type="button"
+                  className="w-full p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all text-sm"
+                >
                   <BugAntIcon className="w-4 h-4 inline mr-2" />
                   Debug Issues
                 </button>
-                <button className="w-full p-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all text-sm">
+                <button
+                  type="button"
+                  className="w-full p-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all text-sm"
+                >
                   <DocumentDuplicateIcon className="w-4 h-4 inline mr-2" />
                   Generate Tests
                 </button>

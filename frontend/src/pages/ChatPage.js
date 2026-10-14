@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   ChatBubbleLeftRightIcon,
   PaperAirplaneIcon,
   SparklesIcon,
   SpeakerWaveIcon,
   StopIcon,
 } from '@heroicons/react/24/outline';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 
 const ChatPage = () => {
@@ -21,6 +21,7 @@ const ChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: messages is the intended trigger; scrollToBottom only touches a ref
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -32,10 +33,10 @@ const ChatPage = () => {
       id: Date.now(),
       type: 'user',
       content: inputMessage,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInputMessage('');
     setIsTyping(true);
 
@@ -44,25 +45,25 @@ const ChatPage = () => {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: inputMessage })
+        body: JSON.stringify({ message: inputMessage }),
       });
-      
+
       const data = await response.json();
-      
+
       const aiMsg = {
         id: Date.now() + 1,
         type: 'assistant',
         content: data.message,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, aiMsg]);
-      
+      setMessages((prev) => [...prev, aiMsg]);
+
       // Auto-trigger TTS if enabled
       if (data.audio_url) {
         handlePlayTTS(data.audio_url);
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to get response from Gemini 3.1');
     } finally {
       setIsTyping(false);
@@ -76,7 +77,7 @@ const ChatPage = () => {
         audioRef.current.src = audioUrl;
         await audioRef.current.play();
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Flash TTS playback failed');
     } finally {
       setIsSpeaking(false);
@@ -85,8 +86,10 @@ const ChatPage = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] max-w-5xl mx-auto">
-      <audio ref={audioRef} onEnded={() => setIsSpeaking(false)} hidden />
-      
+      <audio ref={audioRef} onEnded={() => setIsSpeaking(false)} hidden>
+        <track kind="captions" />
+      </audio>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -108,8 +111,8 @@ const ChatPage = () => {
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
           <AnimatePresence>
             {messages.length === 0 && (
-              <motion.div 
-                initial={{ opacity: 0 }} 
+              <motion.div
+                initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="h-full flex flex-col items-center justify-center text-center opacity-40"
               >
@@ -124,16 +127,18 @@ const ChatPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${m.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[80%] p-4 rounded-2xl ${
-                  m.type === 'user' 
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shadow-purple-900/20' 
-                    : 'bg-white/5 border border-white/10'
-                }`}>
+                <div
+                  className={`max-w-[80%] p-4 rounded-2xl ${
+                    m.type === 'user'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shadow-purple-900/20'
+                      : 'bg-white/5 border border-white/10'
+                  }`}
+                >
                   <p className="text-sm leading-relaxed">{m.content}</p>
                   <div className="flex items-center justify-between mt-2 opacity-50 text-[10px]">
                     <span>{m.timestamp.toLocaleTimeString()}</span>
                     {m.type === 'assistant' && (
-                      <button className="hover:text-purple-400 transition-colors">
+                      <button type="button" className="hover:text-purple-400 transition-colors">
                         <SpeakerWaveIcon className="w-3 h-3" />
                       </button>
                     )}
@@ -163,7 +168,8 @@ const ChatPage = () => {
               placeholder="Message Gemini 3.1..."
               className="flex-1 glass-input"
             />
-            <button 
+            <button
+              type="button"
               onClick={handleSendMessage}
               disabled={!inputMessage.trim() || isTyping}
               className="glass-button-primary !p-3 rounded-xl"
@@ -178,4 +184,3 @@ const ChatPage = () => {
 };
 
 export default ChatPage;
-

@@ -1,27 +1,27 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  ChartBarIcon,
-  ArrowTrendingUpIcon,
+import {
   ArrowTrendingDownIcon,
-  CalendarIcon,
-  GlobeAltIcon,
+  ArrowTrendingUpIcon,
   BoltIcon,
-  CpuChipIcon,
   BuildingOfficeIcon,
-  CurrencyDollarIcon,
-  ClockIcon,
-  SparklesIcon,
-  ExclamationTriangleIcon,
+  CalendarIcon,
+  ChartBarIcon,
   CheckCircleIcon,
+  ClockIcon,
+  CpuChipIcon,
+  CurrencyDollarIcon,
+  ExclamationTriangleIcon,
+  GlobeAltIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import React, { useState } from 'react';
 
 const FuturePredictorPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('technology');
-  const [timeframe, setTimeframe] = useState('1year');
+  const [_timeframe, _setTimeframe] = useState('1year');
   const [predictions, setPredictions] = useState([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [customQuery, setCustomQuery] = useState('');
+  const [_customQuery, _setCustomQuery] = useState('');
 
   const categories = [
     { id: 'technology', name: 'Technology', icon: CpuChipIcon, color: 'from-blue-500 to-cyan-500' },
@@ -29,20 +29,20 @@ const FuturePredictorPage = () => {
     { id: 'economy', name: 'Economy', icon: CurrencyDollarIcon, color: 'from-yellow-500 to-orange-500' },
     { id: 'society', name: 'Society', icon: GlobeAltIcon, color: 'from-purple-500 to-pink-500' },
     { id: 'environment', name: 'Environment', icon: BoltIcon, color: 'from-green-600 to-teal-500' },
-    { id: 'markets', name: 'Markets', icon: ChartBarIcon, color: 'from-red-500 to-rose-500' }
+    { id: 'markets', name: 'Markets', icon: ChartBarIcon, color: 'from-red-500 to-rose-500' },
   ];
 
-  const timeframes = [
+  const _timeframes = [
     { id: '6months', name: '6 Months', description: 'Short-term predictions' },
     { id: '1year', name: '1 Year', description: 'Medium-term trends' },
     { id: '3years', name: '3 Years', description: 'Long-term forecasts' },
     { id: '5years', name: '5 Years', description: 'Strategic planning horizon' },
-    { id: '10years', name: '10 Years', description: 'Revolutionary changes' }
+    { id: '10years', name: '10 Years', description: 'Revolutionary changes' },
   ];
 
   const generatePredictions = async () => {
     setIsAnalyzing(true);
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
     setPredictions([
       {
         id: 1,
@@ -52,8 +52,8 @@ const FuturePredictorPage = () => {
         impact: 'High',
         description: 'AI video generation tools will become widely adopted by content creators and businesses.',
         factors: ['Improving quality', 'Decreasing costs', 'User-friendly interfaces'],
-        confidence: 'Very High'
-      }
+        confidence: 'Very High',
+      },
     ]);
     setIsAnalyzing(false);
   };
@@ -61,11 +61,7 @@ const FuturePredictorPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-800 text-white">
       <div className="container mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <SparklesIcon className="w-12 h-12 text-indigo-400 mr-4" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
@@ -90,6 +86,7 @@ const FuturePredictorPage = () => {
                   const IconComponent = category.icon;
                   return (
                     <button
+                      type="button"
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
                       className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all ${
@@ -109,6 +106,7 @@ const FuturePredictorPage = () => {
             </div>
 
             <button
+              type="button"
               onClick={generatePredictions}
               disabled={isAnalyzing}
               className={`w-full py-4 rounded-lg font-semibold transition-all ${
@@ -141,7 +139,9 @@ const FuturePredictorPage = () => {
                 <div className="text-center py-12">
                   <SparklesIcon className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                   <h3 className="text-xl font-medium text-gray-400 mb-2">Ready for Future Analysis</h3>
-                  <p className="text-gray-500">Select a category and generate predictions to see AI-powered forecasts.</p>
+                  <p className="text-gray-500">
+                    Select a category and generate predictions to see AI-powered forecasts.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-6">

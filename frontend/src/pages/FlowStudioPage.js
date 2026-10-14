@@ -1,11 +1,7 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import {
-  fetchFlowProjects,
-  triggerSceneRender,
-  describeScene,
-} from '../services/flowService';
+import { describeScene, fetchFlowProjects, triggerSceneRender } from '../services/flowService';
 
 const FlowStudioPage = () => {
   const queryClient = useQueryClient();
@@ -17,27 +13,21 @@ const FlowStudioPage = () => {
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) || projects[0],
-    [projects, selectedProjectId]
+    [projects, selectedProjectId],
   );
 
-  const launchMutation = useMutation(
-    ({ projectId, sceneId }) => triggerSceneRender(projectId, sceneId),
-    {
-      onSuccess: () => {
-        toast.success('Render started');
-        queryClient.invalidateQueries(['flow-projects']);
-      },
-      onError: (error) => toast.error(error.response?.data?.detail || 'Failed to launch render'),
-    }
-  );
+  const launchMutation = useMutation(({ projectId, sceneId }) => triggerSceneRender(projectId, sceneId), {
+    onSuccess: () => {
+      toast.success('Render started');
+      queryClient.invalidateQueries(['flow-projects']);
+    },
+    onError: (error) => toast.error(error.response?.data?.detail || 'Failed to launch render'),
+  });
 
-  const describeMutation = useMutation(
-    ({ projectId, sceneId }) => describeScene(projectId, sceneId),
-    {
-      onSuccess: (data) => toast.success(`Caption ready: ${data.caption.slice(0, 40)}...`),
-      onError: (error) => toast.error(error.response?.data?.detail || 'Caption failed'),
-    }
-  );
+  const describeMutation = useMutation(({ projectId, sceneId }) => describeScene(projectId, sceneId), {
+    onSuccess: (data) => toast.success(`Caption ready: ${data.caption.slice(0, 40)}...`),
+    onError: (error) => toast.error(error.response?.data?.detail || 'Caption failed'),
+  });
 
   if (isLoading) {
     return <div className="p-6 text-white">Loading Flow projects...</div>;
@@ -52,9 +42,7 @@ const FlowStudioPage = () => {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Flow Studio</h1>
-          <p className="text-gray-400">
-            Manage Flow scenes, launch renders, and keep approvals on track.
-          </p>
+          <p className="text-gray-400">Manage Flow scenes, launch renders, and keep approvals on track.</p>
         </div>
         <select
           value={selectedProject?.id}
@@ -112,17 +100,15 @@ const FlowStudioPage = () => {
 
                 <div className="flex flex-wrap gap-2 mt-4">
                   <button
-                    onClick={() =>
-                      launchMutation.mutate({ projectId: selectedProject.id, sceneId: scene.id })
-                    }
+                    type="button"
+                    onClick={() => launchMutation.mutate({ projectId: selectedProject.id, sceneId: scene.id })}
                     className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm"
                   >
                     Launch Render
                   </button>
                   <button
-                    onClick={() =>
-                      describeMutation.mutate({ projectId: selectedProject.id, sceneId: scene.id })
-                    }
+                    type="button"
+                    onClick={() => describeMutation.mutate({ projectId: selectedProject.id, sceneId: scene.id })}
                     className="px-4 py-2 rounded-lg border border-gray-700 text-sm text-gray-200"
                   >
                     Describe Scene
@@ -161,8 +147,8 @@ const FlowStudioPage = () => {
                   <p className="font-semibold text-white">Captions</p>
                   {scene.captions?.length ? (
                     <ul className="space-y-1">
-                      {scene.captions.map((caption, index) => (
-                        <li key={index} className="text-gray-400">
+                      {scene.captions.map((caption) => (
+                        <li key={caption} className="text-gray-400">
                           {caption}
                         </li>
                       ))}
@@ -181,4 +167,3 @@ const FlowStudioPage = () => {
 };
 
 export default FlowStudioPage;
-

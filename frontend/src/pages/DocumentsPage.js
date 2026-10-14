@@ -1,22 +1,22 @@
-import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  DocumentTextIcon,
+import {
+  CalendarIcon,
+  ChartBarIcon,
   CloudArrowUpIcon,
+  DocumentArrowDownIcon,
   DocumentIcon,
-  PlusIcon,
+  DocumentTextIcon,
+  EyeIcon,
   FolderIcon,
   MagnifyingGlassIcon,
-  EyeIcon,
   PencilIcon,
-  TrashIcon,
+  PlusIcon,
   ShareIcon,
-  DocumentArrowDownIcon,
-  ChartBarIcon,
   TagIcon,
-  CalendarIcon,
+  TrashIcon,
   UserIcon,
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import React, { useState, useRef } from 'react';
 
 const DocumentsPage = () => {
   const [documents, setDocuments] = useState([
@@ -28,7 +28,7 @@ const DocumentsPage = () => {
       modified: '2024-01-15',
       tags: ['Project', 'Proposal', 'Business'],
       author: 'John Doe',
-      status: 'final'
+      status: 'final',
     },
     {
       id: 2,
@@ -38,7 +38,7 @@ const DocumentsPage = () => {
       modified: '2024-01-14',
       tags: ['Meeting', 'Notes'],
       author: 'Jane Smith',
-      status: 'draft'
+      status: 'draft',
     },
     {
       id: 3,
@@ -48,11 +48,11 @@ const DocumentsPage = () => {
       modified: '2024-01-13',
       tags: ['Research', 'Analysis'],
       author: 'Alex Johnson',
-      status: 'review'
-    }
+      status: 'review',
+    },
   ]);
-  
-  const [selectedDocument, setSelectedDocument] = useState(null);
+
+  const [_selectedDocument, _setSelectedDocument] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
@@ -64,14 +64,14 @@ const DocumentsPage = () => {
     { id: 'projects', name: 'Projects', count: 8 },
     { id: 'reports', name: 'Reports', count: 3 },
     { id: 'drafts', name: 'Drafts', count: 2 },
-    { id: 'shared', name: 'Shared', count: 6 }
+    { id: 'shared', name: 'Shared', count: 6 },
   ];
 
-  const documentTypes = ['pdf', 'docx', 'txt', 'pptx', 'xlsx'];
+  const _documentTypes = ['pdf', 'docx', 'txt', 'pptx', 'xlsx'];
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
-    files.forEach(file => {
+    for (const file of files) {
       const newDoc = {
         id: Date.now() + Math.random(),
         name: file.name,
@@ -80,29 +80,41 @@ const DocumentsPage = () => {
         modified: new Date().toISOString().split('T')[0],
         tags: ['New'],
         author: 'You',
-        status: 'draft'
+        status: 'draft',
       };
-      setDocuments(prev => [newDoc, ...prev]);
-    });
+      setDocuments((prev) => [newDoc, ...prev]);
+    }
   };
 
   const generateSummary = async (doc) => {
     // Simulate AI document analysis
-    alert(`Analyzing "${doc.name}" with AI...\n\nSummary: This document contains important information about ${doc.tags.join(', ').toLowerCase()}. Key insights and recommendations have been identified.`);
+    alert(
+      `Analyzing "${doc.name}" with AI...\n\nSummary: This document contains important information about ${doc.tags
+        .join(', ')
+        .toLowerCase()}. Key insights and recommendations have been identified.`,
+    );
   };
 
   const analyzeContent = async (doc) => {
     // Simulate AI content analysis
-    alert(`Deep content analysis for "${doc.name}":\n\n• Document type: ${doc.type.toUpperCase()}\n• Key themes: ${doc.tags.join(', ')}\n• Sentiment: Professional\n• Readability: High\n• Action items: 3 identified`);
+    alert(
+      `Deep content analysis for "${
+        doc.name
+      }":\n\n• Document type: ${doc.type.toUpperCase()}\n• Key themes: ${doc.tags.join(
+        ', ',
+      )}\n• Sentiment: Professional\n• Readability: High\n• Action items: 3 identified`,
+    );
   };
 
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesFolder = selectedFolder === 'all' || 
-                         (selectedFolder === 'recent' && new Date(doc.modified) > new Date(Date.now() - 7*24*60*60*1000)) ||
-                         (selectedFolder === 'drafts' && doc.status === 'draft') ||
-                         doc.tags.some(tag => tag.toLowerCase().includes(selectedFolder));
+  const filteredDocuments = documents.filter((doc) => {
+    const matchesSearch =
+      doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesFolder =
+      selectedFolder === 'all' ||
+      (selectedFolder === 'recent' && new Date(doc.modified) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
+      (selectedFolder === 'drafts' && doc.status === 'draft') ||
+      doc.tags.some((tag) => tag.toLowerCase().includes(selectedFolder));
     return matchesSearch && matchesFolder;
   });
 
@@ -110,20 +122,14 @@ const DocumentsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-800 text-white">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <DocumentTextIcon className="w-12 h-12 text-indigo-400 mr-4" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
               AI Document Manager
             </h1>
           </div>
-          <p className="text-xl text-gray-300">
-            Intelligent document organization, analysis, and insights
-          </p>
+          <p className="text-xl text-gray-300">Intelligent document organization, analysis, and insights</p>
         </motion.div>
 
         <div className="grid lg:grid-cols-4 gap-6">
@@ -144,6 +150,7 @@ const DocumentsPage = () => {
                 className="hidden"
               />
               <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full p-4 border-2 border-dashed border-gray-600 rounded-lg hover:border-indigo-500 transition-colors text-center"
               >
@@ -158,6 +165,7 @@ const DocumentsPage = () => {
               <div className="space-y-2">
                 {folders.map((folder) => (
                   <button
+                    type="button"
                     key={folder.id}
                     onClick={() => setSelectedFolder(folder.id)}
                     className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
@@ -180,15 +188,24 @@ const DocumentsPage = () => {
             <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-white/10">
               <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
               <div className="space-y-2">
-                <button className="w-full p-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all text-sm">
+                <button
+                  type="button"
+                  className="w-full p-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all text-sm"
+                >
                   <PlusIcon className="w-4 h-4 inline mr-2" />
                   New Document
                 </button>
-                <button className="w-full p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all text-sm">
+                <button
+                  type="button"
+                  className="w-full p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all text-sm"
+                >
                   <ChartBarIcon className="w-4 h-4 inline mr-2" />
                   Analytics Report
                 </button>
-                <button className="w-full p-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all text-sm">
+                <button
+                  type="button"
+                  className="w-full p-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all text-sm"
+                >
                   <DocumentArrowDownIcon className="w-4 h-4 inline mr-2" />
                   Batch Export
                 </button>
@@ -217,12 +234,14 @@ const DocumentsPage = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
+                    type="button"
                     onClick={() => setViewMode('grid')}
                     className={`p-2 rounded ${viewMode === 'grid' ? 'bg-indigo-500' : 'bg-gray-600'}`}
                   >
                     <DocumentIcon className="w-4 h-4" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded ${viewMode === 'list' ? 'bg-indigo-500' : 'bg-gray-600'}`}
                   >
@@ -230,7 +249,7 @@ const DocumentsPage = () => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between text-sm text-gray-400">
                 <span>{filteredDocuments.length} documents found</span>
                 <div className="flex items-center space-x-4">
@@ -246,7 +265,11 @@ const DocumentsPage = () => {
             </div>
 
             {/* Documents Grid/List */}
-            <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+            <div
+              className={`grid gap-4 ${
+                viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'
+              }`}
+            >
               {filteredDocuments.map((doc) => (
                 <motion.div
                   key={doc.id}
@@ -257,12 +280,17 @@ const DocumentsPage = () => {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-lg ${
-                        doc.type === 'pdf' ? 'bg-red-500/20 text-red-400' :
-                        doc.type === 'docx' ? 'bg-blue-500/20 text-blue-400' :
-                        doc.type === 'txt' ? 'bg-gray-500/20 text-gray-400' :
-                        'bg-green-500/20 text-green-400'
-                      }`}>
+                      <div
+                        className={`p-2 rounded-lg ${
+                          doc.type === 'pdf'
+                            ? 'bg-red-500/20 text-red-400'
+                            : doc.type === 'docx'
+                              ? 'bg-blue-500/20 text-blue-400'
+                              : doc.type === 'txt'
+                                ? 'bg-gray-500/20 text-gray-400'
+                                : 'bg-green-500/20 text-green-400'
+                        }`}
+                      >
                         <DocumentIcon className="w-5 h-5" />
                       </div>
                       <div>
@@ -276,18 +304,22 @@ const DocumentsPage = () => {
                         </div>
                       </div>
                     </div>
-                    <div className={`px-2 py-1 rounded text-xs ${
-                      doc.status === 'final' ? 'bg-green-500/20 text-green-400' :
-                      doc.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-blue-500/20 text-blue-400'
-                    }`}>
+                    <div
+                      className={`px-2 py-1 rounded text-xs ${
+                        doc.status === 'final'
+                          ? 'bg-green-500/20 text-green-400'
+                          : doc.status === 'draft'
+                            ? 'bg-yellow-500/20 text-yellow-400'
+                            : 'bg-blue-500/20 text-blue-400'
+                      }`}
+                    >
                       {doc.status}
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-1 mb-4">
-                    {doc.tags.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-gray-700/50 rounded text-xs text-gray-300">
+                    {doc.tags.map((tag) => (
+                      <span key={tag} className="px-2 py-1 bg-gray-700/50 rounded text-xs text-gray-300">
                         {tag}
                       </span>
                     ))}
@@ -306,24 +338,26 @@ const DocumentsPage = () => {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <button className="p-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors">
+                      <button type="button" className="p-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors">
                         <EyeIcon className="w-4 h-4" />
                       </button>
-                      <button className="p-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors">
+                      <button type="button" className="p-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors">
                         <PencilIcon className="w-4 h-4" />
                       </button>
-                      <button className="p-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors">
+                      <button type="button" className="p-1 bg-gray-700 rounded hover:bg-gray-600 transition-colors">
                         <ShareIcon className="w-4 h-4" />
                       </button>
                     </div>
                     <div className="flex items-center space-x-1">
                       <button
+                        type="button"
                         onClick={() => generateSummary(doc)}
                         className="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 rounded text-xs transition-colors"
                       >
                         AI Summary
                       </button>
                       <button
+                        type="button"
                         onClick={() => analyzeContent(doc)}
                         className="px-2 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs transition-colors"
                       >
