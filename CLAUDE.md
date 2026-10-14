@@ -59,6 +59,7 @@ just e2e            # Playwright smoke (backend+frontend auto-started)
   and the old per-feature media endpoints are still honest stubs.
 - Some legacy services still import `google.generativeai` (EOL); new code uses
   `google.genai` or the provider layer.
-- `frontend/src/components/movie/MovieMaker.jsx` is unused legacy (calls
-  endpoints that never existed); the route renders `pages/MovieMakerPage.js`.
+- The Movie Maker route renders `pages/MovieMakerPage.js` (the legacy
+  `components/movie/MovieMaker.jsx`, which called endpoints that never existed,
+  was removed 2026-10-14).
 - `llms-full.txt` is a generated corpus - regenerate after API changes.
