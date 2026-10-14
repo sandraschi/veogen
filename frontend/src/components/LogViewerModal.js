@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  XMarkIcon,
+  ArrowDownTrayIcon,
   DocumentTextIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
-  ArrowDownTrayIcon,
-  PlayIcon,
   PauseIcon,
+  PlayIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
 
 const LogViewerModal = ({ isOpen, onClose }) => {
   const [logs, setLogs] = useState([]);
@@ -17,8 +17,8 @@ const LogViewerModal = ({ isOpen, onClose }) => {
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [selectedComponent, setSelectedComponent] = useState('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(2000);
-  
+  const [refreshInterval, _setRefreshInterval] = useState(2000);
+
   const logContainerRef = useRef(null);
   const intervalRef = useRef(null);
 
@@ -34,37 +34,33 @@ const LogViewerModal = ({ isOpen, onClose }) => {
       if (searchTerm) params.append('search', searchTerm);
       params.append('limit', '1000');
 
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/v1/logs/?${params}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/logs/?${params}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch logs');
       }
 
       const data = await response.json();
-      
+
       // Transform API response to match our LogEntry format
-      const transformedLogs = data.logs.map(log => ({
+      const transformedLogs = data.logs.map((log) => ({
         id: log.id,
         timestamp: log.timestamp,
         level: log.level,
         component: log.component,
         message: log.message,
-        details: log.details
+        details: log.details,
       }));
 
       setLogs(transformedLogs);
-      
     } catch (error) {
       console.error('Failed to fetch logs:', error);
-      
+
       // Fallback to a single error log entry
       const errorLog = {
         id: Date.now(),
@@ -72,13 +68,14 @@ const LogViewerModal = ({ isOpen, onClose }) => {
         level: 'error',
         component: 'log_viewer',
         message: `Failed to fetch logs: ${error.message}`,
-        details: { error: error.toString() }
+        details: { error: error.toString() },
       };
-      
+
       setLogs([errorLog]);
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-subscribe on open/autoRefresh/interval only; fetchLogs and the start/stop helpers are recreated every render and read current state
   useEffect(() => {
     if (isOpen) {
       fetchLogs();
@@ -92,16 +89,19 @@ const LogViewerModal = ({ isOpen, onClose }) => {
   }, [isOpen, autoRefresh, refreshInterval]);
 
   // Refetch logs when filters change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refetch on filter changes only; fetchLogs is recreated every render and reads these filters, and open/close is handled by the effect above
   useEffect(() => {
     if (isOpen) {
       fetchLogs();
     }
   }, [selectedLevel, selectedComponent, searchTerm]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: logs is the intended trigger; filterLogs reads logs and the filters through its closure
   useEffect(() => {
     filterLogs();
   }, [logs]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: filteredLogs is the intended scroll trigger; the effect only touches a ref
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
@@ -129,25 +129,30 @@ const LogViewerModal = ({ isOpen, onClose }) => {
 
   const getLevelColor = (level) => {
     switch (level) {
-      case 'error': return 'text-red-400 bg-red-500/10';
-      case 'warning': return 'text-yellow-400 bg-yellow-500/10';
-      case 'info': return 'text-blue-400 bg-blue-500/10';
-      case 'debug': return 'text-gray-400 bg-gray-500/10';
-      default: return 'text-gray-400 bg-gray-500/10';
+      case 'error':
+        return 'text-red-400 bg-red-500/10';
+      case 'warning':
+        return 'text-yellow-400 bg-yellow-500/10';
+      case 'info':
+        return 'text-blue-400 bg-blue-500/10';
+      case 'debug':
+        return 'text-gray-400 bg-gray-500/10';
+      default:
+        return 'text-gray-400 bg-gray-500/10';
     }
   };
 
   const exportLogs = () => {
-    const logData = filteredLogs.map(log => ({
+    const logData = filteredLogs.map((log) => ({
       timestamp: log.timestamp,
       level: log.level,
       component: log.component,
       message: log.message,
-      details: log.details
+      details: log.details,
     }));
 
     const blob = new Blob([JSON.stringify(logData, null, 2)], {
-      type: 'application/json'
+      type: 'application/json',
     });
 
     const url = URL.createObjectURL(blob);
@@ -191,6 +196,7 @@ const LogViewerModal = ({ isOpen, onClose }) => {
               </div>
 
               <button
+                type="button"
                 onClick={onClose}
                 className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
               >
@@ -220,7 +226,7 @@ const LogViewerModal = ({ isOpen, onClose }) => {
                     onChange={(e) => setSelectedLevel(e.target.value)}
                     className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
-                    {logLevels.map(level => (
+                    {logLevels.map((level) => (
                       <option key={level} value={level} className="bg-gray-800">
                         {level.charAt(0).toUpperCase() + level.slice(1)}
                       </option>
@@ -233,7 +239,7 @@ const LogViewerModal = ({ isOpen, onClose }) => {
                     onChange={(e) => setSelectedComponent(e.target.value)}
                     className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
-                    {components.map(component => (
+                    {components.map((component) => (
                       <option key={component} value={component} className="bg-gray-800">
                         {component.charAt(0).toUpperCase() + component.slice(1)}
                       </option>
@@ -244,11 +250,10 @@ const LogViewerModal = ({ isOpen, onClose }) => {
                 <div className="flex items-center space-x-2">
                   {/* Auto Refresh Toggle */}
                   <button
+                    type="button"
                     onClick={() => setAutoRefresh(!autoRefresh)}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                      autoRefresh
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-white/10 text-gray-400 hover:text-white'
+                      autoRefresh ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-gray-400 hover:text-white'
                     }`}
                   >
                     {autoRefresh ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />}
@@ -257,6 +262,7 @@ const LogViewerModal = ({ isOpen, onClose }) => {
 
                   {/* Export Button */}
                   <button
+                    type="button"
                     onClick={exportLogs}
                     className="flex items-center space-x-2 px-3 py-2 bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white rounded-lg transition-colors"
                   >
@@ -270,15 +276,12 @@ const LogViewerModal = ({ isOpen, onClose }) => {
               <div className="flex items-center space-x-6 text-sm text-gray-400">
                 <span>Total: {logs.length}</span>
                 <span>Filtered: {filteredLogs.length}</span>
-                <span>Auto-refresh: {autoRefresh ? `${refreshInterval/1000}s` : 'Off'}</span>
+                <span>Auto-refresh: {autoRefresh ? `${refreshInterval / 1000}s` : 'Off'}</span>
               </div>
             </div>
 
             {/* Log Content */}
-            <div
-              ref={logContainerRef}
-              className="flex-1 overflow-y-auto p-4 space-y-2 font-mono text-sm"
-            >
+            <div ref={logContainerRef} className="flex-1 overflow-y-auto p-4 space-y-2 font-mono text-sm">
               {filteredLogs.map((log) => (
                 <motion.div
                   key={log.id}
@@ -288,25 +291,17 @@ const LogViewerModal = ({ isOpen, onClose }) => {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3 flex-1">
-                      <span className="text-gray-500 text-xs">
-                        {new Date(log.timestamp).toLocaleTimeString()}
-                      </span>
+                      <span className="text-gray-500 text-xs">{new Date(log.timestamp).toLocaleTimeString()}</span>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getLevelColor(log.level)}`}>
                         {log.level.toUpperCase()}
                       </span>
-                      <span className="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">
-                        {log.component}
-                      </span>
+                      <span className="px-2 py-1 bg-gray-500/20 text-gray-300 rounded text-xs">{log.component}</span>
                     </div>
                   </div>
-                  <div className="mt-2 text-gray-200">
-                    {log.message}
-                  </div>
+                  <div className="mt-2 text-gray-200">{log.message}</div>
                   {log.details && (
                     <details className="mt-2">
-                      <summary className="text-gray-400 text-xs cursor-pointer hover:text-white">
-                        Details
-                      </summary>
+                      <summary className="text-gray-400 text-xs cursor-pointer hover:text-white">Details</summary>
                       <pre className="text-gray-400 text-xs mt-1 bg-black/20 p-2 rounded overflow-x-auto">
                         {JSON.stringify(log.details, null, 2)}
                       </pre>
@@ -319,9 +314,7 @@ const LogViewerModal = ({ isOpen, onClose }) => {
                 <div className="text-center py-12">
                   <DocumentTextIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-white mb-2">No logs found</h3>
-                  <p className="text-gray-400">
-                    Try adjusting your filters or search terms
-                  </p>
+                  <p className="text-gray-400">Try adjusting your filters or search terms</p>
                 </div>
               )}
             </div>

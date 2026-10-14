@@ -1,16 +1,16 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
-  HomeIcon,
+  BeakerIcon,
   ChatBubbleBottomCenterTextIcon,
-  VideoCameraIcon,
+  Cog6ToothIcon,
+  HomeIcon,
   MusicalNoteIcon,
   PhotoIcon,
-  BeakerIcon,
-  Cog6ToothIcon,
-  QueueListIcon
+  QueueListIcon,
+  VideoCameraIcon,
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 const navigationItems = [
   { name: 'Home', href: '/', icon: HomeIcon },
@@ -31,11 +31,7 @@ const Navigation = () => {
       {navigationItems.map((item) => {
         const isActive = location.pathname === item.href;
         return (
-          <Link
-            key={item.name}
-            to={item.href}
-            className="group flex flex-col items-center flex-1 py-1"
-          >
+          <Link key={item.name} to={item.href} className="group flex flex-col items-center flex-1 py-1">
             <motion.div
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.9 }}
@@ -62,4 +58,3 @@ const Navigation = () => {
 };
 
 export default Navigation;
-

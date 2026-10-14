@@ -1,17 +1,17 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  HomeIcon,
+  BeakerIcon,
   ChatBubbleBottomCenterTextIcon,
-  VideoCameraIcon,
+  ChevronRightIcon,
+  Cog6ToothIcon,
+  HomeIcon,
   MusicalNoteIcon,
   PhotoIcon,
-  BeakerIcon,
-  Cog6ToothIcon,
   QueueListIcon,
-  ChevronRightIcon
+  VideoCameraIcon,
 } from '@heroicons/react/24/outline';
+import { AnimatePresence, motion } from 'framer-motion';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 const coreItems = [
   { name: 'Home', href: '/', icon: HomeIcon },
@@ -63,7 +63,7 @@ const Sidebar = ({ open, setOpen }) => {
             <span className="text-white font-bold text-xs">V3</span>
           </div>
           {open && (
-            <motion.span 
+            <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="ml-3 font-bold text-lg premium-gradient"
@@ -76,7 +76,11 @@ const Sidebar = ({ open, setOpen }) => {
         {/* Navigation Section */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 px-3 space-y-2 scrollbar-hide">
           <div className="mb-4">
-            <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 ${!open && 'text-center'}`}>
+            <p
+              className={`text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 ${
+                !open && 'text-center'
+              }`}
+            >
               {open ? 'Core Studios' : '•'}
             </p>
             {coreItems.map((item) => {
@@ -92,9 +96,7 @@ const Sidebar = ({ open, setOpen }) => {
                   } ${open ? 'px-4 mb-1' : 'justify-center mx-2'}`}
                 >
                   <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive && 'text-purple-400'}`} />
-                  {open && (
-                    <span className="ml-3 text-sm font-medium">{item.name}</span>
-                  )}
+                  {open && <span className="ml-3 text-sm font-medium">{item.name}</span>}
                   {isActive && open && (
                     <motion.div layoutId="active-pill" className="ml-auto w-1 h-4 bg-purple-500 rounded-full" />
                   )}
@@ -104,9 +106,12 @@ const Sidebar = ({ open, setOpen }) => {
           </div>
 
           <div>
-             <button
+            <button
+              type="button"
               onClick={() => setLabExpanded(!labExpanded)}
-              className={`w-full flex items-center h-12 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all ${open ? 'px-4' : 'justify-center mx-2'}`}
+              className={`w-full flex items-center h-12 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all ${
+                open ? 'px-4' : 'justify-center mx-2'
+              }`}
             >
               <BeakerIcon className="w-5 h-5 flex-shrink-0" />
               {open && (
@@ -116,7 +121,7 @@ const Sidebar = ({ open, setOpen }) => {
                 </>
               )}
             </button>
-            
+
             <AnimatePresence>
               {open && labExpanded && (
                 <motion.div
@@ -144,7 +149,9 @@ const Sidebar = ({ open, setOpen }) => {
         <div className="p-3 border-t border-white/5">
           <Link
             to="/settings"
-            className={`flex items-center h-12 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all ${open ? 'px-4' : 'justify-center mx-2'}`}
+            className={`flex items-center h-12 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all ${
+              open ? 'px-4' : 'justify-center mx-2'
+            }`}
           >
             <Cog6ToothIcon className="w-5 h-5 flex-shrink-0" />
             {open && <span className="ml-3 text-sm font-medium">Settings</span>}
@@ -156,4 +163,3 @@ const Sidebar = ({ open, setOpen }) => {
 };
 
 export default Sidebar;
-

@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import {
+  ArrowRightOnRectangleIcon,
   Bars3Icon,
   BellIcon,
-  UserCircleIcon,
-  QuestionMarkCircleIcon,
-  DocumentTextIcon,
-  SunIcon,
-  MoonIcon,
-  LanguageIcon,
+  BookOpenIcon,
   ChevronDownIcon,
   Cog6ToothIcon,
-  BookOpenIcon,
-  ArrowRightOnRectangleIcon,
+  DocumentTextIcon,
+  LanguageIcon,
+  MoonIcon,
+  QuestionMarkCircleIcon,
+  SunIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
-import LogViewerModal from './LogViewerModal';
+import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import LogViewerModal from './LogViewerModal';
 
 const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
   const [showLogViewer, setShowLogViewer] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
+
   const languageMenuRef = useRef();
   const userMenuRef = useRef();
 
@@ -53,7 +53,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
     { code: 'ja', name: '日本語', flag: '🇯🇵' },
   ];
 
-  const currentLanguage = languages.find(lang => lang.code === language) || languages[0];
+  const currentLanguage = languages.find((lang) => lang.code === language) || languages[0];
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -81,12 +81,13 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
             {/* Left side */}
             <div className="flex items-center space-x-4">
               <button
+                type="button"
                 onClick={toggleSidebar}
                 className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors lg:hidden"
               >
                 <Bars3Icon className="w-6 h-6" />
               </button>
-              
+
               <div className="hidden lg:flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">V</span>
@@ -141,11 +142,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                 className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                 title="Toggle Theme"
               >
-                {theme === 'dark' ? (
-                  <SunIcon className="w-5 h-5" />
-                ) : (
-                  <MoonIcon className="w-5 h-5" />
-                )}
+                {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
               </motion.button>
 
               {/* Language Selector */}
@@ -171,6 +168,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                   >
                     {languages.map((lang) => (
                       <button
+                        type="button"
                         key={lang.code}
                         onClick={() => {
                           setLanguage(lang.code);
@@ -182,9 +180,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                       >
                         <span className="text-lg">{lang.flag}</span>
                         <span className="text-sm">{lang.name}</span>
-                        {language === lang.code && (
-                          <div className="ml-auto w-2 h-2 bg-purple-500 rounded-full"></div>
-                        )}
+                        {language === lang.code && <div className="ml-auto w-2 h-2 bg-purple-500 rounded-full" />}
                       </button>
                     ))}
                   </motion.div>
@@ -199,7 +195,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                 title="Notifications"
               >
                 <BellIcon className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               </motion.button>
 
               {/* User Menu */}
@@ -229,7 +225,8 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                       <p className="text-white font-medium">{user?.name || 'User'}</p>
                       <p className="text-gray-300 text-sm">{user?.email || 'user@example.com'}</p>
                     </div>
-                    <button 
+                    <button
+                      type="button"
                       onClick={() => {
                         navigate('/settings');
                         setShowUserMenu(false);
@@ -239,17 +236,27 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
                       <Cog6ToothIcon className="w-4 h-4 mr-2" />
                       Settings
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                    <button
+                      type="button"
+                      className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors"
+                    >
                       Profile
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                    <button
+                      type="button"
+                      className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors"
+                    >
                       Billing
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                    <button
+                      type="button"
+                      className="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-700 hover:text-white transition-colors"
+                    >
                       Usage Stats
                     </button>
                     <div className="border-t border-gray-600">
-                      <button 
+                      <button
+                        type="button"
                         onClick={handleLogout}
                         className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors flex items-center"
                       >
@@ -266,6 +273,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
 
         {/* Click outside to close menus */}
         {(showLanguageMenu || showUserMenu) && (
+          // biome-ignore lint/a11y/useKeyWithClickEvents: decorative click-away backdrop, not a control
           <div
             className="fixed inset-0 z-30"
             onClick={() => {
@@ -277,10 +285,7 @@ const TopBar = ({ toggleSidebar, theme, setTheme, language, setLanguage }) => {
       </header>
 
       {/* Log Viewer Modal */}
-      <LogViewerModal
-        isOpen={showLogViewer}
-        onClose={() => setShowLogViewer(false)}
-      />
+      <LogViewerModal isOpen={showLogViewer} onClose={() => setShowLogViewer(false)} />
     </>
   );
 };

@@ -1,8 +1,8 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import TopBar from '../TopBar';
 import Navigation from './Navigation';
 import Sidebar from './Sidebar';
-import TopBar from '../TopBar';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -16,13 +16,11 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Top Bar */}
-      <TopBar 
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-      />
-      
+      <TopBar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+
       {/* Sidebar - Integrated with Glass Panel */}
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-      
+
       {/* Main content */}
       <div className={`transition-all duration-500 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pt-20 pb-16`}>
         <main className="px-4 lg:px-8">
@@ -32,9 +30,9 @@ const Layout = ({ children }) => {
               initial={{ opacity: 0, scale: 0.98, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.98, y: -10 }}
-              transition={{ 
+              transition={{
                 duration: 0.4,
-                ease: [0.22, 1, 0.36, 1] 
+                ease: [0.22, 1, 0.36, 1],
               }}
               className="max-w-7xl mx-auto"
             >
@@ -43,7 +41,7 @@ const Layout = ({ children }) => {
           </AnimatePresence>
         </main>
       </div>
-      
+
       {/* Navigation - Bottom bar for mobile, integrated glass */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 z-50">
         <div className="glass-panel p-2 flex justify-around items-center h-16">
@@ -55,4 +53,3 @@ const Layout = ({ children }) => {
 };
 
 export default Layout;
-

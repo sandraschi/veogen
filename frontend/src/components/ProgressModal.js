@@ -1,6 +1,6 @@
+import { ClockIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { AnimatePresence, motion } from 'framer-motion';
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 const ProgressModal = ({ isOpen, progress, jobId, onClose }) => {
   const getProgressColor = (progress) => {
@@ -39,6 +39,7 @@ const ProgressModal = ({ isOpen, progress, jobId, onClose }) => {
           >
             {/* Close button */}
             <button
+              type="button"
               onClick={onClose}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
@@ -53,14 +54,10 @@ const ProgressModal = ({ isOpen, progress, jobId, onClose }) => {
               </div>
 
               {/* Title */}
-              <h3 className="text-2xl font-bold text-white mb-2">
-                Generating Video
-              </h3>
+              <h3 className="text-2xl font-bold text-white mb-2">Generating Video</h3>
 
               {/* Job ID */}
-              <p className="text-gray-400 text-sm mb-6">
-                Job ID: {jobId?.slice(0, 8)}...
-              </p>
+              <p className="text-gray-400 text-sm mb-6">Job ID: {jobId?.slice(0, 8)}...</p>
 
               {/* Progress bar */}
               <div className="mb-6">
@@ -75,7 +72,7 @@ const ProgressModal = ({ isOpen, progress, jobId, onClose }) => {
                     transition={{ duration: 0.5, ease: 'easeOut' }}
                     className={`h-full bg-gradient-to-r ${getProgressColor(progress)} rounded-full relative`}
                   >
-                    <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full"></div>
+                    <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
                   </motion.div>
                 </div>
               </div>

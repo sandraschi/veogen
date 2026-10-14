@@ -1,10 +1,6 @@
-import React from 'react';
+import { Bars3Icon, BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import {
-  Bars3Icon,
-  BellIcon,
-  UserCircleIcon,
-} from '@heroicons/react/24/outline';
+import React from 'react';
 
 const Header = ({ toggleSidebar }) => {
   return (
@@ -14,19 +10,16 @@ const Header = ({ toggleSidebar }) => {
           {/* Left side */}
           <div className="flex items-center">
             <button
+              type="button"
               onClick={toggleSidebar}
               className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors lg:hidden"
             >
               <Bars3Icon className="w-6 h-6" />
             </button>
-            
+
             <div className="hidden lg:block">
-              <h1 className="text-2xl font-bold text-white">
-                AI Video Studio
-              </h1>
-              <p className="text-sm text-gray-400">
-                Create stunning videos with Veo AI
-              </p>
+              <h1 className="text-2xl font-bold text-white">AI Video Studio</h1>
+              <p className="text-sm text-gray-400">Create stunning videos with Veo AI</p>
             </div>
           </div>
 
@@ -39,7 +32,7 @@ const Header = ({ toggleSidebar }) => {
               className="relative p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
               <BellIcon className="w-6 h-6" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </motion.button>
 
             {/* User menu */}
