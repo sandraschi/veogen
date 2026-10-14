@@ -1,21 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Box, Button, Typography, Grid, 
-  TextField, Select, MenuItem, FormControl, 
-  InputLabel, Paper, CircularProgress,
-  Table, TableBody, TableCell, TableContainer, 
-  TableHead, TableRow, IconButton, Tooltip,
-  Dialog, DialogTitle, DialogContent, DialogActions
-} from '@mui/material';
-import { 
-  Add as AddIcon, 
-  Edit as EditIcon, 
-  Delete as DeleteIcon,
+import {
+  Add as AddIcon,
   CheckCircle as CheckCircleIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
   Error as ErrorIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 
 const DatabaseConnectionManager = ({ server, showSnackbar }) => {
   const [connections, setConnections] = useState([]);
@@ -24,7 +41,7 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
   // Error state is handled by the parent component through showSnackbar
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -34,18 +51,18 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
     database: '',
     username: '',
     password: '',
-    options: '{}'
+    options: '{}',
   });
 
   // Fetch connections from the server
   const fetchConnections = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/mcp/execute`, {
+      const response = await axios.get('/api/mcp/execute', {
         params: {
           server,
-          tool: 'list_connections'
-        }
+          tool: 'list_connections',
+        },
       });
       setConnections(response.data.connections || []);
     } catch (err) {
@@ -59,11 +76,11 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
   // Load connections on component mount
   const memoizedFetchConnections = React.useCallback(async () => {
     try {
-      const response = await axios.get(`/api/mcp/execute`, {
+      const response = await axios.get('/api/mcp/execute', {
         params: {
           server,
-          tool: 'list_connections'
-        }
+          tool: 'list_connections',
+        },
       });
       setConnections(response.data.connections || []);
     } catch (err) {
@@ -79,9 +96,9 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
   // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -89,35 +106,29 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    
+
     try {
       const toolName = editingId ? 'update_connection' : 'add_connection';
       const params = { ...formData };
-      
+
       if (editingId) {
         params.connection_id = editingId;
       }
-      
+
       // The response is not used, but we still want to await the request
       await axios.post('/api/mcp/execute', {
         server,
         tool: toolName,
-        params
+        params,
       });
-      
-      showSnackbar(
-        editingId ? 'Connection updated successfully' : 'Connection added successfully',
-        'success'
-      );
-      
+
+      showSnackbar(editingId ? 'Connection updated successfully' : 'Connection added successfully', 'success');
+
       setDialogOpen(false);
       fetchConnections();
     } catch (err) {
       console.error('Error saving connection:', err);
-      showSnackbar(
-        `Failed to save connection: ${err.response?.data?.detail || err.message}`,
-        'error'
-      );
+      showSnackbar(`Failed to save connection: ${err.response?.data?.detail || err.message}`, 'error');
     } finally {
       setSaving(false);
     }
@@ -129,16 +140,13 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
       await axios.post('/api/mcp/execute', {
         server,
         tool: 'test_connection',
-        params: { connection_id: connectionId }
+        params: { connection_id: connectionId },
       });
       showSnackbar('Connection test successful', 'success');
       return true;
     } catch (err) {
       console.error('Connection test failed:', err);
-      showSnackbar(
-        `Connection test failed: ${err.response?.data?.detail || err.message}`,
-        'error'
-      );
+      showSnackbar(`Connection test failed: ${err.response?.data?.detail || err.message}`, 'error');
       return false;
     }
   };
@@ -148,22 +156,19 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
     if (!window.confirm('Are you sure you want to delete this connection?')) {
       return;
     }
-    
+
     try {
       await axios.post('/api/mcp/execute', {
         server,
         tool: 'remove_connection',
-        params: { connection_id: connectionId }
+        params: { connection_id: connectionId },
       });
-      
+
       showSnackbar('Connection deleted successfully', 'success');
       fetchConnections();
     } catch (err) {
       console.error('Error deleting connection:', err);
-      showSnackbar(
-        `Failed to delete connection: ${err.response?.data?.detail || err.message}`,
-        'error'
-      );
+      showSnackbar(`Failed to delete connection: ${err.response?.data?.detail || err.message}`, 'error');
     }
   };
 
@@ -177,7 +182,7 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
       database: connection.database || '',
       username: connection.username || '',
       password: '', // Don't pre-fill password for security
-      options: connection.options ? JSON.stringify(connection.options, null, 2) : '{}'
+      options: connection.options ? JSON.stringify(connection.options, null, 2) : '{}',
     });
     setEditingId(connection.id);
     setDialogOpen(true);
@@ -193,7 +198,7 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
       database: '',
       username: '',
       password: '',
-      options: '{}'
+      options: '{}',
     });
     setEditingId(null);
     setDialogOpen(true);
@@ -210,24 +215,21 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
     'mongodb',
     'redis',
     'elasticsearch',
-    'dynamodb'
+    'dynamodb',
   ];
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        mb: 3 
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+        }}
+      >
         <Typography variant="h6">Database Connections</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleNewConnection}
-        >
+        <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleNewConnection}>
           New Connection
         </Button>
       </Box>
@@ -263,7 +265,10 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
                 <TableRow key={conn.id}>
                   <TableCell>{conn.name}</TableCell>
                   <TableCell>{conn.type}</TableCell>
-                  <TableCell>{conn.host}{conn.port ? `:${conn.port}` : ''}</TableCell>
+                  <TableCell>
+                    {conn.host}
+                    {conn.port ? `:${conn.port}` : ''}
+                  </TableCell>
                   <TableCell>{conn.database}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -292,11 +297,7 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
-                      <IconButton 
-                        size="small" 
-                        color="error"
-                        onClick={() => deleteConnection(conn.id)}
-                      >
+                      <IconButton size="small" color="error" onClick={() => deleteConnection(conn.id)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -309,16 +310,9 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
       </TableContainer>
 
       {/* Connection Dialog */}
-      <Dialog 
-        open={dialogOpen} 
-        onClose={() => !saving && setDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={dialogOpen} onClose={() => !saving && setDialogOpen(false)} maxWidth="sm" fullWidth>
         <form onSubmit={handleSubmit}>
-          <DialogTitle>
-            {editingId ? 'Edit Connection' : 'New Connection'}
-          </DialogTitle>
+          <DialogTitle>{editingId ? 'Edit Connection' : 'New Connection'}</DialogTitle>
           <DialogContent dividers>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
@@ -335,12 +329,7 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth margin="normal" required>
                   <InputLabel>Database Type</InputLabel>
-                  <Select
-                    name="type"
-                    value={formData.type}
-                    onChange={handleChange}
-                    label="Database Type"
-                  >
+                  <Select name="type" value={formData.type} onChange={handleChange} label="Database Type">
                     {databaseTypes.map((type) => (
                       <MenuItem key={type} value={type}>
                         {type}
@@ -420,15 +409,12 @@ const DatabaseConnectionManager = ({ server, showSnackbar }) => {
             </Grid>
           </DialogContent>
           <DialogActions>
-            <Button 
-              onClick={() => setDialogOpen(false)}
-              disabled={saving}
-            >
+            <Button onClick={() => setDialogOpen(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              variant="contained" 
+            <Button
+              type="submit"
+              variant="contained"
               color="primary"
               disabled={saving}
               startIcon={saving ? <CircularProgress size={20} /> : null}

@@ -1,58 +1,58 @@
-import React, { useState, useRef, useEffect } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Slider,
-  Chip,
-  Alert,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  ListItemAvatar,
-  Avatar,
-  Tabs,
-  Tab,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  LinearProgress,
-  Tooltip
-} from '@mui/material';
-import {
-  MusicNote,
-  PlayArrow,
-  Pause,
-  Stop,
-  Download,
-  Share,
-  Refresh,
-  VolumeUp,
-  Favorite,
-  FavoriteBorder,
-  Delete,
-  Loop,
-  Shuffle,
-  QueueMusic,
   Album,
   AudioFile,
-  Settings,
+  Delete,
+  Download,
+  Equalizer,
+  Favorite,
+  FavoriteBorder,
   History,
-  Equalizer
+  Loop,
+  MusicNote,
+  Pause,
+  PlayArrow,
+  QueueMusic,
+  Refresh,
+  Settings,
+  Share,
+  Shuffle,
+  Stop,
+  VolumeUp,
 } from '@mui/icons-material';
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  IconButton,
+  InputLabel,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemSecondaryAction,
+  ListItemText,
+  MenuItem,
+  Paper,
+  Select,
+  Slider,
+  Tab,
+  Tabs,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import axios from 'axios';
+import React, { useState, useRef, useEffect } from 'react';
 
 const API_BASE_URL = 'http://localhost:11150';
 
@@ -67,7 +67,7 @@ const MUSIC_GENRES = [
   { id: 'hip_hop', name: 'Hip Hop', description: 'Rhythmic and beat-focused' },
   { id: 'folk', name: 'Folk', description: 'Acoustic and traditional' },
   { id: 'cinematic', name: 'Cinematic', description: 'Movie soundtrack style' },
-  { id: 'world', name: 'World', description: 'International and cultural' }
+  { id: 'world', name: 'World', description: 'International and cultural' },
 ];
 
 const MOODS = [
@@ -78,7 +78,7 @@ const MOODS = [
   { id: 'mysterious', name: 'Mysterious', emoji: '🔮' },
   { id: 'romantic', name: 'Romantic', emoji: '💕' },
   { id: 'dramatic', name: 'Dramatic', emoji: '🎭' },
-  { id: 'peaceful', name: 'Peaceful', emoji: '☮️' }
+  { id: 'peaceful', name: 'Peaceful', emoji: '☮️' },
 ];
 
 const DURATIONS = [
@@ -86,7 +86,7 @@ const DURATIONS = [
   { value: 30, label: '30 seconds' },
   { value: 60, label: '1 minute' },
   { value: 120, label: '2 minutes' },
-  { value: 180, label: '3 minutes' }
+  { value: 180, label: '3 minutes' },
 ];
 
 // Audio player component
@@ -97,6 +97,7 @@ const AudioPlayer = ({ track, onPlay, onPause, isPlaying }) => {
   const [isLooping, setIsLooping] = useState(false);
   const audioRef = useRef(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-bind the audio listeners when the track changes; the listeners read audioRef, not track
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -140,7 +141,7 @@ const AudioPlayer = ({ track, onPlay, onPause, isPlaying }) => {
     }
   }, [isLooping]);
 
-  const handleSeek = (event, newValue) => {
+  const handleSeek = (_event, newValue) => {
     const audio = audioRef.current;
     if (audio) {
       audio.currentTime = newValue;
@@ -158,26 +159,23 @@ const AudioPlayer = ({ track, onPlay, onPause, isPlaying }) => {
 
   return (
     <Box>
-      <audio ref={audioRef} src={track.url} preload="metadata" />
-      
+      <audio ref={audioRef} src={track.url} preload="metadata">
+        <track kind="captions" />
+      </audio>
+
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <IconButton onClick={isPlaying ? onPause : onPlay} size="large">
           {isPlaying ? <Pause /> : <PlayArrow />}
         </IconButton>
-        
+
         <Box sx={{ flex: 1, mx: 2 }}>
-          <Slider
-            value={currentTime}
-            max={duration || 100}
-            onChange={handleSeek}
-            size="small"
-          />
+          <Slider value={currentTime} max={duration || 100} onChange={handleSeek} size="small" />
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Typography variant="caption">{formatTime(currentTime)}</Typography>
             <Typography variant="caption">{formatTime(duration)}</Typography>
           </Box>
         </Box>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <IconButton onClick={() => setIsLooping(!isLooping)} color={isLooping ? 'primary' : 'default'}>
             <Loop />
@@ -185,7 +183,7 @@ const AudioPlayer = ({ track, onPlay, onPause, isPlaying }) => {
           <VolumeUp />
           <Slider
             value={volume}
-            onChange={(e, newValue) => setVolume(newValue)}
+            onChange={(_e, newValue) => setVolume(newValue)}
             min={0}
             max={1}
             step={0.1}
@@ -203,19 +201,11 @@ const TrackList = ({ tracks, currentTrack, onSelectTrack, onDeleteTrack, onToggl
     <List>
       {tracks.length === 0 ? (
         <ListItem>
-          <ListItemText 
-            primary="No tracks generated yet"
-            secondary="Generate your first track to see it here"
-          />
+          <ListItemText primary="No tracks generated yet" secondary="Generate your first track to see it here" />
         </ListItem>
       ) : (
         tracks.map((track, index) => (
-          <ListItem 
-            key={index} 
-            button 
-            selected={currentTrack?.id === track.id}
-            onClick={() => onSelectTrack(track)}
-          >
+          <ListItem key={track.id} button selected={currentTrack?.id === track.id} onClick={() => onSelectTrack(track)}>
             <ListItemAvatar>
               <Avatar sx={{ bgcolor: 'primary.main' }}>
                 <MusicNote />
@@ -250,7 +240,7 @@ const MusicGenerator = () => {
   const [tempo, setTempo] = useState(120);
   const [creativity, setCreativity] = useState(0.7);
   const [instruments, setInstruments] = useState('');
-  
+
   const [generating, setGenerating] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [trackHistory, setTrackHistory] = useState([]);
@@ -281,19 +271,15 @@ const MusicGenerator = () => {
         duration,
         tempo,
         creativity,
-        instruments: instruments || undefined
+        instruments: instruments || undefined,
       };
 
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/music/generate`,
-        payload,
-        {
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/api/v1/music/generate`, payload, {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+      });
 
       const trackData = response.data.track;
       if (!trackData?.url) {
@@ -312,13 +298,12 @@ const MusicGenerator = () => {
         tempo,
         created_at: new Date().toISOString(),
         favorite: false,
-        metadata: trackData.metadata
+        metadata: trackData.metadata,
       };
 
       setCurrentTrack(newTrack);
-      setTrackHistory(prev => [newTrack, ...prev]);
+      setTrackHistory((prev) => [newTrack, ...prev]);
       setSuccess(response.data.message || 'Music generated successfully!');
-
     } catch (error) {
       console.error('Music generation error:', error);
       setError(error.response?.data?.detail || 'Failed to generate music. Please try again.');
@@ -329,7 +314,7 @@ const MusicGenerator = () => {
 
   const downloadTrack = async (track) => {
     if (!track?.url) return;
-    
+
     try {
       const response = await fetch(track.url);
       const blob = await response.blob();
@@ -341,22 +326,22 @@ const MusicGenerator = () => {
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch (_error) {
       setError('Failed to download track');
     }
   };
 
   const shareTrack = async (track) => {
     if (!track?.url) return;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'VeoGen AI Music',
           text: `Check out this AI-generated music: "${track.title}"`,
-          url: track.url
+          url: track.url,
         });
-      } catch (error) {
+      } catch (_error) {
         // User cancelled sharing
       }
     } else {
@@ -366,9 +351,7 @@ const MusicGenerator = () => {
   };
 
   const toggleFavorite = (index) => {
-    setTrackHistory(prev => prev.map((track, i) => 
-      i === index ? { ...track, favorite: !track.favorite } : track
-    ));
+    setTrackHistory((prev) => prev.map((track, i) => (i === index ? { ...track, favorite: !track.favorite } : track)));
   };
 
   const deleteTrack = (index) => {
@@ -377,7 +360,7 @@ const MusicGenerator = () => {
       setCurrentTrack(null);
       setIsPlaying(false);
     }
-    setTrackHistory(prev => prev.filter((_, i) => i !== index));
+    setTrackHistory((prev) => prev.filter((_, i) => i !== index));
   };
 
   const TabPanel = ({ children, value, index, ...other }) => (
@@ -388,11 +371,7 @@ const MusicGenerator = () => {
       aria-labelledby={`music-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 
@@ -405,14 +384,22 @@ const MusicGenerator = () => {
         Create original music with AI using Lyria. From ambient soundscapes to energetic beats.
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
       <Grid container spacing={3}>
         {/* Main Generation Panel */}
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3 }}>
-            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+            <Tabs value={activeTab} onChange={(_e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
               <Tab label="Generate" icon={<MusicNote />} />
               <Tab label="Advanced" icon={<Settings />} />
               <Tab label="Library" icon={<QueueMusic />} />
@@ -484,14 +471,14 @@ const MusicGenerator = () => {
                   <Typography gutterBottom>Tempo (BPM)</Typography>
                   <Slider
                     value={tempo}
-                    onChange={(e, newValue) => setTempo(newValue)}
+                    onChange={(_e, newValue) => setTempo(newValue)}
                     min={60}
                     max={180}
                     step={10}
                     marks={[
                       { value: 60, label: 'Slow' },
                       { value: 120, label: 'Medium' },
-                      { value: 180, label: 'Fast' }
+                      { value: 180, label: 'Fast' },
                     ]}
                     disabled={generating}
                   />
@@ -501,14 +488,14 @@ const MusicGenerator = () => {
                   <Typography gutterBottom>Creativity Level</Typography>
                   <Slider
                     value={creativity}
-                    onChange={(e, newValue) => setCreativity(newValue)}
+                    onChange={(_e, newValue) => setCreativity(newValue)}
                     min={0}
                     max={1}
                     step={0.1}
                     marks={[
                       { value: 0, label: 'Structured' },
                       { value: 0.5, label: 'Balanced' },
-                      { value: 1, label: 'Experimental' }
+                      { value: 1, label: 'Experimental' },
                     ]}
                     disabled={generating}
                   />
@@ -525,7 +512,7 @@ const MusicGenerator = () => {
                   >
                     {generating ? 'Generating Music...' : 'Generate Music'}
                   </Button>
-                  
+
                   {generating && (
                     <Box sx={{ mt: 2 }}>
                       <LinearProgress />
@@ -552,14 +539,16 @@ const MusicGenerator = () => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>Genre Templates</Typography>
+                  <Typography variant="h6" gutterBottom>
+                    Genre Templates
+                  </Typography>
                   <Grid container spacing={2}>
                     {MUSIC_GENRES.slice(0, 6).map((g) => (
                       <Grid item xs={6} sm={4} key={g.id}>
-                        <Card 
-                          sx={{ 
+                        <Card
+                          sx={{
                             cursor: 'pointer',
-                            '&:hover': { elevation: 4 }
+                            '&:hover': { elevation: 4 },
                           }}
                           onClick={() => {
                             setGenre(g.id);
@@ -586,13 +575,13 @@ const MusicGenerator = () => {
                 {trackHistory.length > 0 && (
                   <Chip
                     icon={<AudioFile />}
-                    label={`${trackHistory.filter(t => t.favorite).length} favorites`}
+                    label={`${trackHistory.filter((t) => t.favorite).length} favorites`}
                     color="primary"
                     variant="outlined"
                   />
                 )}
               </Box>
-              
+
               <TrackList
                 tracks={trackHistory}
                 currentTrack={currentTrack}
@@ -610,7 +599,7 @@ const MusicGenerator = () => {
             <Typography variant="h6" gutterBottom>
               Now Playing
             </Typography>
-            
+
             {currentTrack ? (
               <Box>
                 <Card sx={{ mb: 2 }}>
@@ -628,14 +617,14 @@ const MusicGenerator = () => {
                         </Typography>
                       </Box>
                     </Box>
-                    
+
                     <AudioPlayer
                       track={currentTrack}
                       isPlaying={isPlaying}
                       onPlay={() => setIsPlaying(true)}
                       onPause={() => setIsPlaying(false)}
                     />
-                    
+
                     <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                       <Button
                         variant="outlined"

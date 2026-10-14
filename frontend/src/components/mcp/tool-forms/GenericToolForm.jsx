@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
-import { 
-  TextField, Button, Typography, Box, 
-  CircularProgress, Grid, Divider, 
-  FormControl, InputLabel, Select, MenuItem,
-  FormHelperText, Checkbox, FormControlLabel
+import {
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  FormHelperText,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
 } from '@mui/material';
 import axios from 'axios';
+import React, { useState } from 'react';
 
 const GenericToolForm = ({ tool, showSnackbar }) => {
   // Generate initial form state from tool parameters
   const [formData, setFormData] = useState(() => {
     const initialData = {};
     if (tool.parameters && typeof tool.parameters === 'object') {
-      Object.entries(tool.parameters).forEach(([param, schema]) => {
+      for (const [param, schema] of Object.entries(tool.parameters)) {
         if (schema.type === 'boolean') {
           initialData[param] = false;
         } else if (schema.type === 'number') {
@@ -22,7 +32,7 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
         } else {
           initialData[param] = schema.default || '';
         }
-      });
+      }
     }
     return initialData;
   });
@@ -33,9 +43,9 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -44,15 +54,15 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
     let isValid = true;
 
     if (tool.parameters) {
-      Object.entries(tool.parameters).forEach(([param, schema]) => {
+      for (const [param, schema] of Object.entries(tool.parameters)) {
         if (schema.required && !formData[param] && formData[param] !== 0) {
           newErrors[param] = 'This field is required';
           isValid = false;
-        } else if (schema.type === 'number' && isNaN(Number(formData[param]))) {
+        } else if (schema.type === 'number' && Number.isNaN(Number(formData[param]))) {
           newErrors[param] = 'Must be a valid number';
           isValid = false;
         }
-      });
+      }
     }
 
     setErrors(newErrors);
@@ -61,31 +71,31 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       showSnackbar('Please fix the form errors', 'error');
       return;
     }
 
     setLoading(true);
-    
+
     try {
       // Convert string numbers to actual numbers if needed
       const params = { ...formData };
       if (tool.parameters) {
-        Object.entries(tool.parameters).forEach(([param, schema]) => {
+        for (const [param, schema] of Object.entries(tool.parameters)) {
           if (schema.type === 'number' && params[param] !== undefined) {
             params[param] = Number(params[param]);
           }
-        });
+        }
       }
 
       const response = await axios.post('/api/mcp/execute', {
         server: tool.server,
         tool: tool.name,
-        params
+        params,
       });
-      
+
       setResult(response.data);
       showSnackbar('Operation completed successfully', 'success');
     } catch (error) {
@@ -107,13 +117,11 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
       case 'string':
         if (schema.enum) {
           return (
-            <FormControl 
-              fullWidth 
-              margin="normal" 
-              error={!!error}
-              key={param}
-            >
-              <InputLabel>{label}{isRequired ? ' *' : ''}</InputLabel>
+            <FormControl fullWidth margin="normal" error={!!error} key={param}>
+              <InputLabel>
+                {label}
+                {isRequired ? ' *' : ''}
+              </InputLabel>
               <Select
                 name={param}
                 value={value || ''}
@@ -130,7 +138,8 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
               {error && <FormHelperText error>{error}</FormHelperText>}
             </FormControl>
           );
-        } else if (schema.format === 'multiline' || (schema.maxLength && schema.maxLength > 100)) {
+        }
+        if (schema.format === 'multiline' || (schema.maxLength && schema.maxLength > 100)) {
           return (
             <TextField
               key={param}
@@ -147,22 +156,21 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
               helperText={error || description}
             />
           );
-        } else {
-          return (
-            <TextField
-              key={param}
-              fullWidth
-              name={param}
-              label={`${label}${isRequired ? ' *' : ''}`}
-              value={value || ''}
-              onChange={handleChange}
-              variant="outlined"
-              margin="normal"
-              error={!!error}
-              helperText={error || description}
-            />
-          );
         }
+        return (
+          <TextField
+            key={param}
+            fullWidth
+            name={param}
+            label={`${label}${isRequired ? ' *' : ''}`}
+            value={value || ''}
+            onChange={handleChange}
+            variant="outlined"
+            margin="normal"
+            error={!!error}
+            helperText={error || description}
+          />
+        );
 
       case 'number':
         return (
@@ -181,7 +189,7 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
             inputProps={{
               step: 'any',
               min: schema.minimum,
-              max: schema.maximum
+              max: schema.maximum,
             }}
           />
         );
@@ -190,17 +198,13 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
         return (
           <FormControlLabel
             key={param}
-            control={
-              <Checkbox
-                name={param}
-                checked={!!value}
-                onChange={handleChange}
-                color="primary"
-              />
-            }
+            control={<Checkbox name={param} checked={!!value} onChange={handleChange} color="primary" />}
             label={
               <Box>
-                <Typography>{label}{isRequired ? ' *' : ''}</Typography>
+                <Typography>
+                  {label}
+                  {isRequired ? ' *' : ''}
+                </Typography>
                 {description && (
                   <Typography variant="caption" color="textSecondary">
                     {description}
@@ -222,10 +226,10 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
             value={Array.isArray(value) ? value.join(', ') : value || ''}
             onChange={(e) => {
               const val = e.target.value;
-              const arrayValue = val ? val.split(',').map(item => item.trim()) : [];
-              setFormData(prev => ({
+              const arrayValue = val ? val.split(',').map((item) => item.trim()) : [];
+              setFormData((prev) => ({
                 ...prev,
-                [param]: arrayValue
+                [param]: arrayValue,
               }));
             }}
             variant="outlined"
@@ -264,16 +268,14 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
           ))
         ) : (
           <Grid item xs={12}>
-            <Typography color="textSecondary">
-              No parameters required for this tool.
-            </Typography>
+            <Typography color="textSecondary">No parameters required for this tool.</Typography>
           </Grid>
         )}
-        
+
         <Grid item xs={12}>
-          <Button 
-            type="submit" 
-            variant="contained" 
+          <Button
+            type="submit"
+            variant="contained"
             color="primary"
             disabled={loading}
             startIcon={loading ? <CircularProgress size={20} /> : null}
@@ -283,13 +285,13 @@ const GenericToolForm = ({ tool, showSnackbar }) => {
           </Button>
         </Grid>
       </Grid>
-      
+
       {result && (
         <Box mt={3}>
           <Divider sx={{ my: 2 }} />
           <Typography variant="h6">Result:</Typography>
-          <Box 
-            component="pre" 
+          <Box
+            component="pre"
             sx={{
               backgroundColor: 'background.paper',
               p: 2,

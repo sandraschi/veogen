@@ -1,24 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  TextField, Button, Typography, Box, 
-  CircularProgress, Grid, FormControl, Divider,
-  InputLabel, Select, MenuItem,
-  Tabs, Tab, Paper, IconButton, Tooltip,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Chip, Collapse
-} from '@mui/material';
-import { 
+import {
+  Code as CodeIcon,
+  ContentCopy as ContentCopyIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  History as HistoryIcon,
+  PlayArrow as PlayArrowIcon,
   PlayArrow as RunIcon,
   Save as SaveIcon,
-  History as HistoryIcon,
-  ContentCopy as ContentCopyIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  Code as CodeIcon,
   TableChart as TableChartIcon,
-  PlayArrow as PlayArrowIcon
 } from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Collapse,
+  Divider,
+  FormControl,
+  Grid,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tabs,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import DatabaseConnectionManager from './DatabaseConnectionManager';
 
 const DatabaseToolForm = ({ tool, showSnackbar }) => {
@@ -29,9 +47,9 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
     operation: 'query', // 'query', 'execute', 'tables', 'schema'
     parameters: '{}',
     limit: 100,
-    saveAs: ''
+    saveAs: '',
   });
-  
+
   // UI state
   const [connections, setConnections] = useState([]);
   const [result, setResult] = useState(null);
@@ -44,9 +62,9 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -56,8 +74,8 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
       const response = await axios.get('/api/mcp/execute', {
         params: {
           server: tool.server,
-          tool: 'list_connections'
-        }
+          tool: 'list_connections',
+        },
       });
       setConnections(response.data.connections || []);
     } catch (err) {
@@ -71,8 +89,8 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
       const response = await axios.get('/api/mcp/execute', {
         params: {
           server: tool.server,
-          tool: 'list_saved_queries'
-        }
+          tool: 'list_saved_queries',
+        },
       });
       setSavedQueries(response.data.queries || []);
     } catch (err) {
@@ -85,7 +103,9 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
   };
 
   // Memoize the fetch functions to prevent infinite loops
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchConnections closes over tool.server and showSnackbar; they refresh the memoized copy
   const memoizedFetchConnections = React.useCallback(fetchConnections, [tool.server, showSnackbar]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchSavedQueries closes over tool.server and showSnackbar; they refresh the memoized copy
   const memoizedFetchSavedQueries = React.useCallback(fetchSavedQueries, [tool.server, showSnackbar]);
 
   useEffect(() => {
@@ -96,37 +116,37 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.connectionId) {
       showSnackbar('Please select a database connection', 'warning');
       return;
     }
-    
+
     if (!formData.query.trim()) {
       showSnackbar('Please enter a query', 'warning');
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       // Parse parameters if provided
-      let params = {
+      const params = {
         connection_id: formData.connectionId,
         query: formData.query,
-        limit: formData.limit
+        limit: formData.limit,
       };
-      
+
       // Add parameters if provided and valid JSON
-      if (formData.parameters && formData.parameters.trim()) {
+      if (formData.parameters?.trim()) {
         try {
           params.parameters = JSON.parse(formData.parameters);
-        } catch (err) {
+        } catch (_err) {
           showSnackbar('Invalid JSON in parameters', 'error');
           return;
         }
       }
-      
+
       // Determine the tool to use based on operation
       let toolName = 'execute_query';
       if (formData.operation === 'tables') {
@@ -138,31 +158,28 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
       const response = await axios.post('/api/mcp/execute', {
         server: tool.server,
         tool: toolName,
-        params
+        params,
       });
-      
+
       setResult(response.data);
       showSnackbar('Query executed successfully', 'success');
     } catch (error) {
       console.error('Database operation failed:', error);
-      showSnackbar(
-        `Error: ${error.response?.data?.detail || error.message}`, 
-        'error'
-      );
+      showSnackbar(`Error: ${error.response?.data?.detail || error.message}`, 'error');
     } finally {
       setLoading(false);
     }
   };
-  
+
   // Handle saving a query
   const handleSaveQuery = async () => {
     if (!formData.saveAs.trim()) {
       showSnackbar('Please enter a name for this query', 'warning');
       return;
     }
-    
+
     setSavingQuery(true);
-    
+
     try {
       await axios.post('/api/mcp/execute', {
         server: tool.server,
@@ -170,43 +187,40 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
         params: {
           name: formData.saveAs,
           query: formData.query,
-          connection_id: formData.connectionId
-        }
+          connection_id: formData.connectionId,
+        },
       });
-      
+
       showSnackbar('Query saved successfully', 'success');
-      
+
       // Refresh saved queries
       const response = await axios.get('/api/mcp/execute', {
         params: {
           server: tool.server,
-          tool: 'list_saved_queries'
-        }
+          tool: 'list_saved_queries',
+        },
       });
       setSavedQueries(response.data.queries || []);
     } catch (error) {
       console.error('Error saving query:', error);
-      showSnackbar(
-        `Failed to save query: ${error.response?.data?.detail || error.message}`,
-        'error'
-      );
+      showSnackbar(`Failed to save query: ${error.response?.data?.detail || error.message}`, 'error');
     } finally {
       setSavingQuery(false);
     }
   };
-  
+
   // Load a saved query
   const loadSavedQuery = (query) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       query: query.sql,
       connectionId: query.connection_id || '',
-      saveAs: query.name
+      saveAs: query.name,
     }));
     setActiveTab('query');
     showSnackbar(`Loaded query: ${query.name}`, 'success');
   };
-  
+
   // Copy query to clipboard
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -218,18 +232,20 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
 
     if (previewMode === 'json' || !Array.isArray(result)) {
       return (
-        <pre style={{
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          margin: 0,
-          fontFamily: 'monospace',
-          fontSize: '0.875rem',
-          maxHeight: '400px',
-          overflow: 'auto',
-          padding: '8px',
-          backgroundColor: 'rgba(0, 0, 0, 0.1)',
-          borderRadius: '4px'
-        }}>
+        <pre
+          style={{
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            margin: 0,
+            fontFamily: 'monospace',
+            fontSize: '0.875rem',
+            maxHeight: '400px',
+            overflow: 'auto',
+            padding: '8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            borderRadius: '4px',
+          }}
+        >
           {JSON.stringify(result, null, 2)}
         </pre>
       );
@@ -237,21 +253,24 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
 
     // Render as table
     if (result.length === 0) return <Typography>No results found</Typography>;
-    
+
     const columns = Object.keys(result[0]);
-    
+
     return (
       <Box sx={{ width: '100%', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              {columns.map(col => (
-                <th key={col} style={{
-                  padding: '8px',
-                  borderBottom: '1px solid rgba(224, 224, 224, 1)',
-                  textAlign: 'left',
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                }}>
+              {columns.map((col) => (
+                <th
+                  key={col}
+                  style={{
+                    padding: '8px',
+                    borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                    textAlign: 'left',
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  }}
+                >
                   {col}
                 </th>
               ))}
@@ -259,16 +278,18 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
           </thead>
           <tbody>
             {result.slice(0, formData.limit).map((row, rowIndex) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: query result rows have no id; list is replaced wholesale, never reordered
               <tr key={rowIndex}>
-                {columns.map(col => (
-                  <td key={col} style={{
-                    padding: '8px',
-                    borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-                    verticalAlign: 'top'
-                  }}>
-                    {typeof row[col] === 'object' 
-                      ? JSON.stringify(row[col])
-                      : String(row[col] ?? '')}
+                {columns.map((col) => (
+                  <td
+                    key={col}
+                    style={{
+                      padding: '8px',
+                      borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
+                      verticalAlign: 'top',
+                    }}
+                  >
+                    {typeof row[col] === 'object' ? JSON.stringify(row[col]) : String(row[col] ?? '')}
                   </td>
                 ))}
               </tr>
@@ -287,17 +308,13 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
   return (
     <Box sx={{ mt: 2 }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          aria-label="database tool tabs"
-        >
+        <Tabs value={activeTab} onChange={(_e, newValue) => setActiveTab(newValue)} aria-label="database tool tabs">
           <Tab label="Query" value="query" />
           <Tab label="Saved Queries" value="saved" />
           <Tab label="Connections" value="connections" />
         </Tabs>
       </Box>
-      
+
       {/* Query Tab */}
       <Box sx={{ display: activeTab === 'query' ? 'block' : 'none' }}>
         <Box component="form" onSubmit={handleSubmit}>
@@ -318,7 +335,7 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
                   >
                     {loading ? 'Executing...' : 'Execute'}
                   </Button>
-                  
+
                   <Button
                     variant="outlined"
                     onClick={() => setExpandedQuery(!expandedQuery)}
@@ -348,9 +365,7 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
                     </MenuItem>
                   ))}
                   {connections.length === 0 && (
-                    <MenuItem disabled>
-                      No connections found. Add one in the Connections tab.
-                    </MenuItem>
+                    <MenuItem disabled>No connections found. Add one in the Connections tab.</MenuItem>
                   )}
                 </Select>
               </FormControl>
@@ -359,13 +374,7 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
             <Grid item xs={12} md={6}>
               <FormControl fullWidth disabled={loading}>
                 <InputLabel>Operation</InputLabel>
-                <Select
-                  name="operation"
-                  value={formData.operation}
-                  label="Operation"
-                  onChange={handleChange}
-                  required
-                >
+                <Select name="operation" value={formData.operation} label="Operation" onChange={handleChange} required>
                   <MenuItem value="query">Run Query</MenuItem>
                   <MenuItem value="execute">Execute Command</MenuItem>
                   <MenuItem value="tables">List Tables</MenuItem>
@@ -387,12 +396,12 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
                   disabled={loading}
                   required
                   placeholder={
-                    formData.operation === 'query' 
+                    formData.operation === 'query'
                       ? 'SELECT * FROM table_name WHERE condition = :param'
                       : 'UPDATE table_name SET column = value WHERE condition'
                   }
                   InputProps={{
-                    style: { fontFamily: 'monospace', fontSize: '0.9rem' }
+                    style: { fontFamily: 'monospace', fontSize: '0.9rem' },
                   }}
                 />
               </Grid>
@@ -411,11 +420,11 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
                   disabled={loading}
                   helperText="JSON object of parameters for parameterized queries"
                   InputProps={{
-                    style: { fontFamily: 'monospace', fontSize: '0.9rem' }
+                    style: { fontFamily: 'monospace', fontSize: '0.9rem' },
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <TextField
@@ -439,10 +448,9 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
                 </Box>
               </Grid>
             </Collapse>
-
           </Grid>
         </Box>
-        
+
         {/* Results Section */}
         {result && (
           <Box sx={{ mt: 4 }}>
@@ -451,7 +459,7 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
               <Button
                 variant="outlined"
                 size="small"
-                onClick={() => setPreviewMode(prev => prev === 'table' ? 'json' : 'table')}
+                onClick={() => setPreviewMode((prev) => (prev === 'table' ? 'json' : 'table'))}
                 startIcon={previewMode === 'table' ? <CodeIcon /> : <TableChartIcon />}
               >
                 {previewMode === 'table' ? 'View as JSON' : 'View as Table'}
@@ -462,15 +470,17 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
           </Box>
         )}
       </Box>
-      
+
       {/* Saved Queries Tab */}
       <Box sx={{ display: activeTab === 'saved' ? 'block' : 'none' }}>
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" gutterBottom>Saved Queries</Typography>
+          <Typography variant="h6" gutterBottom>
+            Saved Queries
+          </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Select a query to load it into the editor
           </Typography>
-          
+
           {savedQueries.length === 0 ? (
             <Paper sx={{ p: 3, textAlign: 'center' }}>
               <Typography variant="body1" color="text.secondary">
@@ -491,9 +501,9 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
                 </TableHead>
                 <TableBody>
                   {savedQueries.map((query) => (
-                    <TableRow 
-                      key={query.id} 
-                      hover 
+                    <TableRow
+                      key={query.id}
+                      hover
                       sx={{ '&:hover': { cursor: 'pointer' } }}
                       onClick={() => loadSavedQuery(query)}
                     >
@@ -504,8 +514,8 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Typography 
-                          variant="caption" 
+                        <Typography
+                          variant="caption"
                           sx={{
                             fontFamily: 'monospace',
                             display: '-webkit-box',
@@ -513,36 +523,36 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                            maxWidth: '300px'
+                            maxWidth: '300px',
                           }}
                         >
                           {query.sql}
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Chip 
-                          label={query.connection_name || 'Default'} 
-                          size="small" 
-                          variant="outlined"
-                        />
+                        <Chip label={query.connection_name || 'Default'} size="small" variant="outlined" />
                       </TableCell>
-                      <TableCell>
-                        {query.last_used ? new Date(query.last_used).toLocaleString() : 'Never'}
-                      </TableCell>
+                      <TableCell>{query.last_used ? new Date(query.last_used).toLocaleString() : 'Never'}</TableCell>
                       <TableCell align="right">
                         <Tooltip title="Load Query">
-                          <IconButton size="small" onClick={(e) => {
-                            e.stopPropagation();
-                            loadSavedQuery(query);
-                          }}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              loadSavedQuery(query);
+                            }}
+                          >
                             <PlayArrowIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Copy to Clipboard">
-                          <IconButton size="small" onClick={(e) => {
-                            e.stopPropagation();
-                            copyToClipboard(query.sql);
-                          }}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyToClipboard(query.sql);
+                            }}
+                          >
                             <ContentCopyIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -555,13 +565,10 @@ const DatabaseToolForm = ({ tool, showSnackbar }) => {
           )}
         </Box>
       </Box>
-      
+
       {/* Connections Tab */}
       <Box sx={{ display: activeTab === 'connections' ? 'block' : 'none' }}>
-        <DatabaseConnectionManager 
-          server={tool.server} 
-          showSnackbar={showSnackbar} 
-        />
+        <DatabaseConnectionManager server={tool.server} showSnackbar={showSnackbar} />
       </Box>
     </Box>
   );

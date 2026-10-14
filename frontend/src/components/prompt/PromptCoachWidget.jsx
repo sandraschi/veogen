@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { startPromptCoachSession, critiquePrompt } from '../../services/promptCoachService';
 import { toast } from 'sonner';
+import { critiquePrompt, startPromptCoachSession } from '../../services/promptCoachService';
 
 const PromptCoachWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,6 +54,7 @@ const PromptCoachWidget = () => {
               <p className="text-xs text-gray-500">{sessionId ? 'Live' : 'Initializing...'}</p>
             </div>
             <button
+              type="button"
               className="text-gray-400 hover:text-white"
               onClick={() => setIsOpen(false)}
               aria-label="Close prompt coach"
@@ -69,6 +70,7 @@ const PromptCoachWidget = () => {
             className="w-full bg-gray-950 border border-gray-800 rounded-xl text-white p-3 h-28 text-sm"
           />
           <button
+            type="button"
             onClick={handleCritique}
             disabled={isLoading}
             className="w-full py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-semibold"
@@ -78,32 +80,34 @@ const PromptCoachWidget = () => {
 
           <div className="space-y-3 max-h-48 overflow-y-auto">
             {messages.map((message, index) => (
-              <div key={index} className="bg-gray-950/60 border border-gray-800 rounded-xl p-3 text-xs text-gray-300 space-y-2">
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: append-only transcript, messages carry no id and are never reordered
+                key={index}
+                className="bg-gray-950/60 border border-gray-800 rounded-xl p-3 text-xs text-gray-300 space-y-2"
+              >
                 <p className="font-semibold text-white">{message.summary}</p>
                 <ul className="list-disc list-inside space-y-1">
-                  {(message.recommendations || []).map((rec, recIndex) => (
-                    <li key={recIndex}>{rec}</li>
+                  {(message.recommendations || []).map((rec) => (
+                    <li key={rec}>{rec}</li>
                   ))}
                 </ul>
               </div>
             ))}
-            {!messages.length && (
-              <p className="text-gray-500 text-xs">No critiques yet. Paste a prompt to begin.</p>
-            )}
+            {!messages.length && <p className="text-gray-500 text-xs">No critiques yet. Paste a prompt to begin.</p>}
           </div>
         </div>
       )}
 
       <button
+        type="button"
         className="w-14 h-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg flex items-center justify-center"
         onClick={() => setIsOpen((prev) => !prev)}
       >
         ✨
       </button>
     </div>,
-    document.body
+    document.body,
   );
 };
 
 export default PromptCoachWidget;
-

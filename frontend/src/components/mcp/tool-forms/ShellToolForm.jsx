@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { TextField, Button, Typography, Box, CircularProgress } from '@mui/material';
+import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
 import axios from 'axios';
+import React, { useState } from 'react';
 
 const ShellToolForm = ({ tool, showSnackbar }) => {
   const [command, setCommand] = useState('');
@@ -15,10 +15,10 @@ const ShellToolForm = ({ tool, showSnackbar }) => {
       const response = await axios.post('/api/mcp/execute', {
         server: tool.server,
         tool: tool.name,
-        params: { 
+        params: {
           command,
-          cwd: workingDir || undefined
-        }
+          cwd: workingDir || undefined,
+        },
       });
       setResult(response.data);
       showSnackbar('Command executed successfully', 'success');
@@ -51,9 +51,9 @@ const ShellToolForm = ({ tool, showSnackbar }) => {
         variant="outlined"
         margin="normal"
       />
-      <Button 
-        type="submit" 
-        variant="contained" 
+      <Button
+        type="submit"
+        variant="contained"
         color="primary"
         disabled={loading || !command}
         startIcon={loading ? <CircularProgress size={20} /> : null}
@@ -61,12 +61,14 @@ const ShellToolForm = ({ tool, showSnackbar }) => {
       >
         {loading ? 'Executing...' : 'Run Command'}
       </Button>
-      
+
       {result && (
         <Box mt={2}>
-          <Typography variant="subtitle1" gutterBottom>Result:</Typography>
-          <Box 
-            component="pre" 
+          <Typography variant="subtitle1" gutterBottom>
+            Result:
+          </Typography>
+          <Box
+            component="pre"
             sx={{
               backgroundColor: 'background.paper',
               p: 2,
