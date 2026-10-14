@@ -12,7 +12,7 @@ class SettingsService {
     const token = localStorage.getItem('token');
     return {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
+      ...(token && { Authorization: `Bearer ${token}` }),
     };
   }
 
@@ -33,7 +33,7 @@ class SettingsService {
       default_aspect_ratio: settings.defaultAspectRatio || '16:9',
       auto_save: settings.autoSave !== undefined ? settings.autoSave : true,
       notifications: settings.notifications !== undefined ? settings.notifications : true,
-      theme: settings.theme || 'dark'
+      theme: settings.theme || 'dark',
     };
   }
 
@@ -48,7 +48,7 @@ class SettingsService {
       defaultAspectRatio: settings.default_aspect_ratio || '16:9',
       autoSave: settings.auto_save !== undefined ? settings.auto_save : true,
       notifications: settings.notifications !== undefined ? settings.notifications : true,
-      theme: settings.theme || 'dark'
+      theme: settings.theme || 'dark',
     };
   }
 
@@ -56,7 +56,7 @@ class SettingsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/settings`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -71,7 +71,6 @@ class SettingsService {
       const frontendSettings = this.toFrontendFormat(settings);
       this.settings = frontendSettings;
       return frontendSettings;
-      
     } catch (error) {
       console.error('Failed to get settings:', error);
       // Return default settings if API fails
@@ -88,27 +87,27 @@ class SettingsService {
 
       // Convert to backend format
       const backendSettings = this.toBackendFormat(settingsData);
-      
+
       const response = await fetch(`${API_BASE_URL}/api/v1/settings`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify(backendSettings)
+        body: JSON.stringify(backendSettings),
       });
 
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Your session has expired. Please log in again to save settings.');
         }
-        
+
         let errorMessage = 'Failed to save settings';
         try {
           const errorData = await response.json();
           errorMessage = errorData.detail || errorMessage;
-        } catch (e) {
+        } catch (_e) {
           // If we can't parse JSON, use status text
           errorMessage = response.statusText || errorMessage;
         }
-        
+
         throw new Error(`${errorMessage} (${response.status})`);
       }
 
@@ -116,20 +115,19 @@ class SettingsService {
       const frontendSettings = this.toFrontendFormat(updatedSettings);
       this.settings = frontendSettings;
       return frontendSettings;
-      
     } catch (error) {
       console.error('Failed to update settings:', error);
-      
+
       // Provide specific guidance based on error type
       if (error.message.includes('log in') || error.message.includes('session')) {
         // Authentication error - user needs to log in
         throw error;
-      } else if (error.message.includes('Failed to fetch')) {
-        throw new Error('Cannot connect to VeoGen servers. Please check that the backend is running.');
-      } else {
-        // Other errors
-        throw new Error(`Settings save failed: ${error.message}`);
       }
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('Cannot connect to VeoGen servers. Please check that the backend is running.');
+      }
+      // Other errors
+      throw new Error(`Settings save failed: ${error.message}`);
     }
   }
 
@@ -141,7 +139,7 @@ class SettingsService {
 
       const response = await fetch(`${API_BASE_URL}/api/v1/settings/${key}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -167,7 +165,7 @@ class SettingsService {
       const response = await fetch(`${API_BASE_URL}/api/v1/settings/${key}`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({ value, type })
+        body: JSON.stringify({ value, type }),
       });
 
       if (!response.ok) {
@@ -195,7 +193,7 @@ class SettingsService {
       defaultAspectRatio: '16:9',
       autoSave: true,
       notifications: true,
-      theme: 'dark'
+      theme: 'dark',
     };
   }
 
@@ -216,8 +214,8 @@ class SettingsService {
       const response = await fetch(`${API_BASE_URL}/health`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       if (response.ok) {
@@ -225,8 +223,10 @@ class SettingsService {
         const results = {
           success: true,
           data,
-          message: `Connected to ${data.service || 'VeoGen'} v${data.version || '1.0.0'}. Status: ${data.status || 'healthy'}`,
-          details: []
+          message: `Connected to ${data.service || 'VeoGen'} v${data.version || '1.0.0'}. Status: ${
+            data.status || 'healthy'
+          }`,
+          details: [],
         };
 
         // Add component status details
@@ -238,16 +238,15 @@ class SettingsService {
         }
 
         return results;
-      } else {
-        return { 
-          success: false, 
-          error: `VeoGen API connection failed (${response.status}: ${response.statusText})` 
-        };
       }
+      return {
+        success: false,
+        error: `VeoGen API connection failed (${response.status}: ${response.statusText})`,
+      };
     } catch (error) {
-      return { 
-        success: false, 
-        error: `Network error: ${error.message}. Is the VeoGen backend running on port 11150?` 
+      return {
+        success: false,
+        error: `Network error: ${error.message}. Is the VeoGen backend running on port 11150?`,
       };
     }
   }
@@ -261,14 +260,14 @@ class SettingsService {
     try {
       // For now, just return success since we don't have a real test endpoint
       // In the future, this could test the actual Gemini API
-      return { 
-        success: true, 
-        message: 'Gemini API key format appears valid (actual connection testing coming soon)' 
+      return {
+        success: true,
+        message: 'Gemini API key format appears valid (actual connection testing coming soon)',
       };
     } catch (error) {
-      return { 
-        success: false, 
-        error: `Gemini API test error: ${error.message}` 
+      return {
+        success: false,
+        error: `Gemini API test error: ${error.message}`,
       };
     }
   }
@@ -279,7 +278,7 @@ class SettingsService {
     if (!token) {
       return {
         authenticated: false,
-        message: 'Not logged in - settings can be viewed but not saved'
+        message: 'Not logged in - settings can be viewed but not saved',
       };
     }
 
@@ -289,18 +288,18 @@ class SettingsService {
       if (parts.length !== 3) {
         return {
           authenticated: false,
-          message: 'Invalid token format - please log in again'
+          message: 'Invalid token format - please log in again',
         };
       }
 
       return {
         authenticated: true,
-        message: 'Logged in - settings can be saved'
+        message: 'Logged in - settings can be saved',
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         authenticated: false,
-        message: 'Token validation failed - please log in again'
+        message: 'Token validation failed - please log in again',
       };
     }
   }

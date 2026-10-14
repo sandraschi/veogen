@@ -12,7 +12,7 @@ class SettingsService {
     const token = localStorage.getItem('token');
     return {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
+      ...(token && { Authorization: `Bearer ${token}` }),
     };
   }
 
@@ -27,7 +27,7 @@ class SettingsService {
       default_aspect_ratio: settings.defaultAspectRatio || '16:9',
       auto_save: settings.autoSave !== undefined ? settings.autoSave : true,
       notifications: settings.notifications !== undefined ? settings.notifications : true,
-      theme: settings.theme || 'dark'
+      theme: settings.theme || 'dark',
     };
   }
 
@@ -42,7 +42,7 @@ class SettingsService {
       defaultAspectRatio: settings.default_aspect_ratio || '16:9',
       autoSave: settings.auto_save !== undefined ? settings.auto_save : true,
       notifications: settings.notifications !== undefined ? settings.notifications : true,
-      theme: settings.theme || 'dark'
+      theme: settings.theme || 'dark',
     };
   }
 
@@ -50,7 +50,7 @@ class SettingsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/settings`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -65,7 +65,6 @@ class SettingsService {
       const frontendSettings = this.toFrontendFormat(settings);
       this.settings = frontendSettings;
       return frontendSettings;
-      
     } catch (error) {
       console.error('Failed to get settings:', error);
       // Return default settings if API fails
@@ -77,18 +76,18 @@ class SettingsService {
     try {
       // Convert to backend format
       const backendSettings = this.toBackendFormat(settingsData);
-      
+
       const response = await fetch(`${API_BASE_URL}/api/v1/settings`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify(backendSettings)
+        body: JSON.stringify(backendSettings),
       });
 
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Please log in to save settings');
         }
-        
+
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `Failed to save settings (${response.status})`);
       }
@@ -97,7 +96,6 @@ class SettingsService {
       const frontendSettings = this.toFrontendFormat(updatedSettings);
       this.settings = frontendSettings;
       return frontendSettings;
-      
     } catch (error) {
       console.error('Failed to update settings:', error);
       throw error;
@@ -108,7 +106,7 @@ class SettingsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/settings/${key}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        headers: this.getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -127,7 +125,7 @@ class SettingsService {
       const response = await fetch(`${API_BASE_URL}/api/v1/settings/${key}`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({ value, type })
+        body: JSON.stringify({ value, type }),
       });
 
       if (!response.ok) {
@@ -152,7 +150,7 @@ class SettingsService {
       defaultAspectRatio: '16:9',
       autoSave: true,
       notifications: true,
-      theme: 'dark'
+      theme: 'dark',
     };
   }
 
@@ -172,7 +170,7 @@ class SettingsService {
       // Test basic VeoGen API health
       const response = await fetch(`${API_BASE_URL}/health`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        headers: this.getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -181,7 +179,7 @@ class SettingsService {
           success: true,
           data,
           message: `Connected to ${data.service} v${data.version}. Status: ${data.status}`,
-          details: []
+          details: [],
         };
 
         // Add component status details
@@ -192,16 +190,15 @@ class SettingsService {
         }
 
         return results;
-      } else {
-        return { 
-          success: false, 
-          error: `VeoGen API connection failed (${response.status})` 
-        };
       }
+      return {
+        success: false,
+        error: `VeoGen API connection failed (${response.status})`,
+      };
     } catch (error) {
-      return { 
-        success: false, 
-        error: `Network error: ${error.message}` 
+      return {
+        success: false,
+        error: `Network error: ${error.message}`,
       };
     }
   }
@@ -217,25 +214,24 @@ class SettingsService {
         method: 'GET',
         headers: {
           ...this.getAuthHeaders(),
-          'X-Test-Gemini-Key': apiKey
-        }
+          'X-Test-Gemini-Key': apiKey,
+        },
       });
 
       if (response.ok) {
-        return { 
-          success: true, 
-          message: 'Gemini API connection successful' 
-        };
-      } else {
-        return { 
-          success: false, 
-          error: `Gemini API test failed (${response.status})` 
+        return {
+          success: true,
+          message: 'Gemini API connection successful',
         };
       }
+      return {
+        success: false,
+        error: `Gemini API test failed (${response.status})`,
+      };
     } catch (error) {
-      return { 
-        success: false, 
-        error: `Gemini API error: ${error.message}` 
+      return {
+        success: false,
+        error: `Gemini API error: ${error.message}`,
       };
     }
   }

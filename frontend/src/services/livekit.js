@@ -24,14 +24,10 @@ class LiveKitService {
   async connect(roomName, identity, token) {
     try {
       // Connect to the room
-      await this.room.connect(
-        process.env.REACT_APP_LIVEKIT_WS_URL,
-        token || this.generateToken(roomName, identity),
-        {
-          autoSubscribe: true,
-        }
-      );
-      
+      await this.room.connect(process.env.REACT_APP_LIVEKIT_WS_URL, token || this.generateToken(roomName, identity), {
+        autoSubscribe: true,
+      });
+
       console.log('Connected to room', this.room.name);
       return this.room;
     } catch (error) {
@@ -41,7 +37,7 @@ class LiveKitService {
   }
 
   // Generate a token for development (in production, this should be generated server-side)
-  generateToken(roomName, identity) {
+  generateToken(_roomName, _identity) {
     // In a real app, this should be an API call to your backend
     return `${process.env.REACT_APP_LIVEKIT_API_KEY}:${process.env.REACT_APP_LIVEKIT_API_SECRET}`;
   }
@@ -69,7 +65,7 @@ class LiveKitService {
       for (const track of stream.getTracks()) {
         await this.room.localParticipant.publishTrack(track);
       }
-      
+
       return stream;
     } catch (error) {
       console.error('Error publishing tracks:', error);
@@ -78,7 +74,7 @@ class LiveKitService {
   }
 
   // Event handlers
-  handleTrackSubscribed(track, publication, participant) {
+  handleTrackSubscribed(track, _publication, participant) {
     console.log('Track subscribed:', track.kind, 'from', participant.identity);
     // Attach the track to a video/audio element
     const element = document.getElementById(`track-${participant.identity}-${track.kind}`);
@@ -87,7 +83,7 @@ class LiveKitService {
     }
   }
 
-  handleTrackUnsubscribed(track, publication, participant) {
+  handleTrackUnsubscribed(track, _publication, participant) {
     console.log('Track unsubscribed:', track.kind, 'from', participant.identity);
     // Detach the track from the DOM
     track.detach();
@@ -150,7 +146,7 @@ class LiveKitService {
 
       const track = stream.getVideoTracks()[0];
       await this.room.localParticipant.publishTrack(track, { name: 'screen' });
-      
+
       return stream;
     } catch (error) {
       console.error('Error sharing screen:', error);

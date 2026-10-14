@@ -12,7 +12,7 @@ class MusicService {
           // Add authorization header when auth is implemented
           // 'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(musicData)
+        body: JSON.stringify(musicData),
       });
 
       if (!response.ok) {
@@ -31,7 +31,7 @@ class MusicService {
       const response = await fetch(`${API_BASE_URL}/api/v1/music/${musicId}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -52,13 +52,13 @@ class MusicService {
         limit: params.limit || 20,
         ...(params.style && { style: params.style }),
         ...(params.mood && { mood: params.mood }),
-        ...(params.status && { status: params.status })
+        ...(params.status && { status: params.status }),
       });
 
       const response = await fetch(`${API_BASE_URL}/api/v1/music/?${queryParams}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -78,7 +78,7 @@ class MusicService {
         method: 'DELETE',
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -98,7 +98,7 @@ class MusicService {
         method: 'POST',
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -115,7 +115,7 @@ class MusicService {
   async getMusicStyles() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/music/styles/`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -130,7 +130,7 @@ class MusicService {
   async getMusicMoods() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/music/moods/`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -147,7 +147,7 @@ class MusicService {
       const response = await fetch(`${API_BASE_URL}/api/v1/music/${musicId}/download?format=${format}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -172,8 +172,8 @@ class MusicService {
         },
         body: JSON.stringify({
           remix_style: remixStyle,
-          ...(remixMood && { remix_mood: remixMood })
-        })
+          ...(remixMood && { remix_mood: remixMood }),
+        }),
       });
 
       if (!response.ok) {

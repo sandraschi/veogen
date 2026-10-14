@@ -12,4 +12,3 @@ export const critiquePrompt = async (sessionId, prompt) => {
   });
   return data;
 };
-

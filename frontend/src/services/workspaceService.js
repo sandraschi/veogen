@@ -7,4 +7,3 @@ export const importBriefToFlow = async (title, outline) => {
   });
   return data;
 };
-
