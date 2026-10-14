@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Typography, 
-  TextField,
-  Button, 
-  Box, 
-  Alert, 
+import { Lock, Visibility, VisibilityOff } from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
   Card,
   CardContent,
+  Container,
   IconButton,
-  InputAdornment
+  InputAdornment,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { Visibility, VisibilityOff, Lock } from '@mui/icons-material';
 import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'http://localhost:11150';
 
@@ -51,7 +51,7 @@ const PasswordReset = () => {
       try {
         const response = await axios.post(`${API_BASE_URL}/api/v1/enhanced-auth/validate-reset-token`, {
           token: tokenParam,
-          user_id: userParam
+          user_id: userParam,
         });
 
         if (response.status === 200) {
@@ -64,7 +64,7 @@ const PasswordReset = () => {
           setError('Failed to validate reset link. Please try again.');
         }
       }
-      
+
       setChecking(false);
     };
 
@@ -96,7 +96,7 @@ const PasswordReset = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     const passwordError = validatePassword();
     if (passwordError) {
       setError(passwordError);
@@ -109,7 +109,7 @@ const PasswordReset = () => {
       const response = await axios.post(`${API_BASE_URL}/api/v1/enhanced-auth/reset-password`, {
         token,
         user_id: userId,
-        new_password: password
+        new_password: password,
       });
 
       if (response.status === 200) {
@@ -155,10 +155,7 @@ const PasswordReset = () => {
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
             </Alert>
-            <Button 
-              variant="contained" 
-              onClick={() => navigate('/auth')}
-            >
+            <Button variant="contained" onClick={() => navigate('/auth')}>
               Request New Reset Link
             </Button>
           </CardContent>
@@ -201,7 +198,11 @@ const PasswordReset = () => {
             </Typography>
           </Box>
 
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit}>
             <TextField
@@ -215,10 +216,7 @@ const PasswordReset = () => {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -242,21 +240,11 @@ const PasswordReset = () => {
               </Typography>
             </Box>
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              sx={{ mt: 3, mb: 2 }}
-            >
+            <Button type="submit" fullWidth variant="contained" disabled={loading} sx={{ mt: 3, mb: 2 }}>
               {loading ? 'Resetting Password...' : 'Reset Password'}
             </Button>
 
-            <Button
-              fullWidth
-              variant="text"
-              onClick={() => navigate('/auth')}
-            >
+            <Button fullWidth variant="text" onClick={() => navigate('/auth')}>
               Back to Login
             </Button>
           </form>

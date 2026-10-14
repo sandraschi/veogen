@@ -1,45 +1,45 @@
-import React, { useState, useEffect, useRef } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  Button,
+  Add,
+  Brush,
+  Business,
+  Code,
+  Image,
+  MoreVert,
+  Movie,
+  MusicNote,
+  Person,
+  School,
+  Send,
+  SmartToy,
+  VideoCall,
+} from '@mui/icons-material';
+import {
+  Alert,
   Avatar,
+  Box,
+  Button,
   Card,
   CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  IconButton,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
-  IconButton,
   Menu,
   MenuItem,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-  CircularProgress,
-  Alert
+  Paper,
+  TextField,
+  Typography,
 } from '@mui/material';
-import {
-  Send,
-  SmartToy,
-  Person,
-  MoreVert,
-  Add,
-  VideoCall,
-  Image,
-  MusicNote,
-  Code,
-  School,
-  Business,
-  Movie,
-  Brush
-} from '@mui/icons-material';
 import { format } from 'date-fns';
+import React, { useState, useEffect, useRef } from 'react';
 import { chatService } from '../../services/chatService';
 
 // Persona selection dialog
@@ -51,7 +51,7 @@ const PersonaSelectionDialog = ({ open, onClose, onSelect, personas }) => {
       story_director: <Movie />,
       music_composer: <MusicNote />,
       brand_strategist: <Business />,
-      educational_tutor: <School />
+      educational_tutor: <School />,
     };
     return iconMap[personaId] || <SmartToy />;
   };
@@ -63,7 +63,7 @@ const PersonaSelectionDialog = ({ open, onClose, onSelect, personas }) => {
       story_director: '#45B7D1',
       music_composer: '#96CEB4',
       brand_strategist: '#FFEAA7',
-      educational_tutor: '#DDA0DD'
+      educational_tutor: '#DDA0DD',
     };
     return colorMap[personaId] || '#666';
   };
@@ -75,52 +75,44 @@ const PersonaSelectionDialog = ({ open, onClose, onSelect, personas }) => {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Each persona has unique expertise and personality traits to help with different types of creative projects.
         </Typography>
-        
+
         <Grid container spacing={2}>
           {personas.map((persona) => (
             <Grid item xs={12} sm={6} md={4} key={persona.id}>
-              <Card 
-                sx={{ 
+              <Card
+                sx={{
                   cursor: 'pointer',
                   height: '100%',
-                  '&:hover': { 
+                  '&:hover': {
                     elevation: 4,
                     transform: 'translateY(-2px)',
-                    transition: 'all 0.2s ease-in-out'
-                  }
+                    transition: 'all 0.2s ease-in-out',
+                  },
                 }}
                 onClick={() => onSelect(persona)}
               >
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar sx={{ bgcolor: getPersonaColor(persona.id), mr: 2 }}>
-                      {getPersonaIcon(persona.id)}
-                    </Avatar>
+                    <Avatar sx={{ bgcolor: getPersonaColor(persona.id), mr: 2 }}>{getPersonaIcon(persona.id)}</Avatar>
                     <Typography variant="h6" component="div">
                       {persona.name}
                     </Typography>
                   </Box>
-                  
+
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {persona.description}
                   </Typography>
-                  
+
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
                     Personality: {persona.personality}
                   </Typography>
-                  
+
                   <Box sx={{ mb: 1 }}>
-                    {persona.expertise.slice(0, 3).map((skill, index) => (
-                      <Chip 
-                        key={index}
-                        label={skill}
-                        size="small"
-                        variant="outlined"
-                        sx={{ mr: 0.5, mb: 0.5 }}
-                      />
+                    {persona.expertise.slice(0, 3).map((skill) => (
+                      <Chip key={skill} label={skill} size="small" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }} />
                     ))}
                   </Box>
-                  
+
                   {persona.tools.length > 0 && (
                     <Typography variant="caption" color="primary">
                       Can generate: {persona.tools.join(', ')}
@@ -142,19 +134,23 @@ const PersonaSelectionDialog = ({ open, onClose, onSelect, personas }) => {
 // Message component
 const ChatMessage = ({ message, persona }) => {
   const isUser = message.role === 'user';
-  
+
   const renderGeneratedContent = (content) => {
     if (!content) return null;
-    
+
     const getContentIcon = () => {
       switch (content.type) {
-        case 'video': return <VideoCall />;
-        case 'image': return <Image />;
-        case 'music': return <MusicNote />;
-        default: return <SmartToy />;
+        case 'video':
+          return <VideoCall />;
+        case 'image':
+          return <Image />;
+        case 'music':
+          return <MusicNote />;
+        default:
+          return <SmartToy />;
       }
     };
-    
+
     return (
       <Card sx={{ mt: 1, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
         <CardContent sx={{ p: 2 }}>
@@ -164,11 +160,9 @@ const ChatMessage = ({ message, persona }) => {
               {content.description}
             </Typography>
           </Box>
-          
-          <Typography variant="body2">
-            Generated {content.type} content
-          </Typography>
-          
+
+          <Typography variant="body2">Generated {content.type} content</Typography>
+
           {content.data && (
             <Button
               variant="outlined"
@@ -192,7 +186,7 @@ const ChatMessage = ({ message, persona }) => {
         display: 'flex',
         flexDirection: isUser ? 'row-reverse' : 'row',
         alignItems: 'flex-start',
-        mb: 1
+        mb: 1,
       }}
     >
       <ListItemAvatar sx={{ minWidth: isUser ? 40 : 48, ml: isUser ? 1 : 0, mr: isUser ? 0 : 1 }}>
@@ -200,7 +194,7 @@ const ChatMessage = ({ message, persona }) => {
           {isUser ? <Person /> : <SmartToy />}
         </Avatar>
       </ListItemAvatar>
-      
+
       <Box sx={{ flex: 1, maxWidth: '70%' }}>
         <Paper
           elevation={1}
@@ -208,7 +202,7 @@ const ChatMessage = ({ message, persona }) => {
             p: 2,
             bgcolor: isUser ? 'primary.main' : 'grey.100',
             color: isUser ? 'primary.contrastText' : 'text.primary',
-            borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'
+            borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
           }}
         >
           {!isUser && persona && (
@@ -216,13 +210,13 @@ const ChatMessage = ({ message, persona }) => {
               {persona.name}
             </Typography>
           )}
-          
+
           <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
             {message.content}
           </Typography>
-          
+
           {message.generated_content && renderGeneratedContent(message.generated_content)}
-          
+
           <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mt: 1 }}>
             {format(new Date(message.timestamp), 'HH:mm')}
           </Typography>
@@ -246,7 +240,7 @@ const PersonaChat = () => {
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [menuConversationId, setMenuConversationId] = useState(null);
-  
+
   const messagesEndRef = useRef(null);
   const chatInputRef = useRef(null);
 
@@ -255,6 +249,7 @@ const PersonaChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: messages is the intended trigger; scrollToBottom only touches a ref
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -332,17 +327,12 @@ const PersonaChat = () => {
 
     try {
       setSending(true);
-      const result = await chatService.startConversation(
-        persona.id,
-        newMessage,
-        token,
-        {}
-      );
+      const result = await chatService.startConversation(persona.id, newMessage, token, {});
 
       const userMessage = {
         role: 'user',
         content: newMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       const aiMessage = {
@@ -350,13 +340,13 @@ const PersonaChat = () => {
         content: result.response.message,
         persona_id: persona.id,
         generated_content: result.response.generated_content,
-        timestamp: result.response.timestamp
+        timestamp: result.response.timestamp,
       };
 
       setMessages([userMessage, aiMessage]);
       setActiveConversation({
         conversation_id: result.conversation_id,
-        persona: result.persona
+        persona: result.persona,
       });
 
       setNewMessage('');
@@ -389,29 +379,24 @@ const PersonaChat = () => {
       const userMessage = {
         role: 'user',
         content: newMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
-      setMessages(prev => [...prev, userMessage]);
+      setMessages((prev) => [...prev, userMessage]);
       const messageToSend = newMessage;
       setNewMessage('');
 
-      const result = await chatService.sendMessage(
-        activeConversation.conversation_id,
-        messageToSend,
-        token,
-        'text'
-      );
+      const result = await chatService.sendMessage(activeConversation.conversation_id, messageToSend, token, 'text');
 
       const aiMessage = {
         role: 'assistant',
         content: result.response.message,
         persona_id: activeConversation.persona.id,
         generated_content: result.response.generated_content,
-        timestamp: result.response.timestamp
+        timestamp: result.response.timestamp,
       };
 
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
       setError('');
     } catch (fetchError) {
       console.error('Failed to send message:', fetchError);
@@ -442,7 +427,7 @@ const PersonaChat = () => {
     try {
       await chatService.deleteConversation(conversationId, token);
 
-      setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+      setConversations((prev) => prev.filter((conv) => conv.id !== conversationId));
 
       if (activeConversation?.conversation_id === conversationId) {
         setActiveConversation(null);
@@ -480,7 +465,7 @@ const PersonaChat = () => {
             New Chat
           </Button>
         </Box>
-        
+
         <List sx={{ flex: 1, overflow: 'auto' }}>
           {sidebarLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -511,7 +496,7 @@ const PersonaChat = () => {
                   secondary={conv.last_message}
                   secondaryTypographyProps={{
                     noWrap: true,
-                    sx: { maxWidth: 180 }
+                    sx: { maxWidth: 180 },
                   }}
                 />
                 <IconButton
@@ -562,9 +547,7 @@ const PersonaChat = () => {
                 <SmartToy />
               </Avatar>
               <Box>
-                <Typography variant="h6">
-                  {activeConversation.persona.name}
-                </Typography>
+                <Typography variant="h6">{activeConversation.persona.name}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {activeConversation.persona.description}
                 </Typography>
@@ -587,27 +570,29 @@ const PersonaChat = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: '100%'
+                height: '100%',
               }}
             >
               <CircularProgress />
             </Box>
           ) : !activeConversation ? (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              height: '100%',
-              textAlign: 'center'
-            }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                textAlign: 'center',
+              }}
+            >
               <Box>
                 <SmartToy sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h5" color="text.secondary" gutterBottom>
                   Welcome to Persona Chat
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                  Choose an AI persona to start a conversation. Each persona has unique expertise 
-                  and can help with different creative projects.
+                  Choose an AI persona to start a conversation. Each persona has unique expertise and can help with
+                  different creative projects.
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Type your message below and click "New Chat" to begin!
@@ -617,11 +602,8 @@ const PersonaChat = () => {
           ) : (
             <List sx={{ width: '100%' }}>
               {messages.map((message, index) => (
-                <ChatMessage
-                  key={index}
-                  message={message}
-                  persona={activeConversation.persona}
-                />
+                // biome-ignore lint/suspicious/noArrayIndexKey: append-only chat transcript, messages carry no id and are never reordered
+                <ChatMessage key={index} message={message} persona={activeConversation.persona} />
               ))}
               {sending && (
                 <ListItem sx={{ justifyContent: 'center' }}>
@@ -645,9 +627,9 @@ const PersonaChat = () => {
               multiline
               maxRows={4}
               placeholder={
-                activeConversation 
+                activeConversation
                   ? `Message ${activeConversation.persona.name}...`
-                  : "Type your message and choose a persona to start chatting..."
+                  : 'Type your message and choose a persona to start chatting...'
               }
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}

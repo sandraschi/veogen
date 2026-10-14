@@ -1,60 +1,60 @@
-import React, { useState, useRef } from 'react';
 import {
+  Add,
+  CreateNewFolder,
+  Delete,
+  Description,
+  Download,
+  Edit,
+  ExpandMore,
+  History,
+  LibraryBooks,
+  MenuBook,
+  Print,
+  Refresh,
+  Remove,
+  Save,
+  Settings,
+  Share,
+  Visibility,
+} from '@mui/icons-material';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
   Box,
-  Paper,
-  Typography,
-  TextField,
   Button,
-  Grid,
   Card,
   CardContent,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-  Alert,
-  LinearProgress,
+  Chip,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
   IconButton,
-  Tabs,
-  Tab,
+  InputLabel,
+  LinearProgress,
   List,
   ListItem,
-  ListItemText,
   ListItemSecondaryAction,
-  Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Slider
+  ListItemText,
+  MenuItem,
+  Paper,
+  Select,
+  Slider,
+  Step,
+  StepContent,
+  StepLabel,
+  Stepper,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
 } from '@mui/material';
-import {
-  MenuBook,
-  Edit,
-  Download,
-  Share,
-  Refresh,
-  Add,
-  Remove,
-  ExpandMore,
-  Visibility,
-  Print,
-  Save,
-  Delete,
-  LibraryBooks,
-  CreateNewFolder,
-  Description,
-  Settings,
-  History
-} from '@mui/icons-material';
 import axios from 'axios';
+import React, { useState, useRef } from 'react';
 
 const API_BASE_URL = 'http://localhost:11150';
 
@@ -69,7 +69,7 @@ const BOOK_GENRES = [
   { id: 'thriller', name: 'Thriller', description: 'High-tension and suspenseful narratives' },
   { id: 'biography', name: 'Biography', description: 'Life stories of real people' },
   { id: 'self_help', name: 'Self-Help', description: 'Personal development and guidance' },
-  { id: 'children', name: 'Children\'s Book', description: 'Stories for young readers' }
+  { id: 'children', name: "Children's Book", description: 'Stories for young readers' },
 ];
 
 const WRITING_STYLES = [
@@ -78,14 +78,14 @@ const WRITING_STYLES = [
   { id: 'conversational', name: 'Conversational', description: 'Informal and engaging tone' },
   { id: 'academic', name: 'Academic', description: 'Scholarly and research-based' },
   { id: 'journalistic', name: 'Journalistic', description: 'Factual and news-style writing' },
-  { id: 'poetic', name: 'Poetic', description: 'Lyrical and artistic language' }
+  { id: 'poetic', name: 'Poetic', description: 'Lyrical and artistic language' },
 ];
 
 const BOOK_LENGTHS = [
   { id: 'short', name: 'Short Story', pages: '10-20', words: '2,500-5,000' },
   { id: 'novella', name: 'Novella', pages: '50-100', words: '17,500-40,000' },
   { id: 'novel', name: 'Novel', pages: '200-400', words: '80,000-120,000' },
-  { id: 'epic', name: 'Epic Novel', pages: '400+', words: '120,000+' }
+  { id: 'epic', name: 'Epic Novel', pages: '400+', words: '120,000+' },
 ];
 
 // Chapter editor component
@@ -144,7 +144,7 @@ const ChapterEditor = ({ chapter, onUpdate, onDelete, index }) => {
               type="number"
               label="Target Word Count"
               value={chapter.target_words || 1000}
-              onChange={(e) => onUpdate({ ...chapter, target_words: parseInt(e.target.value) })}
+              onChange={(e) => onUpdate({ ...chapter, target_words: Number.parseInt(e.target.value) })}
               inputProps={{ min: 100, max: 10000 }}
             />
           </Grid>
@@ -164,7 +164,7 @@ const ChapterEditor = ({ chapter, onUpdate, onDelete, index }) => {
 // Book preview component
 const BookPreview = ({ book, onClose }) => {
   const [currentPage, setCurrentPage] = useState(0);
-  
+
   const downloadBook = () => {
     const content = `
 # ${book.title}
@@ -172,13 +172,17 @@ ${book.author ? `*by ${book.author}*` : ''}
 
 ${book.summary || ''}
 
-${book.chapters.map((chapter, index) => `
+${book.chapters
+  .map(
+    (chapter, index) => `
 ## Chapter ${index + 1}: ${chapter.title}
 
 ${chapter.content}
-`).join('\n')}
+`,
+  )
+  .join('\n')}
     `;
-    
+
     const blob = new Blob([content], { type: 'text/markdown' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -207,12 +211,13 @@ ${chapter.content}
         <Box sx={{ minHeight: 400, maxHeight: 600, overflow: 'auto', p: 2 }}>
           {book.chapters.length > 0 && (
             <Box>
-              <Tabs value={currentPage} onChange={(e, newValue) => setCurrentPage(newValue)} sx={{ mb: 2 }}>
-                {book.chapters.map((chapter, index) => (
+              <Tabs value={currentPage} onChange={(_e, newValue) => setCurrentPage(newValue)} sx={{ mb: 2 }}>
+                {book.chapters.map((_chapter, index) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: one tab per chapter; position is the identity (value={index})
                   <Tab key={index} label={`Ch. ${index + 1}`} />
                 ))}
               </Tabs>
-              
+
               {book.chapters[currentPage] && (
                 <Box>
                   <Typography variant="h5" gutterBottom>
@@ -241,7 +246,7 @@ ${chapter.content}
 const BookGenerator = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [activeTab, setActiveTab] = useState(0);
-  
+
   // Book metadata
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
@@ -251,19 +256,19 @@ const BookGenerator = () => {
   const [concept, setConcept] = useState('');
   const [summary, setSummary] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
-  
+
   // Chapters and content
   const [chapters, setChapters] = useState([]);
   const [outline, setOutline] = useState('');
   const [creativity, setCreativity] = useState(0.7);
-  
+
   // Generation state
   const [generating, setGenerating] = useState(false);
   const [currentChapter, setCurrentChapter] = useState(0);
   const [progress, setProgress] = useState(0);
-  
+
   // UI state
-  const [bookProjects, setBookProjects] = useState([]);
+  const [_bookProjects, _setBookProjects] = useState([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [currentBook, setCurrentBook] = useState(null);
   const [error, setError] = useState('');
@@ -292,24 +297,25 @@ const BookGenerator = () => {
           genre,
           style,
           length,
-          target_audience: targetAudience
+          target_audience: targetAudience,
         },
-        { headers: getAuthHeaders() }
+        { headers: getAuthHeaders() },
       );
 
       setOutline(response.data.outline);
       setSummary(response.data.summary);
-      setChapters(response.data.chapters.map((chapter, index) => ({
-        id: Date.now() + index,
-        title: chapter.title,
-        outline: chapter.outline,
-        content: '',
-        target_words: chapter.target_words || 1000
-      })));
-      
+      setChapters(
+        response.data.chapters.map((chapter, index) => ({
+          id: Date.now() + index,
+          title: chapter.title,
+          outline: chapter.outline,
+          content: '',
+          target_words: chapter.target_words || 1000,
+        })),
+      );
+
       setActiveStep(1);
       setSuccess('Outline generated successfully!');
-
     } catch (error) {
       console.error('Outline generation error:', error);
       setError(error.response?.data?.detail || 'Failed to generate outline');
@@ -338,20 +344,19 @@ const BookGenerator = () => {
           genre,
           style,
           summary,
-          chapters: chapters.map(chapter => ({
+          chapters: chapters.map((chapter) => ({
             title: chapter.title,
             outline: chapter.outline,
-            target_words: chapter.target_words
+            target_words: chapter.target_words,
           })),
-          creativity
+          creativity,
         },
-        { headers: getAuthHeaders() }
+        { headers: getAuthHeaders() },
       );
 
       // Poll for progress
       const bookId = response.data.book_id;
       pollBookProgress(bookId);
-
     } catch (error) {
       console.error('Book generation error:', error);
       setError(error.response?.data?.detail || 'Failed to generate book');
@@ -361,10 +366,7 @@ const BookGenerator = () => {
 
   const pollBookProgress = async (bookId) => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/v1/book/status/${bookId}`,
-        { headers: getAuthHeaders() }
-      );
+      const response = await axios.get(`${API_BASE_URL}/api/v1/book/status/${bookId}`, { headers: getAuthHeaders() });
 
       const { status, current_chapter, total_chapters, chapters: chapterContents } = response.data;
 
@@ -375,9 +377,9 @@ const BookGenerator = () => {
         // Update chapters with generated content
         const updatedChapters = chapters.map((chapter, index) => ({
           ...chapter,
-          content: chapterContents[index]?.content || chapter.content
+          content: chapterContents[index]?.content || chapter.content,
         }));
-        
+
         setChapters(updatedChapters);
         setCurrentBook({
           title,
@@ -385,13 +387,12 @@ const BookGenerator = () => {
           genre,
           summary,
           chapters: updatedChapters,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         });
-        
+
         setGenerating(false);
         setActiveStep(2);
         setSuccess('Book generated successfully!');
-        
       } else if (status === 'failed') {
         setGenerating(false);
         setError('Book generation failed');
@@ -399,7 +400,6 @@ const BookGenerator = () => {
         // Continue polling
         setTimeout(() => pollBookProgress(bookId), 3000);
       }
-
     } catch (error) {
       console.error('Progress polling error:', error);
       setGenerating(false);
@@ -413,7 +413,7 @@ const BookGenerator = () => {
       title: `Chapter ${chapters.length + 1}`,
       outline: '',
       content: '',
-      target_words: 1000
+      target_words: 1000,
     };
     setChapters([...chapters, newChapter]);
   };
@@ -441,19 +441,11 @@ const BookGenerator = () => {
       aria-labelledby={`book-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 
-  const steps = [
-    'Book Concept',
-    'Outline & Chapters',
-    'Generate Book'
-  ];
+  const _steps = ['Book Concept', 'Outline & Chapters', 'Generate Book'];
 
   return (
     <Box sx={{ p: 3 }}>
@@ -464,8 +456,16 @@ const BookGenerator = () => {
         Create complete books with AI assistance. From concept to finished manuscript.
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
       <Grid container spacing={3}>
         {/* Main Content */}
@@ -584,7 +584,7 @@ const BookGenerator = () => {
               <Step>
                 <StepLabel>Edit Outline & Chapters</StepLabel>
                 <StepContent>
-                  <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+                  <Tabs value={activeTab} onChange={(_e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
                     <Tab label="Book Outline" />
                     <Tab label="Chapters" />
                     <Tab label="Settings" />
@@ -619,14 +619,8 @@ const BookGenerator = () => {
 
                   <TabPanel value={activeTab} index={1}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6">
-                        Chapters ({chapters.length})
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        startIcon={<Add />}
-                        onClick={addChapter}
-                      >
+                      <Typography variant="h6">Chapters ({chapters.length})</Typography>
+                      <Button variant="outlined" startIcon={<Add />} onClick={addChapter}>
                         Add Chapter
                       </Button>
                     </Box>
@@ -648,14 +642,14 @@ const BookGenerator = () => {
                         <Typography gutterBottom>Writing Creativity</Typography>
                         <Slider
                           value={creativity}
-                          onChange={(e, newValue) => setCreativity(newValue)}
+                          onChange={(_e, newValue) => setCreativity(newValue)}
                           min={0}
                           max={1}
                           step={0.1}
                           marks={[
                             { value: 0, label: 'Structured' },
                             { value: 0.5, label: 'Balanced' },
-                            { value: 1, label: 'Creative' }
+                            { value: 1, label: 'Creative' },
                           ]}
                         />
                       </Grid>
@@ -698,7 +692,9 @@ const BookGenerator = () => {
                       </Typography>
                       <Card sx={{ mb: 2 }}>
                         <CardContent>
-                          <Typography variant="h5" gutterBottom>{currentBook.title}</Typography>
+                          <Typography variant="h5" gutterBottom>
+                            {currentBook.title}
+                          </Typography>
                           {currentBook.author && (
                             <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                               by {currentBook.author}
@@ -714,20 +710,20 @@ const BookGenerator = () => {
                           </Box>
                         </CardContent>
                       </Card>
-                      
+
                       <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button
-                          variant="contained"
-                          startIcon={<Visibility />}
-                          onClick={() => setPreviewOpen(true)}
-                        >
+                        <Button variant="contained" startIcon={<Visibility />} onClick={() => setPreviewOpen(true)}>
                           Preview Book
                         </Button>
                         <Button
                           variant="outlined"
                           startIcon={<Download />}
                           onClick={() => {
-                            const content = `# ${currentBook.title}\n${currentBook.author ? `*by ${currentBook.author}*\n` : ''}\n${currentBook.summary}\n\n${currentBook.chapters.map((ch, i) => `## Chapter ${i+1}: ${ch.title}\n\n${ch.content}`).join('\n\n')}`;
+                            const content = `# ${currentBook.title}\n${
+                              currentBook.author ? `*by ${currentBook.author}*\n` : ''
+                            }\n${currentBook.summary}\n\n${currentBook.chapters
+                              .map((ch, i) => `## Chapter ${i + 1}: ${ch.title}\n\n${ch.content}`)
+                              .join('\n\n')}`;
                             const blob = new Blob([content], { type: 'text/markdown' });
                             const url = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
@@ -771,22 +767,13 @@ const BookGenerator = () => {
             </Typography>
             <List dense>
               <ListItem>
-                <ListItemText 
-                  primary="Total Chapters" 
-                  secondary={chapters.length} 
-                />
+                <ListItemText primary="Total Chapters" secondary={chapters.length} />
               </ListItem>
               <ListItem>
-                <ListItemText 
-                  primary="Total Words" 
-                  secondary={getTotalWords().toLocaleString()} 
-                />
+                <ListItemText primary="Total Words" secondary={getTotalWords().toLocaleString()} />
               </ListItem>
               <ListItem>
-                <ListItemText 
-                  primary="Estimated Pages" 
-                  secondary={Math.ceil(getTotalWords() / 250)} 
-                />
+                <ListItemText primary="Estimated Pages" secondary={Math.ceil(getTotalWords() / 250)} />
               </ListItem>
             </List>
           </Paper>
@@ -817,12 +804,7 @@ const BookGenerator = () => {
       </Grid>
 
       {/* Book Preview Dialog */}
-      {previewOpen && currentBook && (
-        <BookPreview
-          book={currentBook}
-          onClose={() => setPreviewOpen(false)}
-        />
-      )}
+      {previewOpen && currentBook && <BookPreview book={currentBook} onClose={() => setPreviewOpen(false)} />}
     </Box>
   );
 };

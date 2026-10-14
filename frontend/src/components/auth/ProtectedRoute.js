@@ -1,7 +1,7 @@
+import { Box, CircularProgress } from '@mui/material';
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { CircularProgress, Box } from '@mui/material';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -9,13 +9,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <Box 
-        display="flex" 
-        justifyContent="center" 
-        alignItems="center" 
-        minHeight="100vh"
-        bgcolor="background.default"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="background.default">
         <CircularProgress />
       </Box>
     );
@@ -29,4 +23,4 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

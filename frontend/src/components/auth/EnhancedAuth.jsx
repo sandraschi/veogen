@@ -1,46 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Typography, 
-  TextField, 
-  Button, 
-  Box, 
-  Alert, 
-  Stepper, 
-  Step, 
-  StepLabel,
-  StepContent,
-  Paper,
+import {
+  CheckCircle,
+  CloudDone,
+  Email,
+  Error as ErrorIcon,
+  Key,
+  Person,
+  Settings,
+  Visibility,
+  VisibilityOff,
+  Warning,
+} from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
   Card,
   CardContent,
-  LinearProgress,
   Chip,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  IconButton,
-  InputAdornment,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
+  Paper,
+  Step,
+  StepContent,
+  StepLabel,
+  Stepper,
+  TextField,
+  Typography,
 } from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  CheckCircle,
-  Error,
-  Warning,
-  Email,
-  Key,
-  Person,
-  Settings,
-  CloudDone
-} from '@mui/icons-material';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 const API_BASE_URL = 'http://localhost:11150';
 
@@ -51,14 +51,14 @@ const PasswordStrengthIndicator = ({ password }) => {
 
   useEffect(() => {
     const checks = [
-      { test: password.length >= 8, message: "At least 8 characters" },
-      { test: /[A-Z]/.test(password), message: "Uppercase letter" },
-      { test: /[a-z]/.test(password), message: "Lowercase letter" },
-      { test: /[0-9]/.test(password), message: "Number" },
-      { test: /[!@#$%^&*(),.?":{}|<>]/.test(password), message: "Special character" }
+      { test: password.length >= 8, message: 'At least 8 characters' },
+      { test: /[A-Z]/.test(password), message: 'Uppercase letter' },
+      { test: /[a-z]/.test(password), message: 'Lowercase letter' },
+      { test: /[0-9]/.test(password), message: 'Number' },
+      { test: /[!@#$%^&*(),.?":{}|<>]/.test(password), message: 'Special character' },
     ];
 
-    const passed = checks.filter(check => check.test).length;
+    const passed = checks.filter((check) => check.test).length;
     setStrength(passed);
     setFeedback(checks);
   }, [password]);
@@ -84,25 +84,23 @@ const PasswordStrengthIndicator = ({ password }) => {
           {getStrengthText()}
         </Typography>
       </Box>
-      <LinearProgress 
-        variant="determinate" 
-        value={(strength / 5) * 100} 
+      <LinearProgress
+        variant="determinate"
+        value={(strength / 5) * 100}
         color={getStrengthColor()}
         sx={{ height: 4, borderRadius: 2, mt: 0.5 }}
       />
       <List dense sx={{ mt: 1 }}>
-        {feedback.map((item, index) => (
-          <ListItem key={index} sx={{ py: 0, px: 0 }}>
+        {feedback.map((item) => (
+          <ListItem key={item} sx={{ py: 0, px: 0 }}>
             <ListItemIcon sx={{ minWidth: 24 }}>
-              {item.test ? 
-                <CheckCircle color="success" sx={{ fontSize: 16 }} /> : 
-                <Error color="error" sx={{ fontSize: 16 }} />
-              }
+              {item.test ? (
+                <CheckCircle color="success" sx={{ fontSize: 16 }} />
+              ) : (
+                <ErrorIcon color="error" sx={{ fontSize: 16 }} />
+              )}
             </ListItemIcon>
-            <ListItemText 
-              primary={item.message} 
-              primaryTypographyProps={{ variant: 'caption' }}
-            />
+            <ListItemText primary={item.message} primaryTypographyProps={{ variant: 'caption' }} />
           </ListItem>
         ))}
       </List>
@@ -117,26 +115,22 @@ const ConnectionTestDialog = ({ open, onClose, onComplete }) => {
   const [apiKeys, setApiKeys] = useState({
     google_api_key: '',
     gemini_api_key: '',
-    google_cloud_project: ''
+    google_cloud_project: '',
   });
 
   const runConnectionTest = async () => {
     setTesting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/enhanced-auth/test-connection`,
-        apiKeys,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/api/v1/enhanced-auth/test-connection`, apiKeys, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setTestResults(response.data);
     } catch (error) {
       console.error('Connection test failed:', error);
       setTestResults({
         test_results: { overall_status: 'error', message: 'Test failed' },
-        recommendations: ['Check your API keys and try again']
+        recommendations: ['Check your API keys and try again'],
       });
     } finally {
       setTesting(false);
@@ -145,19 +139,27 @@ const ConnectionTestDialog = ({ open, onClose, onComplete }) => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'success': return <CheckCircle color="success" />;
-      case 'failed': return <Error color="error" />;
-      case 'warning': return <Warning color="warning" />;
-      default: return <Error color="error" />;
+      case 'success':
+        return <CheckCircle color="success" />;
+      case 'failed':
+        return <ErrorIcon color="error" />;
+      case 'warning':
+        return <Warning color="warning" />;
+      default:
+        return <ErrorIcon color="error" />;
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'success': return 'success';
-      case 'failed': return 'error';
-      case 'warning': return 'warning';
-      default: return 'default';
+      case 'success':
+        return 'success';
+      case 'failed':
+        return 'error';
+      case 'warning':
+        return 'warning';
+      default:
+        return 'default';
     }
   };
 
@@ -169,32 +171,32 @@ const ConnectionTestDialog = ({ open, onClose, onComplete }) => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Test your API connections to ensure VeoGen can access Google's AI services.
           </Typography>
-          
+
           <TextField
             fullWidth
             label="Google API Key"
             value={apiKeys.google_api_key}
-            onChange={(e) => setApiKeys(prev => ({ ...prev, google_api_key: e.target.value }))}
+            onChange={(e) => setApiKeys((prev) => ({ ...prev, google_api_key: e.target.value }))}
             margin="normal"
             type="password"
             helperText="Your Google Cloud API key"
           />
-          
+
           <TextField
             fullWidth
             label="Gemini API Key"
             value={apiKeys.gemini_api_key}
-            onChange={(e) => setApiKeys(prev => ({ ...prev, gemini_api_key: e.target.value }))}
+            onChange={(e) => setApiKeys((prev) => ({ ...prev, gemini_api_key: e.target.value }))}
             margin="normal"
             type="password"
             helperText="Your Gemini API key"
           />
-          
+
           <TextField
             fullWidth
             label="Google Cloud Project ID"
             value={apiKeys.google_cloud_project}
-            onChange={(e) => setApiKeys(prev => ({ ...prev, google_cloud_project: e.target.value }))}
+            onChange={(e) => setApiKeys((prev) => ({ ...prev, google_cloud_project: e.target.value }))}
             margin="normal"
             helperText="Your Google Cloud project ID"
           />
@@ -205,11 +207,9 @@ const ConnectionTestDialog = ({ open, onClose, onComplete }) => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 {getStatusIcon(testResults.test_results.overall_status)}
-                <Typography variant="h6">
-                  Test Results: {testResults.test_results.overall_status}
-                </Typography>
+                <Typography variant="h6">Test Results: {testResults.test_results.overall_status}</Typography>
               </Box>
-              
+
               <Typography variant="body2" sx={{ mb: 2 }}>
                 {testResults.test_results.message}
               </Typography>
@@ -235,10 +235,12 @@ const ConnectionTestDialog = ({ open, onClose, onComplete }) => {
 
               {testResults.recommendations && (
                 <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Recommendations:</Typography>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Recommendations:
+                  </Typography>
                   <List dense>
-                    {testResults.recommendations.map((rec, index) => (
-                      <ListItem key={index} sx={{ py: 0 }}>
+                    {testResults.recommendations.map((rec) => (
+                      <ListItem key={rec} sx={{ py: 0 }}>
                         <ListItemText primary={rec} primaryTypographyProps={{ variant: 'body2' }} />
                       </ListItem>
                     ))}
@@ -249,10 +251,10 @@ const ConnectionTestDialog = ({ open, onClose, onComplete }) => {
           </Card>
         )}
       </DialogContent>
-      
+
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button 
+        <Button
           onClick={runConnectionTest}
           disabled={testing || !apiKeys.gemini_api_key}
           startIcon={testing ? <LinearProgress size={20} /> : <Settings />}
@@ -260,11 +262,7 @@ const ConnectionTestDialog = ({ open, onClose, onComplete }) => {
           {testing ? 'Testing...' : 'Test Connection'}
         </Button>
         {testResults?.can_save_keys && (
-          <Button 
-            onClick={() => onComplete(apiKeys)}
-            variant="contained"
-            startIcon={<CloudDone />}
-          >
+          <Button onClick={() => onComplete(apiKeys)} variant="contained" startIcon={<CloudDone />}>
             Save & Continue
           </Button>
         )}
@@ -297,7 +295,7 @@ const EnhancedAuth = () => {
     password: '',
     username: '',
     full_name: '',
-    remember_me: false
+    remember_me: false,
   });
 
   // Registration form validation
@@ -305,41 +303,42 @@ const EnhancedAuth = () => {
 
   const validateField = (name, value) => {
     const errors = { ...validationErrors };
-    
+
     switch (name) {
-      case 'email':
+      case 'email': {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(value)) {
           errors.email = 'Please enter a valid email address';
         } else {
-          delete errors.email;
+          errors.email = undefined;
         }
         break;
-      
+      }
+
       case 'username':
         if (value && value.length < 3) {
           errors.username = 'Username must be at least 3 characters';
         } else if (value && !/^[a-zA-Z0-9_-]+$/.test(value)) {
           errors.username = 'Username can only contain letters, numbers, hyphens, and underscores';
         } else {
-          delete errors.username;
+          errors.username = undefined;
         }
         break;
-        
+
       default:
         break;
     }
-    
+
     setValidationErrors(errors);
   };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: newValue
+      [name]: newValue,
     }));
 
     // Validate field on change
@@ -355,10 +354,10 @@ const EnhancedAuth = () => {
 
     try {
       const result = await authLogin(formData.email, formData.password);
-      
+
       if (result.success) {
         setSuccess('Login successful!');
-        
+
         // Check if onboarding is needed
         if (!result.user.onboarding_complete) {
           setActiveStep(1); // Move to onboarding
@@ -370,7 +369,6 @@ const EnhancedAuth = () => {
       } else {
         setError(result.error || 'Login failed. Please try again.');
       }
-
     } catch (error) {
       console.error('Login error:', error);
       setError('Login failed. Please try again.');
@@ -381,7 +379,7 @@ const EnhancedAuth = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    
+
     // Check for validation errors
     if (Object.keys(validationErrors).length > 0) {
       setError('Please fix the validation errors before continuing.');
@@ -396,19 +394,18 @@ const EnhancedAuth = () => {
         email: formData.email,
         password: formData.password,
         username: formData.username || null,
-        full_name: formData.full_name || null
+        full_name: formData.full_name || null,
       });
 
       if (result.success) {
         setSuccess('Registration successful! Welcome to VeoGen!');
-        
+
         // Move to onboarding
         setActiveStep(1);
         setMode('onboarding');
       } else {
         setError(result.error || 'Registration failed. Please try again.');
       }
-
     } catch (error) {
       console.error('Registration error:', error);
       setError('Registration failed. Please try again.');
@@ -429,14 +426,14 @@ const EnhancedAuth = () => {
               api_keys: apiKeys,
               preferences: {
                 theme: 'dark',
-                notifications: true
+                notifications: true,
               },
-              skip_tutorial: true
+              skip_tutorial: true,
             },
             {
               headers: { Authorization: `Bearer ${token}` },
-              timeout: 5000 // 5 second timeout
-            }
+              timeout: 5000, // 5 second timeout
+            },
           );
           setSuccess('Onboarding completed! Welcome to VeoGen!');
         } catch (apiError) {
@@ -444,10 +441,9 @@ const EnhancedAuth = () => {
           // Continue to dashboard even if API call fails
         }
       }
-      
+
       // Always navigate to main app
       navigate('/');
-
     } catch (error) {
       console.error('Onboarding error:', error);
       // Still navigate to dashboard even on error
@@ -464,12 +460,11 @@ const EnhancedAuth = () => {
 
     try {
       await axios.post(`${API_BASE_URL}/api/v1/enhanced-auth/request-password-reset`, {
-        email: formData.email
+        email: formData.email,
       });
 
       setSuccess('Password reset email sent! Please check your inbox.');
       setMode('login');
-
     } catch (error) {
       console.error('Password reset error:', error);
       setError('Failed to send password reset email. Please try again.');
@@ -489,8 +484,16 @@ const EnhancedAuth = () => {
         </Typography>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
 
       <form onSubmit={handleLogin}>
         <TextField
@@ -530,10 +533,7 @@ const EnhancedAuth = () => {
             ),
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton
-                  onClick={() => setShowPassword(!showPassword)}
-                  edge="end"
-                >
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
                   {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
@@ -542,30 +542,17 @@ const EnhancedAuth = () => {
         />
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-          <Button
-            variant="text"
-            onClick={() => setMode('forgot')}
-            size="small"
-          >
+          <Button variant="text" onClick={() => setMode('forgot')} size="small">
             Forgot password?
           </Button>
         </Box>
 
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          disabled={loading}
-          sx={{ mt: 3, mb: 2 }}
-        >
+        <Button type="submit" fullWidth variant="contained" disabled={loading} sx={{ mt: 3, mb: 2 }}>
           {loading ? 'Signing in...' : 'Sign In'}
         </Button>
 
         <Box sx={{ textAlign: 'center' }}>
-          <Button
-            variant="text"
-            onClick={() => setMode('register')}
-          >
+          <Button variant="text" onClick={() => setMode('register')}>
             Don't have an account? Sign up
           </Button>
         </Box>
@@ -584,8 +571,16 @@ const EnhancedAuth = () => {
         </Typography>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
 
       <form onSubmit={handleRegister}>
         <TextField
@@ -617,7 +612,7 @@ const EnhancedAuth = () => {
           onChange={handleInputChange}
           margin="normal"
           error={!!validationErrors.username}
-          helperText={validationErrors.username || "Choose a unique username"}
+          helperText={validationErrors.username || 'Choose a unique username'}
           autoComplete="username"
           InputProps={{
             startAdornment: (
@@ -656,10 +651,7 @@ const EnhancedAuth = () => {
             ),
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton
-                  onClick={() => setShowPassword(!showPassword)}
-                  edge="end"
-                >
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
                   {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
@@ -680,10 +672,7 @@ const EnhancedAuth = () => {
         </Button>
 
         <Box sx={{ textAlign: 'center' }}>
-          <Button
-            variant="text"
-            onClick={() => setMode('login')}
-          >
+          <Button variant="text" onClick={() => setMode('login')}>
             Already have an account? Sign in
           </Button>
         </Box>
@@ -706,8 +695,7 @@ const EnhancedAuth = () => {
           <StepContent>
             <Alert severity="success" sx={{ mb: 2 }}>
               <Typography>
-                Your VeoGen account has been created successfully! 
-                Now let's configure your AI connections.
+                Your VeoGen account has been created successfully! Now let's configure your AI connections.
               </Typography>
             </Alert>
           </StepContent>
@@ -717,10 +705,10 @@ const EnhancedAuth = () => {
           <StepLabel>Set Up API Connections</StepLabel>
           <StepContent>
             <Typography sx={{ mb: 2 }}>
-              To use VeoGen's AI features, you'll need to configure your API keys.
-              Don't worry - we'll test them to make sure everything works!
+              To use VeoGen's AI features, you'll need to configure your API keys. Don't worry - we'll test them to make
+              sure everything works!
             </Typography>
-            
+
             <Box sx={{ mb: 2 }}>
               <Button
                 variant="contained"
@@ -730,19 +718,16 @@ const EnhancedAuth = () => {
               >
                 Configure API Keys
               </Button>
-              
-              <Button
-                variant="outlined"
-                onClick={() => handleCompleteOnboarding()}
-              >
+
+              <Button variant="outlined" onClick={() => handleCompleteOnboarding()}>
                 Skip for Now
               </Button>
             </Box>
 
             <Alert severity="info">
               <Typography variant="body2">
-                You can always configure your API keys later in the settings.
-                However, you won't be able to generate content without them.
+                You can always configure your API keys later in the settings. However, you won't be able to generate
+                content without them.
               </Typography>
             </Alert>
           </StepContent>
@@ -768,8 +753,16 @@ const EnhancedAuth = () => {
         </Typography>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
 
       <form onSubmit={handleForgotPassword}>
         <TextField
@@ -791,21 +784,12 @@ const EnhancedAuth = () => {
           }}
         />
 
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          disabled={loading}
-          sx={{ mt: 3, mb: 2 }}
-        >
+        <Button type="submit" fullWidth variant="contained" disabled={loading} sx={{ mt: 3, mb: 2 }}>
           {loading ? 'Sending...' : 'Send Reset Link'}
         </Button>
 
         <Box sx={{ textAlign: 'center' }}>
-          <Button
-            variant="text"
-            onClick={() => setMode('login')}
-          >
+          <Button variant="text" onClick={() => setMode('login')}>
             Back to Sign In
           </Button>
         </Box>

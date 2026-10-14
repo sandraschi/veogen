@@ -1,57 +1,57 @@
-import React, { useState, useRef } from 'react';
 import {
+  Copy,
+  Delete,
+  Download,
+  Edit,
+  Favorite,
+  FavoriteBorder,
+  Fullscreen,
+  History,
+  Image as ImageIcon,
+  Palette,
+  PhotoLibrary,
+  Refresh,
+  Settings,
+  Share,
+  Upload,
+  ZoomIn,
+} from '@mui/icons-material';
+import {
+  Alert,
   Box,
-  Paper,
-  Typography,
-  TextField,
   Button,
-  Grid,
   Card,
   CardContent,
   CardMedia,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Slider,
   Chip,
-  Alert,
+  CircularProgress,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
   IconButton,
   ImageList,
   ImageListItem,
   ImageListItemBar,
-  Tabs,
-  Tab,
+  InputLabel,
   List,
   ListItem,
-  ListItemText,
   ListItemSecondaryAction,
-  CircularProgress,
-  Tooltip
+  ListItemText,
+  MenuItem,
+  Paper,
+  Select,
+  Slider,
+  Tab,
+  Tabs,
+  TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-import {
-  Image as ImageIcon,
-  Download,
-  Share,
-  Refresh,
-  Favorite,
-  FavoriteBorder,
-  Delete,
-  Edit,
-  Fullscreen,
-  Palette,
-  PhotoLibrary,
-  Settings,
-  History,
-  Upload,
-  ZoomIn,
-  Copy
-} from '@mui/icons-material';
 import axios from 'axios';
+import React, { useState, useRef } from 'react';
 
 const API_BASE_URL = 'http://localhost:11150';
 
@@ -66,7 +66,7 @@ const IMAGE_STYLES = [
   { id: 'cartoon', name: 'Cartoon', description: 'Cartoon illustration' },
   { id: 'anime', name: 'Anime', description: 'Anime/manga style' },
   { id: 'vintage', name: 'Vintage', description: 'Vintage photograph style' },
-  { id: 'minimalist', name: 'Minimalist', description: 'Clean, simple design' }
+  { id: 'minimalist', name: 'Minimalist', description: 'Clean, simple design' },
 ];
 
 const ASPECT_RATIOS = [
@@ -74,17 +74,17 @@ const ASPECT_RATIOS = [
   { id: '16:9', name: 'Landscape', description: '1344x768' },
   { id: '9:16', name: 'Portrait', description: '768x1344' },
   { id: '4:3', name: 'Standard', description: '1152x896' },
-  { id: '3:2', name: 'Classic', description: '1216x832' }
+  { id: '3:2', name: 'Classic', description: '1216x832' },
 ];
 
 const QUALITY_LEVELS = [
   { id: 'draft', name: 'Draft', description: 'Fast generation, lower quality' },
   { id: 'standard', name: 'Standard', description: 'Balanced speed and quality' },
-  { id: 'high', name: 'High', description: 'Best quality, slower generation' }
+  { id: 'high', name: 'High', description: 'Best quality, slower generation' },
 ];
 
 // Image gallery component
-const ImageGallery = ({ images, onSelectImage, onDeleteImage, onToggleFavorite }) => {
+const ImageGallery = ({ images, onDeleteImage, onToggleFavorite }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
 
@@ -97,29 +97,29 @@ const ImageGallery = ({ images, onSelectImage, onDeleteImage, onToggleFavorite }
     <>
       <ImageList cols={2} gap={8}>
         {images.map((image, index) => (
-          <ImageListItem key={index}>
-            <img
-              src={image.url}
-              alt={image.prompt}
-              loading="lazy"
-              style={{ cursor: 'pointer', aspectRatio: '1/1', objectFit: 'cover' }}
+          <ImageListItem key={image.id ?? image.url}>
+            <button
+              type="button"
               onClick={() => handlePreview(image)}
-            />
+              aria-label={`Preview: ${image.prompt}`}
+              style={{ all: 'unset', display: 'block', cursor: 'pointer', width: '100%' }}
+            >
+              <img
+                src={image.url}
+                alt={image.prompt}
+                loading="lazy"
+                style={{ display: 'block', width: '100%', aspectRatio: '1/1', objectFit: 'cover' }}
+              />
+            </button>
             <ImageListItemBar
-              title={image.prompt.substring(0, 50) + '...'}
+              title={`${image.prompt.substring(0, 50)}...`}
               subtitle={`${image.style} • ${image.resolution}`}
               actionIcon={
                 <Box>
-                  <IconButton
-                    sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
-                    onClick={() => onToggleFavorite(index)}
-                  >
+                  <IconButton sx={{ color: 'rgba(255, 255, 255, 0.54)' }} onClick={() => onToggleFavorite(index)}>
                     {image.favorite ? <Favorite /> : <FavoriteBorder />}
                   </IconButton>
-                  <IconButton
-                    sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
-                    onClick={() => onDeleteImage(index)}
-                  >
+                  <IconButton sx={{ color: 'rgba(255, 255, 255, 0.54)' }} onClick={() => onDeleteImage(index)}>
                     <Delete />
                   </IconButton>
                 </Box>
@@ -130,12 +130,7 @@ const ImageGallery = ({ images, onSelectImage, onDeleteImage, onToggleFavorite }
       </ImageList>
 
       {/* Preview Dialog */}
-      <Dialog
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6">Image Preview</Typography>
@@ -183,7 +178,7 @@ const ImageGallery = ({ images, onSelectImage, onDeleteImage, onToggleFavorite }
                     navigator.share({
                       title: 'VeoGen AI Image',
                       text: previewImage.prompt,
-                      url: previewImage.url
+                      url: previewImage.url,
                     });
                   } else {
                     navigator.clipboard.writeText(previewImage.url);
@@ -212,14 +207,14 @@ const ImageGenerator = () => {
   const [negativePrompt, setNegativePrompt] = useState('');
   const [referenceImage, setReferenceImage] = useState(null);
   const [imageMode, setImageMode] = useState('generate'); // 'generate', 'edit', 'ocr'
-  
+
   const [generating, setGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState([]);
   const [imageHistory, setImageHistory] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [batchCount, setBatchCount] = useState(1);
-  
+
   const fileInputRef = useRef(null);
 
   const getAuthHeaders = () => {
@@ -234,12 +229,12 @@ const ImageGenerator = () => {
         setError('Image file size must be less than 10MB');
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setReferenceImage({
           file: file,
-          preview: e.target.result
+          preview: e.target.result,
         });
       };
       reader.readAsDataURL(file);
@@ -263,9 +258,9 @@ const ImageGenerator = () => {
         aspect_ratio: aspectRatio,
         num_images: batchCount,
         creativity,
-        mode: imageMode
+        mode: imageMode,
       };
-      
+
       // Add reference image if uploaded (for editing or OCR)
       if (referenceImage && imageMode !== 'generate') {
         // Convert image to base64
@@ -273,16 +268,12 @@ const ImageGenerator = () => {
         payload.reference_image = base64Image;
       }
 
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/image/generate`,
-        payload,
-        {
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/api/v1/image/generate`, payload, {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+      });
 
       const newImages = (response.data.images || []).map((imageData) => ({
         id: Date.now() + Math.random(),
@@ -292,7 +283,7 @@ const ImageGenerator = () => {
         resolution: imageData.metadata?.resolution || aspectRatio,
         quality,
         created_at: new Date().toISOString(),
-        favorite: false
+        favorite: false,
       }));
 
       if (newImages.length === 0) {
@@ -301,9 +292,8 @@ const ImageGenerator = () => {
       }
 
       setGeneratedImages(newImages);
-      setImageHistory(prev => [...newImages, ...prev]);
+      setImageHistory((prev) => [...newImages, ...prev]);
       setSuccess(response.data.message || `Generated ${newImages.length} image(s) successfully!`);
-
     } catch (error) {
       console.error('Image generation error:', error);
       const detail = error.response?.data?.detail || 'Failed to generate images. Please try again.';
@@ -314,13 +304,11 @@ const ImageGenerator = () => {
   };
 
   const toggleFavorite = (index) => {
-    setImageHistory(prev => prev.map((img, i) => 
-      i === index ? { ...img, favorite: !img.favorite } : img
-    ));
+    setImageHistory((prev) => prev.map((img, i) => (i === index ? { ...img, favorite: !img.favorite } : img)));
   };
 
   const deleteImage = (index) => {
-    setImageHistory(prev => prev.filter((_, i) => i !== index));
+    setImageHistory((prev) => prev.filter((_, i) => i !== index));
   };
 
   const downloadAllImages = () => {
@@ -342,11 +330,7 @@ const ImageGenerator = () => {
       aria-labelledby={`image-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 
@@ -359,14 +343,22 @@ const ImageGenerator = () => {
         Create stunning AI-generated images with Nano Banana Pro. From photorealistic to artistic styles.
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
       <Grid container spacing={3}>
         {/* Main Generation Panel */}
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3 }}>
-            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+            <Tabs value={activeTab} onChange={(_e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
               <Tab label="Generate" icon={<ImageIcon />} />
               <Tab label="Advanced" icon={<Settings />} />
               <Tab label="Gallery" icon={<PhotoLibrary />} />
@@ -377,28 +369,24 @@ const ImageGenerator = () => {
                 <Grid item xs={12}>
                   <FormControl fullWidth sx={{ mb: 2 }}>
                     <InputLabel>Mode</InputLabel>
-                    <Select 
-                      value={imageMode} 
-                      onChange={(e) => setImageMode(e.target.value)} 
-                      disabled={generating}
-                    >
+                    <Select value={imageMode} onChange={(e) => setImageMode(e.target.value)} disabled={generating}>
                       <MenuItem value="generate">Generate New Image</MenuItem>
                       <MenuItem value="edit">Edit Uploaded Image</MenuItem>
                       <MenuItem value="ocr">Extract Text (OCR)</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label={imageMode === 'ocr' ? 'OCR Instructions (Optional)' : 'Image Description'}
                     placeholder={
-                      imageMode === 'ocr' 
+                      imageMode === 'ocr'
                         ? 'Optional: Describe what text to extract or focus on...'
                         : imageMode === 'edit'
-                        ? 'Describe how to edit the uploaded image... (e.g., "Add a sunset sky", "Remove background")'
-                        : "Describe the image you want to generate... (e.g., 'A beautiful sunset over mountains')"
+                          ? 'Describe how to edit the uploaded image... (e.g., "Add a sunset sky", "Remove background")'
+                          : "Describe the image you want to generate... (e.g., 'A beautiful sunset over mountains')"
                     }
                     multiline
                     rows={4}
@@ -408,16 +396,16 @@ const ImageGenerator = () => {
                     required={imageMode !== 'ocr'}
                   />
                 </Grid>
-                
+
                 {(imageMode === 'edit' || imageMode === 'ocr') && (
                   <Grid item xs={12}>
                     <Typography variant="h6" gutterBottom>
                       {imageMode === 'ocr' ? 'Upload Image for OCR' : 'Upload Image to Edit'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {imageMode === 'ocr' 
+                      {imageMode === 'ocr'
                         ? 'Nano Banana Pro can extract text from images with high accuracy.'
-                        : 'Upload an image to edit using Nano Banana Pro\'s AI editing capabilities.'}
+                        : "Upload an image to edit using Nano Banana Pro's AI editing capabilities."}
                     </Typography>
                     <input
                       type="file"
@@ -435,7 +423,7 @@ const ImageGenerator = () => {
                     >
                       {referenceImage ? 'Change Image' : 'Upload Image'}
                     </Button>
-                    
+
                     {referenceImage && (
                       <Box sx={{ mt: 2 }}>
                         <img
@@ -509,7 +497,7 @@ const ImageGenerator = () => {
                   <Typography gutterBottom>Number of Images</Typography>
                   <Slider
                     value={batchCount}
-                    onChange={(e, newValue) => setBatchCount(newValue)}
+                    onChange={(_e, newValue) => setBatchCount(newValue)}
                     min={1}
                     max={4}
                     step={1}
@@ -517,7 +505,7 @@ const ImageGenerator = () => {
                       { value: 1, label: '1' },
                       { value: 2, label: '2' },
                       { value: 3, label: '3' },
-                      { value: 4, label: '4' }
+                      { value: 4, label: '4' },
                     ]}
                     disabled={generating}
                   />
@@ -527,14 +515,14 @@ const ImageGenerator = () => {
                   <Typography gutterBottom>Creativity Level</Typography>
                   <Slider
                     value={creativity}
-                    onChange={(e, newValue) => setCreativity(newValue)}
+                    onChange={(_e, newValue) => setCreativity(newValue)}
                     min={0}
                     max={1}
                     step={0.1}
                     marks={[
                       { value: 0, label: 'Precise' },
                       { value: 0.5, label: 'Balanced' },
-                      { value: 1, label: 'Creative' }
+                      { value: 1, label: 'Creative' },
                     ]}
                     disabled={generating}
                   />
@@ -587,9 +575,9 @@ const ImageGenerator = () => {
                       {imageMode === 'ocr' ? 'Upload Image for OCR' : 'Upload Image to Edit'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {imageMode === 'ocr' 
+                      {imageMode === 'ocr'
                         ? 'Nano Banana Pro can extract text from images with high accuracy.'
-                        : 'Upload an image to edit using Nano Banana Pro\'s AI editing capabilities.'}
+                        : "Upload an image to edit using Nano Banana Pro's AI editing capabilities."}
                     </Typography>
                     <input
                       type="file"
@@ -607,7 +595,7 @@ const ImageGenerator = () => {
                     >
                       {referenceImage ? 'Change Image' : 'Upload Image'}
                     </Button>
-                    
+
                     {referenceImage && (
                       <Box sx={{ mt: 2 }}>
                         <img
@@ -629,16 +617,12 @@ const ImageGenerator = () => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">Generated Images ({imageHistory.length})</Typography>
                 {generatedImages.length > 0 && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<Download />}
-                    onClick={downloadAllImages}
-                  >
+                  <Button variant="outlined" startIcon={<Download />} onClick={downloadAllImages}>
                     Download All
                   </Button>
                 )}
               </Box>
-              
+
               {imageHistory.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <ImageIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -664,12 +648,12 @@ const ImageGenerator = () => {
             <Typography variant="h6" gutterBottom>
               Latest Generated Images
             </Typography>
-            
+
             {generatedImages.length > 0 ? (
               <Box>
                 <ImageList cols={1} gap={8}>
                   {generatedImages.map((image, index) => (
-                    <ImageListItem key={index}>
+                    <ImageListItem key={image.id ?? image.url}>
                       <img
                         src={image.url}
                         alt={image.prompt}
@@ -707,7 +691,7 @@ const ImageGenerator = () => {
                     </ImageListItem>
                   ))}
                 </ImageList>
-                
+
                 <Box sx={{ mt: 2 }}>
                   <Button
                     variant="contained"
@@ -737,28 +721,16 @@ const ImageGenerator = () => {
             </Typography>
             <List dense>
               <ListItem>
-                <ListItemText
-                  primary="Realistic"
-                  secondary="Perfect for portraits and landscapes"
-                />
+                <ListItemText primary="Realistic" secondary="Perfect for portraits and landscapes" />
               </ListItem>
               <ListItem>
-                <ListItemText
-                  primary="Digital Art"
-                  secondary="Modern digital illustrations"
-                />
+                <ListItemText primary="Digital Art" secondary="Modern digital illustrations" />
               </ListItem>
               <ListItem>
-                <ListItemText
-                  primary="Oil Painting"
-                  secondary="Classical artistic style"
-                />
+                <ListItemText primary="Oil Painting" secondary="Classical artistic style" />
               </ListItem>
               <ListItem>
-                <ListItemText
-                  primary="Anime"
-                  secondary="Japanese manga/anime style"
-                />
+                <ListItemText primary="Anime" secondary="Japanese manga/anime style" />
               </ListItem>
             </List>
           </Paper>

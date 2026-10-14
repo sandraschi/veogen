@@ -1,17 +1,8 @@
+import { CheckCircle, Error as ErrorIcon } from '@mui/icons-material';
+import { Alert, Box, Button, Card, CardContent, CircularProgress, Container, Typography } from '@mui/material';
+import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Typography, 
-  Button, 
-  Box, 
-  Alert, 
-  CircularProgress,
-  Card,
-  CardContent 
-} from '@mui/material';
-import { CheckCircle, Error } from '@mui/icons-material';
-import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:11150';
 
@@ -38,13 +29,13 @@ const EmailVerification = () => {
       try {
         const response = await axios.post(`${API_BASE_URL}/api/v1/enhanced-auth/verify-email`, {
           token,
-          user_id: userId
+          user_id: userId,
         });
 
         if (response.status === 200) {
           setStatus('success');
           setMessage('Your email has been successfully verified! You can now access all VeoGen features.');
-          
+
           // Auto-redirect after 3 seconds
           setTimeout(() => {
             navigate('/auth');
@@ -61,7 +52,7 @@ const EmailVerification = () => {
           setMessage('Verification failed. Please try again or contact support.');
         }
       }
-      
+
       setLoading(false);
     };
 
@@ -72,14 +63,18 @@ const EmailVerification = () => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        await axios.post(`${API_BASE_URL}/api/v1/enhanced-auth/resend-verification`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.post(
+          `${API_BASE_URL}/api/v1/enhanced-auth/resend-verification`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
         setMessage('New verification email sent! Please check your inbox.');
       } else {
         navigate('/auth');
       }
-    } catch (error) {
+    } catch (_error) {
       setMessage('Failed to resend verification email. Please try logging in again.');
     }
   };
@@ -94,9 +89,7 @@ const EmailVerification = () => {
               <Typography variant="h5" gutterBottom>
                 Verifying your email...
               </Typography>
-              <Typography color="text.secondary">
-                Please wait while we verify your email address.
-              </Typography>
+              <Typography color="text.secondary">Please wait while we verify your email address.</Typography>
             </>
           ) : (
             <>
@@ -115,7 +108,7 @@ const EmailVerification = () => {
                 </>
               ) : (
                 <>
-                  <Error sx={{ fontSize: 80, color: 'error.main', mb: 2 }} />
+                  <ErrorIcon sx={{ fontSize: 80, color: 'error.main', mb: 2 }} />
                   <Typography variant="h4" gutterBottom color="error.main">
                     Verification Failed
                   </Typography>
@@ -123,17 +116,10 @@ const EmailVerification = () => {
                     {message}
                   </Alert>
                   <Box sx={{ mt: 3 }}>
-                    <Button 
-                      variant="contained" 
-                      onClick={handleResendVerification}
-                      sx={{ mr: 2 }}
-                    >
+                    <Button variant="contained" onClick={handleResendVerification} sx={{ mr: 2 }}>
                       Resend Verification Email
                     </Button>
-                    <Button 
-                      variant="outlined" 
-                      onClick={() => navigate('/auth')}
-                    >
+                    <Button variant="outlined" onClick={() => navigate('/auth')}>
                       Back to Login
                     </Button>
                   </Box>
