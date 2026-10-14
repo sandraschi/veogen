@@ -29,19 +29,12 @@ const VideoCallDemo = () => {
       <div className="video-call-container">
         <div className="video-call-header">
           <h2>Video Call: {roomName}</h2>
-          <button 
-            onClick={handleLeaveRoom}
-            className="leave-button"
-          >
+          <button type="button" onClick={handleLeaveRoom} className="leave-button">
             Leave Room
           </button>
         </div>
         <div className="video-room-wrapper">
-          <VideoRoom 
-            roomName={roomName}
-            identity={username}
-            onLeave={handleLeaveRoom}
-          />
+          <VideoRoom roomName={roomName} identity={username} onLeave={handleLeaveRoom} />
         </div>
       </div>
     );
@@ -74,11 +67,7 @@ const VideoCallDemo = () => {
               required
             />
           </div>
-          <button 
-            type="submit" 
-            className="join-button"
-            disabled={isLoading}
-          >
+          <button type="submit" className="join-button" disabled={isLoading}>
             {isLoading ? 'Joining...' : 'Join Room'}
           </button>
         </form>

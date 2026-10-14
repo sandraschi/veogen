@@ -12,7 +12,7 @@ class ImageService {
           // Add authorization header when auth is implemented
           // 'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(imageData)
+        body: JSON.stringify(imageData),
       });
 
       if (!response.ok) {
@@ -31,7 +31,7 @@ class ImageService {
       const response = await fetch(`${API_BASE_URL}/api/v1/image/${imageId}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -52,13 +52,13 @@ class ImageService {
         limit: params.limit || 20,
         ...(params.style && { style: params.style }),
         ...(params.quality && { quality: params.quality }),
-        ...(params.status && { status: params.status })
+        ...(params.status && { status: params.status }),
       });
 
       const response = await fetch(`${API_BASE_URL}/api/v1/image/?${queryParams}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -78,7 +78,7 @@ class ImageService {
         method: 'DELETE',
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -98,7 +98,7 @@ class ImageService {
         method: 'POST',
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -115,7 +115,7 @@ class ImageService {
   async getImageStyles() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/image/styles/`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -130,7 +130,7 @@ class ImageService {
   async getImageQualities() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/image/qualities/`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -147,7 +147,7 @@ class ImageService {
       const response = await fetch(`${API_BASE_URL}/api/v1/image/${imageId}/download?format=${format}`, {
         headers: {
           // 'Authorization': `Bearer ${token}`
-        }
+        },
       });
 
       if (!response.ok) {
@@ -164,12 +164,15 @@ class ImageService {
 
   async createImageVariations(imageId, variationCount = 4) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/image/${imageId}/variations?variation_count=${variationCount}`, {
-        method: 'POST',
-        headers: {
-          // 'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/image/${imageId}/variations?variation_count=${variationCount}`,
+        {
+          method: 'POST',
+          headers: {
+            // 'Authorization': `Bearer ${token}`
+          },
+        },
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

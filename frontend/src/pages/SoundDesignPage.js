@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { generateSoundEffect } from '../services/soundDesignService';
 
@@ -40,9 +40,7 @@ const SoundDesignPage = () => {
     <div className="p-6 space-y-6">
       <header>
         <h1 className="text-3xl font-bold text-white">Sound Design</h1>
-        <p className="text-gray-400">
-          Generate AudioFX loops that match your Flow scenes or Lyria cues.
-        </p>
+        <p className="text-gray-400">Generate AudioFX loops that match your Flow scenes or Lyria cues.</p>
       </header>
 
       <form
@@ -140,7 +138,9 @@ const SoundDesignPage = () => {
       {result && (
         <div className="bg-gray-900/70 border border-gray-800 rounded-2xl p-6">
           <h2 className="text-white font-semibold mb-3">Latest Output</h2>
-          <audio controls src={result.audio_data || result.file} className="w-full mb-3" />
+          <audio controls src={result.audio_data || result.file} className="w-full mb-3">
+            <track kind="captions" />
+          </audio>
           <p className="text-xs text-gray-500">SynthID hash: {result.synthid_hash || 'pending'}</p>
         </div>
       )}
@@ -149,4 +149,3 @@ const SoundDesignPage = () => {
 };
 
 export default SoundDesignPage;
-

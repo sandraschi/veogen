@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { ArrowsRightLeftIcon, LanguageIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import { LanguageIcon, ArrowsRightLeftIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
 
 const TranslationPage = () => {
   const [sourceText, setSourceText] = useState('');
@@ -19,13 +19,13 @@ const TranslationPage = () => {
     { code: 'pt', name: 'Portuguese', flag: '🇵🇹' },
     { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
     { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
-    { code: 'ko', name: 'Korean', flag: '🇰🇷' }
+    { code: 'ko', name: 'Korean', flag: '🇰🇷' },
   ];
 
   const handleTranslate = async () => {
     if (!sourceText.trim()) return;
     setIsTranslating(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     setTranslatedText('This is a sample translation using advanced AI technology.');
     setIsTranslating(false);
   };
@@ -56,21 +56,23 @@ const TranslationPage = () => {
                 </option>
               ))}
             </select>
-            
-            <button className="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition-colors">
+
+            <button type="button" className="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition-colors">
               <ArrowsRightLeftIcon className="w-5 h-5" />
             </button>
-            
+
             <select
               value={targetLanguage}
               onChange={(e) => setTargetLanguage(e.target.value)}
               className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white"
             >
-              {languages.filter(lang => lang.code !== 'auto').map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.flag} {lang.name}
-                </option>
-              ))}
+              {languages
+                .filter((lang) => lang.code !== 'auto')
+                .map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
@@ -85,6 +87,7 @@ const TranslationPage = () => {
               className="w-full h-64 bg-gray-700/50 border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
             />
             <button
+              type="button"
               onClick={handleTranslate}
               disabled={!sourceText.trim() || isTranslating}
               className={`w-full mt-4 py-3 rounded-lg font-semibold transition-all ${
@@ -100,14 +103,12 @@ const TranslationPage = () => {
           <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Translation</h3>
-              <button className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+              <button type="button" className="p-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
                 <SpeakerWaveIcon className="w-4 h-4" />
               </button>
             </div>
             <div className="w-full h-64 bg-gray-700/50 border border-gray-600 rounded-lg p-4 text-white overflow-y-auto">
-              {translatedText || (
-                <span className="text-gray-400">Translation will appear here...</span>
-              )}
+              {translatedText || <span className="text-gray-400">Translation will appear here...</span>}
             </div>
           </div>
         </div>

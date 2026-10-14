@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { PaintBrushIcon, PhotoIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import React, { useState } from 'react';
 
 const StyleTransferPage = () => {
   return (
@@ -20,7 +20,10 @@ const StyleTransferPage = () => {
             <PhotoIcon className="w-16 h-16 text-gray-500 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-gray-400 mb-2">Upload Image for Style Transfer</h3>
             <p className="text-gray-500">Apply artistic styles from famous paintings to your images</p>
-            <button className="mt-6 px-6 py-3 bg-gradient-to-r from-pink-600 to-rose-600 rounded-lg hover:from-pink-700 hover:to-rose-700 transition-all">
+            <button
+              type="button"
+              className="mt-6 px-6 py-3 bg-gradient-to-r from-pink-600 to-rose-600 rounded-lg hover:from-pink-700 hover:to-rose-700 transition-all"
+            >
               <SparklesIcon className="w-5 h-5 inline mr-2" />
               Start Style Transfer
             </button>

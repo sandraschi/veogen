@@ -26,9 +26,7 @@ const WorkspaceSyncPage = () => {
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-3xl font-bold text-white">Workspace Sync</h1>
-      <p className="text-gray-400">
-        Paste Gemini Agent Builder output or Docs JSON to push a brief into Flow Studio.
-      </p>
+      <p className="text-gray-400">Paste Gemini Agent Builder output or Docs JSON to push a brief into Flow Studio.</p>
 
       <form onSubmit={handleSubmit} className="bg-gray-900/70 border border-gray-800 rounded-2xl p-6 space-y-4">
         <label className="block text-sm text-gray-400">
@@ -64,4 +62,3 @@ const WorkspaceSyncPage = () => {
 };
 
 export default WorkspaceSyncPage;
-

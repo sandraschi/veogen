@@ -5,7 +5,7 @@ const API_BASE_URL = 'http://localhost:11150';
 const buildHeaders = (token, extraHeaders = {}) => {
   const headers = {
     'Content-Type': 'application/json',
-    ...extraHeaders
+    ...extraHeaders,
   };
 
   if (token) {
@@ -28,8 +28,8 @@ class ChatService {
         body: JSON.stringify({
           persona_id: personaId,
           initial_message: initialMessage,
-          context
-        })
+          context,
+        }),
       });
 
       if (!response.ok) {
@@ -51,8 +51,8 @@ class ChatService {
         headers: buildHeaders(token),
         body: JSON.stringify({
           message,
-          message_type: messageType
-        })
+          message_type: messageType,
+        }),
       });
 
       if (!response.ok) {
@@ -70,7 +70,7 @@ class ChatService {
   async getPersonas() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/personas`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to load personas (${response.status})`);
       }
@@ -85,7 +85,7 @@ class ChatService {
   async getConversations(token) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations`, {
-        headers: buildHeaders(token, { 'Content-Type': 'application/json' })
+        headers: buildHeaders(token, { 'Content-Type': 'application/json' }),
       });
 
       if (!response.ok) {
@@ -103,7 +103,7 @@ class ChatService {
   async getConversationHistory(conversationId, token) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/${conversationId}/history`, {
-        headers: buildHeaders(token, { 'Content-Type': 'application/json' })
+        headers: buildHeaders(token, { 'Content-Type': 'application/json' }),
       });
 
       if (!response.ok) {
@@ -122,7 +122,7 @@ class ChatService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/${conversationId}`, {
         method: 'DELETE',
-        headers: buildHeaders(token, { 'Content-Type': 'application/json' })
+        headers: buildHeaders(token, { 'Content-Type': 'application/json' }),
       });
 
       if (!response.ok) {
@@ -137,11 +137,14 @@ class ChatService {
     }
   }
 
-  async exportConversation(conversationId, format = 'json', token) {
+  async exportConversation(conversationId, format, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/export?format=${format}`, {
-        headers: buildHeaders(token, { 'Content-Type': 'application/json' })
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/export?format=${format}`,
+        {
+          headers: buildHeaders(token, { 'Content-Type': 'application/json' }),
+        },
+      );
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
@@ -150,9 +153,8 @@ class ChatService {
 
       if (format === 'json') {
         return await response.json();
-      } else {
-        return await response.text();
       }
+      return await response.text();
     } catch (error) {
       console.error('Failed to export conversation:', error);
       throw error;
@@ -161,10 +163,13 @@ class ChatService {
 
   async regenerateResponse(conversationId, messageId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/messages/${messageId}/regenerate`, {
-        method: 'POST',
-        headers: buildHeaders(token)
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/messages/${messageId}/regenerate`,
+        {
+          method: 'POST',
+          headers: buildHeaders(token),
+        },
+      );
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
@@ -183,7 +188,7 @@ class ChatService {
     this.conversations.set(conversationId, {
       id: conversationId,
       messages: [...messages],
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     });
   }
 

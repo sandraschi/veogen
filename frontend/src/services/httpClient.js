@@ -12,8 +12,7 @@ apiClient.interceptors.response.use(
       console.warn('Authentication required for API call');
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;
-

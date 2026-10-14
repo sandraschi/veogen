@@ -6,16 +6,11 @@ export const fetchFlowProjects = async () => {
 };
 
 export const triggerSceneRender = async (projectId, sceneId) => {
-  const { data } = await apiClient.post(
-    `/flow/projects/${projectId}/scenes/${sceneId}/launch`
-  );
+  const { data } = await apiClient.post(`/flow/projects/${projectId}/scenes/${sceneId}/launch`);
   return data;
 };
 
 export const describeScene = async (projectId, sceneId) => {
-  const { data } = await apiClient.post(
-    `/flow/projects/${projectId}/scenes/${sceneId}/describe`
-  );
+  const { data } = await apiClient.post(`/flow/projects/${projectId}/scenes/${sceneId}/describe`);
   return data;
 };
-
