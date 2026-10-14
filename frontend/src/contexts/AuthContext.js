@@ -1,31 +1,31 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Dynamic API base URL detection for different access methods
 const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'production') {
     return ''; // Use relative URLs in production (proxy handles it)
   }
-  
+
   // Check if accessing via different hostnames/IPs
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
-  
+
   // Tailscale hostname access
   if (hostname === 'goliath') {
     return `${protocol}//goliath:11150`;
   }
-  
+
   // Tailscale IP access
   if (hostname === '100.118.171.110') {
     return `${protocol}//100.118.171.110:11150`;
   }
-  
+
   // Public IP access
   if (hostname === '213.47.34.131') {
     return `${protocol}//213.47.34.131:11150`;
   }
-  
+
   // Default to localhost for local development
   return process.env.REACT_APP_API_URL || 'http://localhost:11150';
 };
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           const response = await axios.get(`${API_BASE_URL}/api/v1/enhanced-auth/me`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           });
           // /me endpoint returns user data directly, not nested in a user field
           setUser(response.data);
@@ -73,21 +73,21 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/api/v1/enhanced-auth/login`, {
         email,
-        password
+        password,
       });
 
       const { access_token, user: userData } = response.data;
-      
+
       localStorage.setItem('token', access_token);
       setToken(access_token);
       setUser(userData);
-      
+
       return { success: true, user: userData };
     } catch (error) {
       console.error('Login failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'Login failed',
       };
     }
   };
@@ -95,19 +95,19 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/api/v1/enhanced-auth/register`, userData);
-      
+
       const { access_token, user: newUser } = response.data;
-      
+
       localStorage.setItem('token', access_token);
       setToken(access_token);
       setUser(newUser);
-      
+
       return { success: true, user: newUser };
     } catch (error) {
       console.error('Registration failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.detail || 'Registration failed' 
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'Registration failed',
       };
     }
   };
@@ -134,12 +134,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
-    isAuthenticated
+    isAuthenticated,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-}; 
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

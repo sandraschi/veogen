@@ -1,52 +1,52 @@
-import React, { useState, useRef } from 'react';
 import {
+  Delete,
+  Download,
+  Edit,
+  Favorite,
+  FavoriteBorder,
+  History,
+  Image as ImageIcon,
+  Info,
+  PlayArrow,
+  Refresh,
+  Settings,
+  Share,
+  Stop,
+  VideoCall,
+} from '@mui/icons-material';
+import {
+  Alert,
   Box,
-  Paper,
-  Typography,
-  TextField,
   Button,
-  Grid,
   Card,
   CardContent,
   CardMedia,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Slider,
   Chip,
-  Alert,
-  LinearProgress,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
   IconButton,
-  Tooltip,
-  Tabs,
-  Tab,
+  InputLabel,
+  LinearProgress,
   List,
   ListItem,
+  ListItemSecondaryAction,
   ListItemText,
-  ListItemSecondaryAction
+  MenuItem,
+  Paper,
+  Select,
+  Slider,
+  Tab,
+  Tabs,
+  TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-import {
-  PlayArrow,
-  Stop,
-  Download,
-  Share,
-  Refresh,
-  Info,
-  VideoCall,
-  Image as ImageIcon,
-  Settings,
-  History,
-  Favorite,
-  FavoriteBorder,
-  Delete,
-  Edit
-} from '@mui/icons-material';
 import axios from 'axios';
+import React, { useState, useRef } from 'react';
 
 const API_BASE_URL = 'http://localhost:11150';
 
@@ -60,7 +60,7 @@ const VIDEO_STYLES = [
   { id: 'claymation', name: 'Claymation', description: 'Stop-motion clay animation' },
   { id: 'advertisement', name: 'Advertisement', description: 'Commercial/marketing style' },
   { id: 'music_video', name: 'Music Video', description: 'Dynamic, rhythmic visuals' },
-  { id: 'documentary', name: 'Documentary', description: 'Natural, observational style' }
+  { id: 'documentary', name: 'Documentary', description: 'Natural, observational style' },
 ];
 
 // Duration presets
@@ -69,7 +69,7 @@ const DURATION_PRESETS = [
   { value: 10, label: '10 seconds' },
   { value: 15, label: '15 seconds' },
   { value: 30, label: '30 seconds' },
-  { value: 60, label: '1 minute' }
+  { value: 60, label: '1 minute' },
 ];
 
 // Video generation history component
@@ -78,14 +78,11 @@ const VideoHistory = ({ videos, onSelectVideo, onDeleteVideo }) => {
     <List>
       {videos.length === 0 ? (
         <ListItem>
-          <ListItemText 
-            primary="No videos generated yet"
-            secondary="Generate your first video to see it here"
-          />
+          <ListItemText primary="No videos generated yet" secondary="Generate your first video to see it here" />
         </ListItem>
       ) : (
         videos.map((video, index) => (
-          <ListItem key={index} button onClick={() => onSelectVideo(video)}>
+          <ListItem key={video.id ?? video.created_at} button onClick={() => onSelectVideo(video)}>
             <ListItemText
               primary={video.prompt}
               secondary={`${video.duration}s • ${video.style} • ${new Date(video.created_at).toLocaleDateString()}`}
@@ -113,16 +110,16 @@ const VideoGenerator = () => {
   const [seed, setSeed] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
   const [referenceImage, setReferenceImage] = useState(null);
-  
+
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [videoHistory, setVideoHistory] = useState([]);
-  const [previewDialog, setPreviewDialog] = useState(false);
-  
+  const [_previewDialog, _setPreviewDialog] = useState(false);
+
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -134,16 +131,17 @@ const VideoGenerator = () => {
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
         setError('Image file size must be less than 10MB');
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setReferenceImage({
           file: file,
-          preview: e.target.result
+          preview: e.target.result,
         });
       };
       reader.readAsDataURL(file);
@@ -167,7 +165,7 @@ const VideoGenerator = () => {
     setProgress(0);
 
     const progressInterval = setInterval(() => {
-      setProgress(prev => {
+      setProgress((prev) => {
         if (prev >= 90) {
           clearInterval(progressInterval);
           return 90;
@@ -184,19 +182,15 @@ const VideoGenerator = () => {
         aspect_ratio: aspectRatio,
         temperature,
         seed: seed || undefined,
-        negative_prompt: negativePrompt || undefined
+        negative_prompt: negativePrompt || undefined,
       };
 
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/video/generate`,
-        payload,
-        {
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/api/v1/video/generate`, payload, {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+      });
 
       clearInterval(progressInterval);
       setProgress(100);
@@ -216,13 +210,12 @@ const VideoGenerator = () => {
         video_url: videoPayload.url,
         created_at: new Date().toISOString(),
         status: 'completed',
-        metadata: videoPayload.metadata
+        metadata: videoPayload.metadata,
       };
 
       setGeneratedVideo(videoData);
-      setVideoHistory(prev => [videoData, ...prev]);
+      setVideoHistory((prev) => [videoData, ...prev]);
       setSuccess(response.data.message || 'Video generated successfully!');
-
     } catch (error) {
       clearInterval(progressInterval);
       console.error('Video generation error:', error);
@@ -235,7 +228,7 @@ const VideoGenerator = () => {
 
   const downloadVideo = async () => {
     if (!generatedVideo?.video_url) return;
-    
+
     try {
       const response = await fetch(generatedVideo.video_url);
       const blob = await response.blob();
@@ -247,22 +240,22 @@ const VideoGenerator = () => {
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch (_error) {
       setError('Failed to download video');
     }
   };
 
   const shareVideo = async () => {
     if (!generatedVideo?.video_url) return;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'VeoGen AI Video',
           text: `Check out this AI-generated video: "${prompt}"`,
-          url: generatedVideo.video_url
+          url: generatedVideo.video_url,
         });
-      } catch (error) {
+      } catch (_error) {
         // User cancelled sharing
       }
     } else {
@@ -280,11 +273,7 @@ const VideoGenerator = () => {
       aria-labelledby={`video-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 
@@ -297,14 +286,22 @@ const VideoGenerator = () => {
         Generate stunning videos using AI with Veo 3. Describe what you want to see and let AI bring it to life.
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
 
       <Grid container spacing={3}>
         {/* Main Generation Panel */}
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3 }}>
-            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
+            <Tabs value={activeTab} onChange={(_e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
               <Tab label="Generate" icon={<VideoCall />} />
               <Tab label="Advanced" icon={<Settings />} />
               <Tab label="History" icon={<History />} />
@@ -372,14 +369,14 @@ const VideoGenerator = () => {
                   <Typography gutterBottom>Creativity Level</Typography>
                   <Slider
                     value={temperature}
-                    onChange={(e, newValue) => setTemperature(newValue)}
+                    onChange={(_e, newValue) => setTemperature(newValue)}
                     min={0}
                     max={1}
                     step={0.1}
                     marks={[
                       { value: 0, label: 'Conservative' },
                       { value: 0.5, label: 'Balanced' },
-                      { value: 1, label: 'Creative' }
+                      { value: 1, label: 'Creative' },
                     ]}
                     disabled={generating}
                   />
@@ -396,14 +393,18 @@ const VideoGenerator = () => {
                   >
                     {generating ? 'Generating Video...' : 'Generate Video'}
                   </Button>
-                  
+
                   {generating && (
                     <Box sx={{ mt: 2 }}>
                       <LinearProgress variant="determinate" value={progress} />
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        {progress < 30 ? 'Analyzing prompt...' :
-                         progress < 60 ? 'Generating frames...' :
-                         progress < 90 ? 'Rendering video...' : 'Finalizing...'}
+                        {progress < 30
+                          ? 'Analyzing prompt...'
+                          : progress < 60
+                            ? 'Generating frames...'
+                            : progress < 90
+                              ? 'Rendering video...'
+                              : 'Finalizing...'}
                       </Typography>
                     </Box>
                   )}
@@ -439,7 +440,9 @@ const VideoGenerator = () => {
                 </Grid>
 
                 <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>Reference Image (Optional)</Typography>
+                  <Typography variant="h6" gutterBottom>
+                    Reference Image (Optional)
+                  </Typography>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -455,7 +458,7 @@ const VideoGenerator = () => {
                   >
                     Upload Reference Image
                   </Button>
-                  
+
                   {referenceImage && (
                     <Box sx={{ mt: 2 }}>
                       <img
@@ -477,7 +480,7 @@ const VideoGenerator = () => {
                 videos={videoHistory}
                 onSelectVideo={setGeneratedVideo}
                 onDeleteVideo={(index) => {
-                  setVideoHistory(prev => prev.filter((_, i) => i !== index));
+                  setVideoHistory((prev) => prev.filter((_, i) => i !== index));
                 }}
               />
             </TabPanel>
@@ -490,7 +493,7 @@ const VideoGenerator = () => {
             <Typography variant="h6" gutterBottom>
               Generated Video
             </Typography>
-            
+
             {generatedVideo ? (
               <Box>
                 <video
@@ -501,36 +504,27 @@ const VideoGenerator = () => {
                   style={{ borderRadius: 8, marginBottom: 16 }}
                 >
                   <source src={generatedVideo.video_url} type="video/mp4" />
+                  <track kind="captions" />
                   Your browser does not support the video tag.
                 </video>
-                
+
                 <Box sx={{ mb: 2 }}>
                   <Chip label={generatedVideo.style} size="small" sx={{ mr: 1 }} />
                   <Chip label={`${generatedVideo.duration}s`} size="small" />
                 </Box>
-                
+
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   "{generatedVideo.prompt}"
                 </Typography>
-                
+
                 <Grid container spacing={1}>
                   <Grid item xs={12}>
-                    <Button
-                      variant="contained"
-                      startIcon={<Download />}
-                      onClick={downloadVideo}
-                      fullWidth
-                    >
+                    <Button variant="contained" startIcon={<Download />} onClick={downloadVideo} fullWidth>
                       Download
                     </Button>
                   </Grid>
                   <Grid item xs={6}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<Share />}
-                      onClick={shareVideo}
-                      fullWidth
-                    >
+                    <Button variant="outlined" startIcon={<Share />} onClick={shareVideo} fullWidth>
                       Share
                     </Button>
                   </Grid>

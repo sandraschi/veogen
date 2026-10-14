@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { MicrophoneIcon, PauseIcon, PlayIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import { MicrophoneIcon, SpeakerWaveIcon, PlayIcon, PauseIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
 
 const AudioStudioPage = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -18,23 +18,24 @@ const AudioStudioPage = () => {
           </div>
           <p className="text-xl text-gray-300">Record, enhance, and generate professional audio with AI</p>
         </motion.div>
-        
+
         <div className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-8 border border-white/10 text-center">
           <div className="mb-8">
-            <div className={`w-32 h-32 mx-auto rounded-full border-4 transition-all duration-300 ${
-              isRecording 
-                ? 'border-red-500 bg-red-500/20 animate-pulse' 
-                : 'border-purple-500 bg-purple-500/20'
-            } flex items-center justify-center`}>
+            <div
+              className={`w-32 h-32 mx-auto rounded-full border-4 transition-all duration-300 ${
+                isRecording ? 'border-red-500 bg-red-500/20 animate-pulse' : 'border-purple-500 bg-purple-500/20'
+              } flex items-center justify-center`}
+            >
               <MicrophoneIcon className={`w-16 h-16 ${isRecording ? 'text-red-400' : 'text-purple-400'}`} />
             </div>
           </div>
 
           <div className="flex items-center justify-center space-x-4">
             <button
+              type="button"
               onClick={() => setIsRecording(!isRecording)}
               className={`px-8 py-4 rounded-full transition-all text-lg font-semibold ${
-                isRecording 
+                isRecording
                   ? 'bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800'
                   : 'bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700'
               }`}
@@ -42,8 +43,9 @@ const AudioStudioPage = () => {
               <MicrophoneIcon className="w-6 h-6 inline mr-2" />
               {isRecording ? 'Stop Recording' : 'Start Recording'}
             </button>
-            
+
             <button
+              type="button"
               onClick={() => setIsPlaying(!isPlaying)}
               className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-full transition-all text-lg font-semibold"
             >
