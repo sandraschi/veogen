@@ -1,16 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { ArrowDownTrayIcon, BellIcon, CloudIcon, Cog6ToothIcon, KeyIcon, UserIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import {
-  Cog6ToothIcon,
-  KeyIcon,
-  CloudIcon,
-  BellIcon,
-  UserIcon,
-  ArrowDownTrayIcon,
-} from '@heroicons/react/24/outline';
-import { settingsService } from '../services/settingsService';
 import LlmProvidersPanel from '../components/settings/LlmProvidersPanel';
+import { settingsService } from '../services/settingsService';
 
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
@@ -46,9 +39,9 @@ const SettingsPage = () => {
   }, []);
 
   const handleSettingChange = (key, value) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
@@ -59,11 +52,11 @@ const SettingsPage = () => {
       toast.success('Settings saved successfully!');
     } catch (error) {
       console.error('Failed to save settings:', error);
-      
+
       // Show specific error message
       const errorMessage = error.message || 'Failed to save settings';
       toast.error(errorMessage);
-      
+
       // If authentication error, suggest login
       if (errorMessage.includes('log in') || errorMessage.includes('401')) {
         toast.error('Please log in to save your settings');
@@ -77,29 +70,29 @@ const SettingsPage = () => {
     try {
       // Test basic VeoGen connection
       const result = await settingsService.testConnection();
-      
+
       if (result.success) {
         let successMessage = result.message || 'Connection successful!';
-        
+
         if (result.details && result.details.length > 0) {
           successMessage += `\n\nComponents:\n${result.details.join('\n')}`;
         }
-        
+
         toast.success(successMessage);
-        
+
         // Also test Gemini if API key is provided
         if (settings.geminiApiKey) {
           toast.info('Testing Gemini API...');
-          
+
           const geminiResult = await settingsService.testGeminiConnection(settings.geminiApiKey);
-          
+
           if (geminiResult.success) {
             toast.success('Gemini API connection verified!');
           } else {
             toast.warning(`Gemini API issue: ${geminiResult.error}`);
           }
         }
-        
+
         // Log detailed info for debugging
         console.log('Connection test result:', result.data);
       } else {
@@ -114,7 +107,7 @@ const SettingsPage = () => {
     return (
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-400 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-400 mx-auto mb-4" />
           <p className="text-xl text-gray-300">Loading settings...</p>
         </div>
       </div>
@@ -123,17 +116,9 @@ const SettingsPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center"
-      >
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          Settings
-        </h1>
-        <p className="text-gray-400">
-          Configure your VeoGen experience and API connections
-        </p>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">Settings</h1>
+        <p className="text-gray-400">Configure your VeoGen experience and API connections</p>
       </motion.div>
 
       <LlmProvidersPanel />
@@ -151,12 +136,10 @@ const SettingsPage = () => {
               <KeyIcon className="w-6 h-6 mr-2" />
               API Configuration
             </h2>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Google API Key
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Google API Key</label>
                 <input
                   type="password"
                   value={settings.googleApiKey}
@@ -167,9 +150,7 @@ const SettingsPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Google Cloud Project ID
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Google Cloud Project ID</label>
                 <input
                   type="text"
                   value={settings.googleCloudProject}
@@ -180,9 +161,7 @@ const SettingsPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Gemini API Key
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Gemini API Key</label>
                 <input
                   type="password"
                   value={settings.geminiApiKey}
@@ -193,6 +172,7 @@ const SettingsPage = () => {
               </div>
 
               <button
+                type="button"
                 onClick={testConnection}
                 className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white hover:bg-white/20 transition-colors flex items-center justify-center"
               >
@@ -208,12 +188,10 @@ const SettingsPage = () => {
               <Cog6ToothIcon className="w-6 h-6 mr-2" />
               Default Generation Settings
             </h2>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Default Style
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Default Style</label>
                 <select
                   value={settings.defaultStyle}
                   onChange={(e) => handleSettingChange('defaultStyle', e.target.value)}
@@ -227,24 +205,20 @@ const SettingsPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Default Duration (seconds)
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Default Duration (seconds)</label>
                 <input
                   type="range"
                   min="1"
                   max="60"
                   value={settings.defaultDuration}
-                  onChange={(e) => handleSettingChange('defaultDuration', parseInt(e.target.value))}
+                  onChange={(e) => handleSettingChange('defaultDuration', Number.parseInt(e.target.value))}
                   className="w-full accent-purple-500"
                 />
                 <div className="text-center text-white mt-2">{settings.defaultDuration}s</div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Default Aspect Ratio
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Default Aspect Ratio</label>
                 <select
                   value={settings.defaultAspectRatio}
                   onChange={(e) => handleSettingChange('defaultAspectRatio', e.target.value)}
@@ -271,7 +245,7 @@ const SettingsPage = () => {
               <UserIcon className="w-6 h-6 mr-2" />
               User Preferences
             </h2>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -285,7 +259,7 @@ const SettingsPage = () => {
                     onChange={(e) => handleSettingChange('autoSave', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600" />
                 </label>
               </div>
 
@@ -301,14 +275,12 @@ const SettingsPage = () => {
                     onChange={(e) => handleSettingChange('notifications', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600" />
                 </label>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
-                  Theme
-                </label>
+                <label className="block text-sm font-medium text-white mb-2">Theme</label>
                 <select
                   value={settings.theme}
                   onChange={(e) => handleSettingChange('theme', e.target.value)}
@@ -324,10 +296,8 @@ const SettingsPage = () => {
 
           {/* System Info */}
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              System Information
-            </h2>
-            
+            <h2 className="text-xl font-semibold text-white mb-4">System Information</h2>
+
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">Version:</span>
@@ -362,7 +332,7 @@ const SettingsPage = () => {
           >
             {saving ? (
               <div className="flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                 Saving...
               </div>
             ) : (

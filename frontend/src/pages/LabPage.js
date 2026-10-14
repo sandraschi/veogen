@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { BeakerIcon, CpuChipIcon, RocketLaunchIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import { BeakerIcon, CpuChipIcon, SparklesIcon, RocketLaunchIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
 
 const LabPage = () => {
   return (
@@ -20,7 +20,7 @@ const LabPage = () => {
             <CpuChipIcon className="w-8 h-8 text-orange-400 mb-4" />
             <h3 className="text-lg font-semibold mb-2">Beta Models</h3>
             <p className="text-gray-400 mb-4">Test the latest AI models before public release</p>
-            <button className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded transition-colors">
+            <button type="button" className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded transition-colors">
               Access Beta
             </button>
           </div>
@@ -28,7 +28,7 @@ const LabPage = () => {
             <SparklesIcon className="w-8 h-8 text-yellow-400 mb-4" />
             <h3 className="text-lg font-semibold mb-2">Experiments</h3>
             <p className="text-gray-400 mb-4">Try experimental AI features and techniques</p>
-            <button className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded transition-colors">
+            <button type="button" className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded transition-colors">
               Start Experiment
             </button>
           </div>
@@ -36,7 +36,7 @@ const LabPage = () => {
             <RocketLaunchIcon className="w-8 h-8 text-red-400 mb-4" />
             <h3 className="text-lg font-semibold mb-2">Future Tech</h3>
             <p className="text-gray-400 mb-4">Preview upcoming AI technologies and innovations</p>
-            <button className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition-colors">
+            <button type="button" className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition-colors">
               Explore Future
             </button>
           </div>

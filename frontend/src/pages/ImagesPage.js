@@ -1,12 +1,6 @@
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Image, 
-  Sparkles, 
-  Download,
-  Search,
-  CaseSensitive
-} from 'lucide-react';
+import { CaseSensitive, Download, Image, Search, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 
 const ImageStudio = () => {
@@ -19,24 +13,24 @@ const ImageStudio = () => {
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
-    
+
     try {
       // Calling Nano Banana 2 API
       const response = await fetch('/api/image/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          prompt, 
+        body: JSON.stringify({
+          prompt,
           text: textInImage,
           aspect_ratio: aspectRatio,
-          search_grounding: true 
-        })
+          search_grounding: true,
+        }),
       });
-      
+
       const data = await response.json();
       setResultImage(data.image_url);
       toast.success('Nano Banana 2: Image generated with 4K clarity');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Image generation failed');
     } finally {
       setIsGenerating(false);
@@ -52,8 +46,9 @@ const ImageStudio = () => {
           <p className="text-slate-400 mt-2">Gemini 3.1 Flash Image • 4K • Text Rendering • Search Grounded</p>
         </div>
         <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
-          {['1:1', '16:9', '9:16'].map(ratio => (
+          {['1:1', '16:9', '9:16'].map((ratio) => (
             <button
+              type="button"
               key={ratio}
               onClick={() => setAspectRatio(ratio)}
               className={`px-4 py-1.5 rounded-lg text-sm transition-all ${
@@ -99,6 +94,7 @@ const ImageStudio = () => {
 
             <div className="pt-4">
               <button
+                type="button"
                 onClick={handleGenerate}
                 disabled={isGenerating || !prompt}
                 className="glass-button-primary w-full py-4 flex items-center justify-center gap-2"
@@ -138,18 +134,14 @@ const ImageStudio = () => {
         {/* Preview Area */}
         <div className="glass-panel min-h-[500px] flex flex-col items-center justify-center p-4 relative group">
           {resultImage ? (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="w-full h-full"
             >
-              <img 
-                src={resultImage} 
-                alt="Generated result" 
-                className="w-full h-full object-contain rounded-xl"
-              />
+              <img src={resultImage} alt="Generated result" className="w-full h-full object-contain rounded-xl" />
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="glass-button-secondary !p-2">
+                <button type="button" className="glass-button-secondary !p-2">
                   <Download className="w-5 h-5" />
                 </button>
               </div>
@@ -160,7 +152,7 @@ const ImageStudio = () => {
               <p>Your creation will appear here</p>
             </div>
           )}
-          
+
           {isGenerating && (
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm rounded-2xl flex items-center justify-center">
               <div className="text-center">
@@ -176,4 +168,3 @@ const ImageStudio = () => {
 };
 
 export default ImageStudio;
-

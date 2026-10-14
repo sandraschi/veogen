@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { GlobeAltIcon, MicrophoneIcon, PhotoIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import { GlobeAltIcon, PhotoIcon, MicrophoneIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
 
 const MultimodalPage = () => {
   return (

@@ -1,13 +1,6 @@
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Music, 
-  Sparkles, 
-  Play,
-  Pause,
-  Download,
-  Waves
-} from 'lucide-react';
+import { Download, Music, Pause, Play, Sparkles, Waves } from 'lucide-react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 
 const LyriaStudio = () => {
@@ -20,21 +13,21 @@ const LyriaStudio = () => {
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
-    
+
     try {
       const response = await fetch('/api/music/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           prompt,
-          genre
-        })
+          genre,
+        }),
       });
-      
+
       const data = await response.json();
       setGeneratedAudio(data.audio_url);
       toast.success('Lyria 3: High-fidelity composition ready');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Music generation failed');
     } finally {
       setIsGenerating(false);
@@ -71,11 +64,7 @@ const LyriaStudio = () => {
                 <Music className="w-4 h-4 text-indigo-400" />
                 Genre Preset
               </label>
-              <select 
-                value={genre} 
-                onChange={(e) => setGenre(e.target.value)}
-                className="glass-input w-full"
-              >
+              <select value={genre} onChange={(e) => setGenre(e.target.value)} className="glass-input w-full">
                 <option value="ambient">Ambient / Atmospheric</option>
                 <option value="lofi">Lofi / Chill</option>
                 <option value="cinematic">Cinematic Orchestral</option>
@@ -85,6 +74,7 @@ const LyriaStudio = () => {
             </div>
 
             <button
+              type="button"
               onClick={handleGenerate}
               disabled={isGenerating || !prompt}
               className="glass-button-primary w-full py-4 flex items-center justify-center gap-3"
@@ -112,44 +102,46 @@ const LyriaStudio = () => {
               <div className="flex items-center justify-center gap-1.5 h-32">
                 {[...Array(20)].map((_, i) => (
                   <motion.div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: decorative fixed-length bars, no data identity
                     key={i}
                     className="w-1.5 bg-gradient-to-t from-purple-500 to-pink-500 rounded-full"
-                    animate={{ 
-                      height: isPlaying ? [20, 80, 40, 100, 30] : 10 
+                    animate={{
+                      height: isPlaying ? [20, 80, 40, 100, 30] : 10,
                     }}
-                    transition={{ 
-                      repeat: Infinity, 
-                      duration: 0.8, 
+                    transition={{
+                      repeat: Number.POSITIVE_INFINITY,
+                      duration: 0.8,
                       delay: i * 0.05,
-                      ease: "easeInOut"
+                      ease: 'easeInOut',
                     }}
                   />
                 ))}
               </div>
 
               <div className="flex flex-col items-center gap-6">
-                <button 
+                <button
+                  type="button"
                   onClick={() => setIsPlaying(!isPlaying)}
                   className="w-20 h-20 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all active:scale-95"
                 >
                   {isPlaying ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
                 </button>
-                
+
                 <div className="w-full space-y-2">
                   <div className="flex justify-between text-xs text-slate-400">
                     <span>0:12</span>
                     <span>0:30</span>
                   </div>
                   <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div 
+                    <motion.div
                       className="bg-purple-500 h-full w-1/3"
-                      animate={{ width: isPlaying ? "100%" : "33%" }}
-                      transition={{ duration: 30, ease: "linear" }}
+                      animate={{ width: isPlaying ? '100%' : '33%' }}
+                      transition={{ duration: 30, ease: 'linear' }}
                     />
                   </div>
                 </div>
 
-                <button className="glass-button-secondary flex items-center gap-2">
+                <button type="button" className="glass-button-secondary flex items-center gap-2">
                   <Download className="w-4 h-4" />
                   Download WAV
                 </button>
@@ -177,4 +169,3 @@ const LyriaStudio = () => {
 };
 
 export default LyriaStudio;
-

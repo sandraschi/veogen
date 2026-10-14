@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import {
-  SparklesIcon,
-  PlayIcon,
+  BoltIcon,
   CameraIcon,
-  FilmIcon,
   ChartBarIcon,
-  UserGroupIcon,
-  DocumentTextIcon,
-  LightBulbIcon,
   ClockIcon,
   CurrencyDollarIcon,
+  DocumentTextIcon,
+  FilmIcon,
+  LightBulbIcon,
+  PlayIcon,
+  SparklesIcon,
   StarIcon,
-  BoltIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const HomePage = () => {
   const features = [
@@ -48,22 +48,22 @@ const HomePage = () => {
     {
       icon: DocumentTextIcon,
       title: 'AI Script Generation',
-      description: 'Transform simple ideas into detailed movie scripts'
+      description: 'Transform simple ideas into detailed movie scripts',
     },
     {
       icon: LightBulbIcon,
       title: 'Scene Continuity',
-      description: 'Frame-to-frame continuity for seamless movie flow'
+      description: 'Frame-to-frame continuity for seamless movie flow',
     },
     {
       icon: ClockIcon,
       title: 'Quick Production',
-      description: 'Complete movies in minutes, not months'
+      description: 'Complete movies in minutes, not months',
     },
     {
       icon: CurrencyDollarIcon,
       title: 'Cost Control',
-      description: 'Built-in budget limits and cost estimation'
+      description: 'Built-in budget limits and cost estimation',
     },
   ];
 
@@ -124,15 +124,18 @@ const HomePage = () => {
           </div>
           <div data-testid="kpi-uptime" className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
             <div className="text-xs text-gray-400 mb-1">Uptime</div>
-            <div className="text-white font-semibold">
-              {diag ? `${Math.floor(diag.uptime_seconds / 60)}m` : '...'}
-            </div>
+            <div className="text-white font-semibold">{diag ? `${Math.floor(diag.uptime_seconds / 60)}m` : '...'}</div>
             <div className="text-sm text-gray-400">since boot</div>
           </div>
           <div data-testid="kpi-backend" className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
             <div className="text-xs text-gray-400 mb-1">Backend</div>
             <div className="flex items-center space-x-2">
-              <span data-testid="backend-dot" className={`w-2.5 h-2.5 rounded-full ${backendOk === null ? 'bg-gray-500' : backendOk ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <span
+                data-testid="backend-dot"
+                className={`w-2.5 h-2.5 rounded-full ${
+                  backendOk === null ? 'bg-gray-500' : backendOk ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                }`}
+              />
               <span className="text-white font-semibold">
                 {backendOk === null ? 'Connecting...' : backendOk ? 'Connected' : 'Offline'}
               </span>
@@ -166,9 +169,7 @@ const HomePage = () => {
           className="text-4xl md:text-6xl font-bold text-white mb-6"
         >
           Create Amazing Videos & Movies with{' '}
-          <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            AI Magic
-          </span>
+          <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">AI Magic</span>
         </motion.h1>
 
         <motion.p
@@ -177,8 +178,8 @@ const HomePage = () => {
           transition={{ delay: 0.4, duration: 0.6 }}
           className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto"
         >
-          From single videos to complete movies - transform your ideas into stunning visual content using Google's cutting-edge Veo AI model. 
-          Professional quality in minutes, not months.
+          From single videos to complete movies - transform your ideas into stunning visual content using Google's
+          cutting-edge Veo AI model. Professional quality in minutes, not months.
         </motion.p>
 
         <motion.div
@@ -220,7 +221,7 @@ const HomePage = () => {
           >
             <FilmIcon className="w-8 h-8 text-white" />
           </motion.div>
-          
+
           <h2 className="text-4xl font-bold text-white mb-4">
             Introducing{' '}
             <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
@@ -228,8 +229,8 @@ const HomePage = () => {
             </span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            The world's first AI-powered movie creation platform with frame-to-frame continuity. 
-            Turn your ideas into complete movies with multiple scenes and seamless transitions.
+            The world's first AI-powered movie creation platform with frame-to-frame continuity. Turn your ideas into
+            complete movies with multiple scenes and seamless transitions.
           </p>
 
           <div className="flex items-center justify-center space-x-2 mb-8">
@@ -263,9 +264,7 @@ const HomePage = () => {
 
         {/* Movie Styles Showcase */}
         <div className="mb-12">
-          <h3 className="text-2xl font-bold text-white text-center mb-8">
-            Choose Your Movie Style
-          </h3>
+          <h3 className="text-2xl font-bold text-white text-center mb-8">Choose Your Movie Style</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             {movieStyles.map((style, index) => (
               <motion.div
@@ -329,9 +328,7 @@ const HomePage = () => {
         className="py-12"
       >
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Powerful Features
-          </h2>
+          <h2 className="text-3xl font-bold text-white mb-4">Powerful Features</h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
             Everything you need to create professional videos and movies with AI
           </p>
@@ -346,15 +343,13 @@ const HomePage = () => {
               transition={{ delay: 1.5 + index * 0.1, duration: 0.6 }}
               className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300 group"
             >
-              <div className={`inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br ${feature.color} rounded-lg mb-4 group-hover:scale-110 transition-transform duration-300`}>
+              <div
+                className={`inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br ${feature.color} rounded-lg mb-4 group-hover:scale-110 transition-transform duration-300`}
+              >
                 <feature.icon className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">
-                {feature.name}
-              </h3>
-              <p className="text-gray-400">
-                {feature.description}
-              </p>
+              <h3 className="text-lg font-semibold text-white mb-2">{feature.name}</h3>
+              <p className="text-gray-400">{feature.description}</p>
             </motion.div>
           ))}
         </div>
@@ -368,9 +363,7 @@ const HomePage = () => {
         className="py-12"
       >
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Perfect For Every Creator
-          </h2>
+          <h2 className="text-3xl font-bold text-white mb-4">Perfect For Every Creator</h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
             From content creators to filmmakers, VeoGen empowers everyone to create amazing visual content
           </p>
@@ -417,14 +410,12 @@ const HomePage = () => {
         className="text-center py-12"
       >
         <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-          <h3 className="text-3xl font-bold text-white mb-4">
-            Ready to Create Your Masterpiece?
-          </h3>
+          <h3 className="text-3xl font-bold text-white mb-4">Ready to Create Your Masterpiece?</h3>
           <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of creators who are already using VeoGen to bring their ideas to life. 
-            Start with a single video or create your first movie today.
+            Join thousands of creators who are already using VeoGen to bring their ideas to life. Start with a single
+            video or create your first movie today.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/generate"

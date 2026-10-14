@@ -1,24 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
 import {
-  ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  TrashIcon,
-  EyeIcon,
   ArrowDownTrayIcon,
-  FilmIcon,
   CameraIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  EyeIcon,
+  FilmIcon,
   MusicalNoteIcon,
+  TrashIcon,
+  XCircleIcon,
 } from '@heroicons/react/24/outline';
+import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 import { imageService } from '../services/imageService';
 import { musicService } from '../services/musicService';
 
 const JobsPage = () => {
   const [jobs, setJobs] = useState([]);
 
-  const { data: jobsData, isLoading, refetch } = useQuery({
+  const {
+    data: jobsData,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['jobs'],
     queryFn: async () => {
       const response = await fetch('/api/v1/video/jobs');
@@ -80,37 +84,23 @@ const JobsPage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center"
-      >
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          Video Generation Jobs
-        </h1>
-        <p className="text-gray-400">
-          Track your video generation progress and manage completed videos
-        </p>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">Video Generation Jobs</h1>
+        <p className="text-gray-400">Track your video generation progress and manage completed videos</p>
       </motion.div>
 
       {jobs.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
           <ClockIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">No jobs yet</h3>
-          <p className="text-gray-400 mb-6">
-            Start generating your first video to see it here
-          </p>
+          <p className="text-gray-400 mb-6">Start generating your first video to see it here</p>
           <a
             href="/generate"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300"
@@ -132,21 +122,13 @@ const JobsPage = () => {
                 <div className="flex items-center space-x-4">
                   {getStatusIcon(job.status)}
                   <div>
-                    <h3 className="text-lg font-semibold text-white">
-                      Job #{job.job_id.slice(0, 8)}
-                    </h3>
-                    <p className="text-gray-400 text-sm">
-                      Created: {new Date(job.created_at).toLocaleString()}
-                    </p>
+                    <h3 className="text-lg font-semibold text-white">Job #{job.job_id.slice(0, 8)}</h3>
+                    <p className="text-gray-400 text-sm">Created: {new Date(job.created_at).toLocaleString()}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                      job.status
-                    )}`}
-                  >
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(job.status)}`}>
                     {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
                   </span>
 
@@ -154,6 +136,7 @@ const JobsPage = () => {
                     {job.status === 'completed' && (
                       <>
                         <button
+                          type="button"
                           onClick={() => downloadVideo(job.job_id)}
                           className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                           title="Download"
@@ -161,6 +144,7 @@ const JobsPage = () => {
                           <ArrowDownTrayIcon className="w-5 h-5" />
                         </button>
                         <button
+                          type="button"
                           className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                           title="Preview"
                         >
@@ -169,6 +153,7 @@ const JobsPage = () => {
                       </>
                     )}
                     <button
+                      type="button"
                       onClick={() => deleteJob(job.job_id)}
                       className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                       title="Delete"
@@ -196,9 +181,7 @@ const JobsPage = () => {
               )}
 
               {job.completed_at && (
-                <p className="text-gray-400 text-sm mt-2">
-                  Completed: {new Date(job.completed_at).toLocaleString()}
-                </p>
+                <p className="text-gray-400 text-sm mt-2">Completed: {new Date(job.completed_at).toLocaleString()}</p>
               )}
             </motion.div>
           ))}
